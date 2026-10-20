@@ -1,0 +1,3891 @@
+{
+  "season": "2026-2027",
+  "checkedAt": "2026-10-20",
+  "method": "Current-season club squad pages and official club/league sources; positional group normalized to game schema; on-loan players are included only where shown on current squad pages.",
+  "rosters": {
+    "ado-den-haag": {
+      "sourceUrl": "https://adodenhaag.nl/nl/teams/1e-elftal/selectie",
+      "checkedAt": "2026-10-20",
+      "players": [
+        {
+          "name": "Kilian Nikiema",
+          "position": "GK"
+        },
+        {
+          "name": "Sem Eekhout",
+          "position": "GK"
+        },
+        {
+          "name": "Niclas Thiede",
+          "position": "GK"
+        },
+        {
+          "name": "Othniël Raterink",
+          "position": "CB"
+        },
+        {
+          "name": "Pascal Mulder",
+          "position": "CB"
+        },
+        {
+          "name": "Matteo Waem",
+          "position": "CB"
+        },
+        {
+          "name": "Jonas Jensen-Abbew",
+          "position": "CB"
+        },
+        {
+          "name": "Milan Hokke",
+          "position": "CB"
+        },
+        {
+          "name": "Jan Žambůrek",
+          "position": "CM"
+        },
+        {
+          "name": "Mylian Jimenez",
+          "position": "CM"
+        },
+        {
+          "name": "Finn de Bruin",
+          "position": "CM"
+        },
+        {
+          "name": "Daryl van Mieghem",
+          "position": "ST"
+        },
+        {
+          "name": "Jesse Bal",
+          "position": "ST"
+        },
+        {
+          "name": "Illaijh de Ruijter",
+          "position": "ST"
+        },
+        {
+          "name": "Evan Rottier",
+          "position": "ST"
+        },
+        {
+          "name": "Jalen Hawkins",
+          "position": "ST"
+        },
+        {
+          "name": "Luka Reischl",
+          "position": "ST"
+        },
+        {
+          "name": "Cameron Peupion",
+          "position": "ST"
+        },
+        {
+          "name": "Nigel Thomas",
+          "position": "ST"
+        },
+        {
+          "name": "Donát Bárány",
+          "position": "ST"
+        }
+      ]
+    },
+    "ajax": {
+      "sourceUrl": "https://www.vi.nl/clubs/ajax/selectie",
+      "checkedAt": "2026-10-20",
+      "players": [
+        {
+          "name": "Marc-André ter Stegen",
+          "position": "GK"
+        },
+        {
+          "name": "Maarten Paes",
+          "position": "GK"
+        },
+        {
+          "name": "Joeri Heerkens",
+          "position": "GK"
+        },
+        {
+          "name": "Lucas Rosa",
+          "position": "CB"
+        },
+        {
+          "name": "Anton Gaaei",
+          "position": "CB"
+        },
+        {
+          "name": "Owen Wijndal",
+          "position": "CB"
+        },
+        {
+          "name": "Thilo Kehrer",
+          "position": "CB"
+        },
+        {
+          "name": "Caio Henrique",
+          "position": "CB"
+        },
+        {
+          "name": "Youri Baas",
+          "position": "CB"
+        },
+        {
+          "name": "Daley Blind",
+          "position": "CB"
+        },
+        {
+          "name": "Jorthy Mokio",
+          "position": "CB"
+        },
+        {
+          "name": "Aaron Bouwman",
+          "position": "CB"
+        },
+        {
+          "name": "Dies Janse",
+          "position": "CB"
+        },
+        {
+          "name": "Sofyan Amrabat",
+          "position": "CM"
+        },
+        {
+          "name": "Julian Brandt",
+          "position": "CM"
+        },
+        {
+          "name": "Oscar Gloukh",
+          "position": "CM"
+        },
+        {
+          "name": "Davy Klaassen",
+          "position": "CM"
+        },
+        {
+          "name": "Steven Berghuis",
+          "position": "CM"
+        },
+        {
+          "name": "Jorthy Mokio",
+          "position": "CM"
+        },
+        {
+          "name": "Simon Adingra",
+          "position": "ST"
+        },
+        {
+          "name": "Kasper Dolberg",
+          "position": "ST"
+        },
+        {
+          "name": "Mika Godts",
+          "position": "ST"
+        },
+        {
+          "name": "Marcos Leonardo",
+          "position": "ST"
+        },
+        {
+          "name": "Maher Carrizo",
+          "position": "ST"
+        },
+        {
+          "name": "Oliver Edvardsen",
+          "position": "ST"
+        },
+        {
+          "name": "Rayane Bounida",
+          "position": "ST"
+        },
+        {
+          "name": "Don-Angelo Konadu",
+          "position": "ST"
+        }
+      ]
+    },
+    "az": {
+      "sourceUrl": "https://www.vi.nl/clubs/az/selectie",
+      "checkedAt": "2026-10-20",
+      "players": [
+        {
+          "name": "Rome-Jayden Owusu-Oduro",
+          "position": "GK"
+        },
+        {
+          "name": "Jari De Busser",
+          "position": "GK"
+        },
+        {
+          "name": "Jeroen Zoet",
+          "position": "GK"
+        },
+        {
+          "name": "Seiya Maikuma",
+          "position": "CB"
+        },
+        {
+          "name": "Wouter Goes",
+          "position": "CB"
+        },
+        {
+          "name": "Lewis Schouten",
+          "position": "CB"
+        },
+        {
+          "name": "Mateo Chávez",
+          "position": "CB"
+        },
+        {
+          "name": "Wesley Hoedt",
+          "position": "CB"
+        },
+        {
+          "name": "Denso Kasius",
+          "position": "CB"
+        },
+        {
+          "name": "Mees de Wit",
+          "position": "CB"
+        },
+        {
+          "name": "Jordy Clasie",
+          "position": "CM"
+        },
+        {
+          "name": "Peer Koopmeiners",
+          "position": "CM"
+        },
+        {
+          "name": "Kees Smit",
+          "position": "CM"
+        },
+        {
+          "name": "Stije Resink",
+          "position": "CM"
+        },
+        {
+          "name": "Calvin Stengs",
+          "position": "CM"
+        },
+        {
+          "name": "Weslley Patati",
+          "position": "ST"
+        },
+        {
+          "name": "Mexx Meerdink",
+          "position": "ST"
+        },
+        {
+          "name": "Ro-Zangelo Daal",
+          "position": "ST"
+        },
+        {
+          "name": "Ayoub Oufkir",
+          "position": "ST"
+        },
+        {
+          "name": "Jizz Hornkamp",
+          "position": "ST"
+        },
+        {
+          "name": "Bendegúz Kovács",
+          "position": "ST"
+        },
+        {
+          "name": "Jerolldino Bergraaf",
+          "position": "ST"
+        }
+      ]
+    },
+    "excelsior-rotterdam": {
+      "sourceUrl": "https://en.wikipedia.org/wiki/Excelsior_Rotterdam",
+      "checkedAt": "2026-10-20",
+      "players": [
+        {
+          "name": "Stijn van Gassel",
+          "position": "GK"
+        },
+        {
+          "name": "Celton Biai",
+          "position": "GK"
+        },
+        {
+          "name": "Tijmen Holla",
+          "position": "GK"
+        },
+        {
+          "name": "Eric da Silva Moreira",
+          "position": "CB"
+        },
+        {
+          "name": "Rick Meissen",
+          "position": "CB"
+        },
+        {
+          "name": "Casper Widell",
+          "position": "CB"
+        },
+        {
+          "name": "Kasey Bos",
+          "position": "CB"
+        },
+        {
+          "name": "Jan Plug",
+          "position": "CB"
+        },
+        {
+          "name": "Simon Janssen",
+          "position": "CB"
+        },
+        {
+          "name": "Guilliano Cairo",
+          "position": "CB"
+        },
+        {
+          "name": "Osman Turay",
+          "position": "CB"
+        },
+        {
+          "name": "Daniël van Vianen",
+          "position": "CM"
+        },
+        {
+          "name": "Irakli Yegoian",
+          "position": "CM"
+        },
+        {
+          "name": "Noah Naujoks",
+          "position": "CM"
+        },
+        {
+          "name": "Alireza Jahanbakhsh",
+          "position": "CM"
+        },
+        {
+          "name": "Valentin Sulzbacher",
+          "position": "CM"
+        },
+        {
+          "name": "Lennard Hartjes",
+          "position": "CM"
+        },
+        {
+          "name": "Aymen Sliti",
+          "position": "ST"
+        },
+        {
+          "name": "Mario Domínguez",
+          "position": "ST"
+        },
+        {
+          "name": "David Garden",
+          "position": "ST"
+        },
+        {
+          "name": "Ilano Silva Timas",
+          "position": "ST"
+        },
+        {
+          "name": "Yacqub Finey",
+          "position": "ST"
+        },
+        {
+          "name": "Nesto Groen",
+          "position": "ST"
+        },
+        {
+          "name": "Ágúst Orri Þorsteinsson",
+          "position": "ST"
+        }
+      ]
+    },
+    "fc-groningen": {
+      "sourceUrl": "https://www.vi.nl/clubs/fc-groningen/selectie",
+      "checkedAt": "2026-10-20",
+      "players": [
+        {
+          "name": "Etienne Vaessen",
+          "position": "GK"
+        },
+        {
+          "name": "Pelle Boevink",
+          "position": "GK"
+        },
+        {
+          "name": "Lovro Stubljar",
+          "position": "GK"
+        },
+        {
+          "name": "Thijmen Blokzijl",
+          "position": "CB"
+        },
+        {
+          "name": "Márk Csinger",
+          "position": "CB"
+        },
+        {
+          "name": "Wouter Prins",
+          "position": "CB"
+        },
+        {
+          "name": "Marco Rente",
+          "position": "CB"
+        },
+        {
+          "name": "Elvis van der Laan",
+          "position": "CB"
+        },
+        {
+          "name": "Travis Hernes",
+          "position": "CM"
+        },
+        {
+          "name": "Tika de Jonge",
+          "position": "CM"
+        },
+        {
+          "name": "Stije Resink",
+          "position": "CM"
+        },
+        {
+          "name": "Pelle Clement",
+          "position": "CM"
+        },
+        {
+          "name": "Tygo Land",
+          "position": "CM"
+        },
+        {
+          "name": "Thom van Bergen",
+          "position": "ST"
+        },
+        {
+          "name": "Brynjólfur Willumsson",
+          "position": "ST"
+        },
+        {
+          "name": "Jacob Ondrejka",
+          "position": "ST"
+        },
+        {
+          "name": "Nils Eggens",
+          "position": "ST"
+        },
+        {
+          "name": "Oskar Zawada",
+          "position": "ST"
+        },
+        {
+          "name": "Ryan Metu",
+          "position": "ST"
+        }
+      ]
+    },
+    "fc-twente": {
+      "sourceUrl": "https://en.wikipedia.org/wiki/FC_Twente",
+      "checkedAt": "2026-10-20",
+      "players": [
+        {
+          "name": "Lars Unnerstall",
+          "position": "GK"
+        },
+        {
+          "name": "Joël Drommel",
+          "position": "GK"
+        },
+        {
+          "name": "Remko Pasveer",
+          "position": "GK"
+        },
+        {
+          "name": "Michał Rosiak",
+          "position": "CB"
+        },
+        {
+          "name": "Robin Pröpper",
+          "position": "CB"
+        },
+        {
+          "name": "Ruud Nijstad",
+          "position": "CB"
+        },
+        {
+          "name": "Stav Lemkin",
+          "position": "CB"
+        },
+        {
+          "name": "Krzysztof Kurowski",
+          "position": "CB"
+        },
+        {
+          "name": "Bart van Rooij",
+          "position": "CB"
+        },
+        {
+          "name": "Aske Adelgaard",
+          "position": "CB"
+        },
+        {
+          "name": "Max Bruns",
+          "position": "CB"
+        },
+        {
+          "name": "Ramiz Zerrouki",
+          "position": "CM"
+        },
+        {
+          "name": "Daouda Weidmann",
+          "position": "CM"
+        },
+        {
+          "name": "Kristian Hlynsson",
+          "position": "CM"
+        },
+        {
+          "name": "Thomas van den Belt",
+          "position": "CM"
+        },
+        {
+          "name": "Jordy Bawuah",
+          "position": "CM"
+        },
+        {
+          "name": "Gijs Besselink",
+          "position": "CM"
+        },
+        {
+          "name": "Juliën Mesbahi",
+          "position": "CM"
+        },
+        {
+          "name": "Marko Pjaca",
+          "position": "ST"
+        },
+        {
+          "name": "Wout Weghorst",
+          "position": "ST"
+        },
+        {
+          "name": "Younes Taha",
+          "position": "ST"
+        },
+        {
+          "name": "Daan Rots",
+          "position": "ST"
+        },
+        {
+          "name": "Filip Thorvaldsen",
+          "position": "ST"
+        },
+        {
+          "name": "Lucas Vennegoor of Hesselink",
+          "position": "ST"
+        },
+        {
+          "name": "Sondre Ørjasæter",
+          "position": "ST"
+        },
+        {
+          "name": "Naci Ünüvar",
+          "position": "ST"
+        }
+      ]
+    },
+    "fc-utrecht": {
+      "sourceUrl": "https://www.vi.nl/clubs/fc-utrecht/selectie",
+      "checkedAt": "2026-10-20",
+      "players": [
+        {
+          "name": "Vasilis Barkas",
+          "position": "GK"
+        },
+        {
+          "name": "Sergio Padt",
+          "position": "GK"
+        },
+        {
+          "name": "Kevin Gadellaa",
+          "position": "GK"
+        },
+        {
+          "name": "Siebe Horemans",
+          "position": "CB"
+        },
+        {
+          "name": "Matisse Didden",
+          "position": "CB"
+        },
+        {
+          "name": "Nikolas Panayiotou",
+          "position": "CB"
+        },
+        {
+          "name": "Jakov Medić",
+          "position": "CB"
+        },
+        {
+          "name": "Arthur Zagré",
+          "position": "CB"
+        },
+        {
+          "name": "Niklas Vesterlund",
+          "position": "CB"
+        },
+        {
+          "name": "Per Kloosterboer",
+          "position": "CB"
+        },
+        {
+          "name": "Guus Offerhaus",
+          "position": "CM"
+        },
+        {
+          "name": "Joris van Overeem",
+          "position": "CM"
+        },
+        {
+          "name": "Dani de Wit",
+          "position": "CM"
+        },
+        {
+          "name": "Alonzo Engwanda",
+          "position": "CM"
+        },
+        {
+          "name": "Davy van den Berg",
+          "position": "CM"
+        },
+        {
+          "name": "Victor Jensen",
+          "position": "ST"
+        },
+        {
+          "name": "Artem Stepanov",
+          "position": "ST"
+        },
+        {
+          "name": "Yoann Cathline",
+          "position": "ST"
+        },
+        {
+          "name": "Ángel Alarcón",
+          "position": "ST"
+        },
+        {
+          "name": "Adrian Blake",
+          "position": "ST"
+        },
+        {
+          "name": "Sem van Duijn",
+          "position": "ST"
+        },
+        {
+          "name": "Miliano Jonathans",
+          "position": "ST"
+        },
+        {
+          "name": "Noah Ohio",
+          "position": "ST"
+        },
+        {
+          "name": "Marius Broholm",
+          "position": "ST"
+        }
+      ]
+    },
+    "feyenoord": {
+      "sourceUrl": "https://en.wikipedia.org/wiki/Feyenoord",
+      "checkedAt": "2026-10-20",
+      "players": [
+        {
+          "name": "Tjark Ernst",
+          "position": "GK"
+        },
+        {
+          "name": "Mannou Berger",
+          "position": "GK"
+        },
+        {
+          "name": "Liam Bossin",
+          "position": "GK"
+        },
+        {
+          "name": "Bart Nieuwkoop",
+          "position": "CB"
+        },
+        {
+          "name": "Thomas Beelen",
+          "position": "CB"
+        },
+        {
+          "name": "Tsuyoshi Watanabe",
+          "position": "CB"
+        },
+        {
+          "name": "Gijs Smal",
+          "position": "CB"
+        },
+        {
+          "name": "Jerry St. Juste",
+          "position": "CB"
+        },
+        {
+          "name": "Mika Mármol",
+          "position": "CB"
+        },
+        {
+          "name": "Jakub Moder",
+          "position": "CM"
+        },
+        {
+          "name": "Gjivai Zechiël",
+          "position": "CM"
+        },
+        {
+          "name": "Luciano Valente",
+          "position": "CM"
+        },
+        {
+          "name": "Sem Steijn",
+          "position": "CM"
+        },
+        {
+          "name": "Charles Vanhoutte",
+          "position": "CM"
+        },
+        {
+          "name": "Gonçalo Borges",
+          "position": "ST"
+        },
+        {
+          "name": "Jivayno Zinhagel",
+          "position": "ST"
+        },
+        {
+          "name": "Shaqueel van Persie",
+          "position": "ST"
+        },
+        {
+          "name": "Nacho Ferri",
+          "position": "ST"
+        }
+      ]
+    },
+    "fortuna-sittard": {
+      "sourceUrl": "https://en.wikipedia.org/wiki/Fortuna_Sittard",
+      "checkedAt": "2026-10-20",
+      "players": [
+        {
+          "name": "Luuk Koopmans",
+          "position": "GK"
+        },
+        {
+          "name": "Mattijs Branderhorst",
+          "position": "GK"
+        },
+        {
+          "name": "Kaylen Reitmaier",
+          "position": "GK"
+        },
+        {
+          "name": "Siebe Wylin",
+          "position": "CB"
+        },
+        {
+          "name": "Rodrigo Guth",
+          "position": "CB"
+        },
+        {
+          "name": "Syb van Ottele",
+          "position": "CB"
+        },
+        {
+          "name": "Ivo Pinto",
+          "position": "CB"
+        },
+        {
+          "name": "Nick de Groot",
+          "position": "CB"
+        },
+        {
+          "name": "Justin Hubner",
+          "position": "CB"
+        },
+        {
+          "name": "Daley Sinkgraven",
+          "position": "CB"
+        },
+        {
+          "name": "Kevin van Burgsteden",
+          "position": "CB"
+        },
+        {
+          "name": "Iván Márquez",
+          "position": "CB"
+        },
+        {
+          "name": "Yassin Oukili",
+          "position": "CM"
+        },
+        {
+          "name": "Jasper Dahlhaus",
+          "position": "CM"
+        },
+        {
+          "name": "Sven Simons",
+          "position": "CM"
+        },
+        {
+          "name": "Édouard Michut",
+          "position": "CM"
+        },
+        {
+          "name": "Philip Brittijn",
+          "position": "CM"
+        },
+        {
+          "name": "Moussa Gbemou",
+          "position": "CM"
+        },
+        {
+          "name": "Kristoffer Peterson",
+          "position": "ST"
+        },
+        {
+          "name": "Anthony Descotte",
+          "position": "ST"
+        },
+        {
+          "name": "Ole Romeny",
+          "position": "ST"
+        },
+        {
+          "name": "Shiloh 't Zand",
+          "position": "ST"
+        },
+        {
+          "name": "Lequincio Zeefuik",
+          "position": "ST"
+        },
+        {
+          "name": "Mohamed Ihattaren",
+          "position": "ST"
+        }
+      ]
+    },
+    "go-ahead-eagles": {
+      "sourceUrl": "https://en.wikipedia.org/wiki/Go_Ahead_Eagles",
+      "checkedAt": "2026-10-20",
+      "players": [
+        {
+          "name": "Kjetil Haug",
+          "position": "GK"
+        },
+        {
+          "name": "Nick Marsman",
+          "position": "GK"
+        },
+        {
+          "name": "Thomas Hulleman",
+          "position": "GK"
+        },
+        {
+          "name": "Nando Verdoni",
+          "position": "GK"
+        },
+        {
+          "name": "Alfons Sampsted",
+          "position": "CB"
+        },
+        {
+          "name": "Gerrit Nauber",
+          "position": "CB"
+        },
+        {
+          "name": "Joris Kramer",
+          "position": "CB"
+        },
+        {
+          "name": "Dean James",
+          "position": "CB"
+        },
+        {
+          "name": "Tino Jukić",
+          "position": "CB"
+        },
+        {
+          "name": "Eus Waayers",
+          "position": "CB"
+        },
+        {
+          "name": "Giovanni van Zwam",
+          "position": "CB"
+        },
+        {
+          "name": "Julius Dirksen",
+          "position": "CB"
+        },
+        {
+          "name": "Tomas Galvez",
+          "position": "CB"
+        },
+        {
+          "name": "Pim Saathof",
+          "position": "CB"
+        },
+        {
+          "name": "Dani Tijman",
+          "position": "CB"
+        },
+        {
+          "name": "Evert Linthorst",
+          "position": "CM"
+        },
+        {
+          "name": "Robbin Weijenberg",
+          "position": "CM"
+        },
+        {
+          "name": "Mathis Suray",
+          "position": "CM"
+        },
+        {
+          "name": "Melle Meulensteen",
+          "position": "CM"
+        },
+        {
+          "name": "Yassir Salah Rahmouni",
+          "position": "CM"
+        },
+        {
+          "name": "Stefán Ingi Sigurðarson",
+          "position": "ST"
+        },
+        {
+          "name": "Søren Tengstedt",
+          "position": "ST"
+        },
+        {
+          "name": "Oskar Sivertsen",
+          "position": "ST"
+        },
+        {
+          "name": "Victor Edvardsen",
+          "position": "ST"
+        },
+        {
+          "name": "Richonell Margaret",
+          "position": "ST"
+        },
+        {
+          "name": "Thibo Baeten",
+          "position": "ST"
+        },
+        {
+          "name": "Erik Flataker",
+          "position": "ST"
+        }
+      ]
+    },
+    "nec": {
+      "sourceUrl": "https://www.uefa.com/nationalassociations/teams/52330/squad/",
+      "checkedAt": "2026-10-20",
+      "players": [
+        {
+          "name": "Gonzalo Crettaz",
+          "position": "GK"
+        },
+        {
+          "name": "Nikolas Polster",
+          "position": "GK"
+        },
+        {
+          "name": "Freek Entius",
+          "position": "GK"
+        },
+        {
+          "name": "Joep Geneste",
+          "position": "GK"
+        },
+        {
+          "name": "Brayann Pereira",
+          "position": "CB"
+        },
+        {
+          "name": "Philippe Sandler",
+          "position": "CB"
+        },
+        {
+          "name": "Perr Schuurs",
+          "position": "CB"
+        },
+        {
+          "name": "Thomas Ouwejan",
+          "position": "CB"
+        },
+        {
+          "name": "Bram Nuytinck",
+          "position": "CB"
+        },
+        {
+          "name": "Tobias Storm",
+          "position": "CB"
+        },
+        {
+          "name": "Ahmetcan Kaplan",
+          "position": "CB"
+        },
+        {
+          "name": "Deveron Fonville",
+          "position": "CB"
+        },
+        {
+          "name": "Yassin Moslih",
+          "position": "CB"
+        },
+        {
+          "name": "Almugera Kabar",
+          "position": "CB"
+        },
+        {
+          "name": "Gabriel Brás",
+          "position": "CB"
+        },
+        {
+          "name": "Yousri Sbai",
+          "position": "CM"
+        },
+        {
+          "name": "Darko Nejašmić",
+          "position": "CM"
+        },
+        {
+          "name": "Isak Hansen-Aarøen",
+          "position": "CM"
+        },
+        {
+          "name": "Tjaronn Chery",
+          "position": "CM"
+        },
+        {
+          "name": "Willum Thor Willumsson",
+          "position": "CM"
+        },
+        {
+          "name": "Dennis Geiger",
+          "position": "CM"
+        },
+        {
+          "name": "Noe Lebreton",
+          "position": "CM"
+        },
+        {
+          "name": "Kodai Sano",
+          "position": "CM"
+        },
+        {
+          "name": "Jamiro Monteiro",
+          "position": "CM"
+        },
+        {
+          "name": "Vito van Crooij",
+          "position": "CM"
+        },
+        {
+          "name": "Emre Mor",
+          "position": "ST"
+        },
+        {
+          "name": "Dušan Tadić",
+          "position": "ST"
+        },
+        {
+          "name": "Kaj Sierhuis",
+          "position": "ST"
+        },
+        {
+          "name": "Adam Tahaui",
+          "position": "ST"
+        },
+        {
+          "name": "Sami Ouaissa",
+          "position": "ST"
+        },
+        {
+          "name": "Bryan Linssen",
+          "position": "ST"
+        },
+        {
+          "name": "Kevin Kers",
+          "position": "ST"
+        },
+        {
+          "name": "Clement Bischoff",
+          "position": "ST"
+        }
+      ]
+    },
+    "pec-zwolle": {
+      "sourceUrl": "https://en.wikipedia.org/wiki/PEC_Zwolle",
+      "checkedAt": "2026-10-20",
+      "players": [
+        {
+          "name": "Jasper Schendelaar",
+          "position": "GK"
+        },
+        {
+          "name": "Tom de Graaff",
+          "position": "GK"
+        },
+        {
+          "name": "Duke Verduin",
+          "position": "GK"
+        },
+        {
+          "name": "Sherel Floranus",
+          "position": "CB"
+        },
+        {
+          "name": "Olivier Aertssen",
+          "position": "CB"
+        },
+        {
+          "name": "Tijs Velthuis",
+          "position": "CB"
+        },
+        {
+          "name": "Jan Bürger",
+          "position": "CB"
+        },
+        {
+          "name": "Nick Viergever",
+          "position": "CB"
+        },
+        {
+          "name": "Simon Graves",
+          "position": "CB"
+        },
+        {
+          "name": "Damian van der Haar",
+          "position": "CB"
+        },
+        {
+          "name": "Tobias Sommer",
+          "position": "CM"
+        },
+        {
+          "name": "Gabriël Reiziger",
+          "position": "CM"
+        },
+        {
+          "name": "Thijs Oosting",
+          "position": "CM"
+        },
+        {
+          "name": "Jadiel Pereira da Gama",
+          "position": "CM"
+        },
+        {
+          "name": "Ryan Thomas",
+          "position": "CM"
+        },
+        {
+          "name": "Nick Fichtinger",
+          "position": "CM"
+        },
+        {
+          "name": "Gilles van der Wal",
+          "position": "CM"
+        },
+        {
+          "name": "Younes Namli",
+          "position": "ST"
+        },
+        {
+          "name": "Elias Sørensen",
+          "position": "ST"
+        },
+        {
+          "name": "Koen Kostons",
+          "position": "ST"
+        },
+        {
+          "name": "Dylan Mbayo",
+          "position": "ST"
+        },
+        {
+          "name": "Sydney van Hooijdonk",
+          "position": "ST"
+        },
+        {
+          "name": "Odysseus Velanas",
+          "position": "ST"
+        },
+        {
+          "name": "Ibrahim Cissoko",
+          "position": "ST"
+        },
+        {
+          "name": "Filip Krastev",
+          "position": "ST"
+        }
+      ]
+    },
+    "psv": {
+      "sourceUrl": "https://www.supver-psv.nl/nl/seizoen/selectie.html",
+      "checkedAt": "2026-10-20",
+      "players": [
+        {
+          "name": "Nick Olij",
+          "position": "GK"
+        },
+        {
+          "name": "Matěj Kovář",
+          "position": "GK"
+        },
+        {
+          "name": "Tijn Smolenaars",
+          "position": "GK"
+        },
+        {
+          "name": "Lutsharel Geertruida",
+          "position": "CB"
+        },
+        {
+          "name": "Yarek Gąsiorowski",
+          "position": "CB"
+        },
+        {
+          "name": "Armando Obispo",
+          "position": "CB"
+        },
+        {
+          "name": "Ryan Flamingo",
+          "position": "CB"
+        },
+        {
+          "name": "Sergiño Dest",
+          "position": "CB"
+        },
+        {
+          "name": "Mauro Júnior",
+          "position": "CB"
+        },
+        {
+          "name": "Filip Kostić",
+          "position": "CB"
+        },
+        {
+          "name": "Kiliann Sildillia",
+          "position": "CB"
+        },
+        {
+          "name": "Paul Wanner",
+          "position": "CM"
+        },
+        {
+          "name": "Guus Til",
+          "position": "CM"
+        },
+        {
+          "name": "Sven Mijnans",
+          "position": "CM"
+        },
+        {
+          "name": "Jerdy Schouten",
+          "position": "CM"
+        },
+        {
+          "name": "Kodai Sano",
+          "position": "CM"
+        },
+        {
+          "name": "Noah Fernandez",
+          "position": "CM"
+        },
+        {
+          "name": "Ayoni Santos",
+          "position": "CM"
+        },
+        {
+          "name": "Ivan Perišić",
+          "position": "ST"
+        },
+        {
+          "name": "Ruben van Bommel",
+          "position": "ST"
+        },
+        {
+          "name": "Ricardo Pepi",
+          "position": "ST"
+        },
+        {
+          "name": "Sami Ouaissa",
+          "position": "ST"
+        },
+        {
+          "name": "Alassane Pléa",
+          "position": "ST"
+        },
+        {
+          "name": "Esmir Bajraktarević",
+          "position": "ST"
+        },
+        {
+          "name": "Dennis Man",
+          "position": "ST"
+        },
+        {
+          "name": "Sam Lammers",
+          "position": "ST"
+        },
+        {
+          "name": "Amir Bouhamdi",
+          "position": "ST"
+        }
+      ]
+    },
+    "sc-cambuur": {
+      "sourceUrl": "https://cambuur.nl/nieuws/sc-cambuur-met-selectie-van-28-spelers-naar-bologna/",
+      "checkedAt": "2026-10-20",
+      "players": [
+        {
+          "name": "Thijs Jansen",
+          "position": "GK"
+        },
+        {
+          "name": "Jasper Meijster",
+          "position": "GK"
+        },
+        {
+          "name": "Matthijs Kalisvaart",
+          "position": "GK"
+        },
+        {
+          "name": "Devid Eugene Bouah",
+          "position": "CB"
+        },
+        {
+          "name": "Jorn Berkhout",
+          "position": "CB"
+        },
+        {
+          "name": "Ismaël Baouf",
+          "position": "CB"
+        },
+        {
+          "name": "Jamal Amofa",
+          "position": "CB"
+        },
+        {
+          "name": "Rik Mulders",
+          "position": "CB"
+        },
+        {
+          "name": "Lucas Jetten",
+          "position": "CB"
+        },
+        {
+          "name": "Billy van Duijl",
+          "position": "CB"
+        },
+        {
+          "name": "Morgan Costarelli",
+          "position": "CB"
+        },
+        {
+          "name": "Wout Asselman",
+          "position": "CM"
+        },
+        {
+          "name": "Nicky Souren",
+          "position": "CM"
+        },
+        {
+          "name": "Rafik El Arguioui",
+          "position": "CM"
+        },
+        {
+          "name": "Ethan Apkakou",
+          "position": "CM"
+        },
+        {
+          "name": "Wiebe van der Heide",
+          "position": "CM"
+        },
+        {
+          "name": "Mathieu Maertens",
+          "position": "CM"
+        },
+        {
+          "name": "Sami Bouhoudane",
+          "position": "ST"
+        },
+        {
+          "name": "Skye Vink",
+          "position": "ST"
+        },
+        {
+          "name": "Ilyes Hamache",
+          "position": "ST"
+        },
+        {
+          "name": "Nicolas Binder",
+          "position": "ST"
+        },
+        {
+          "name": "Fabian Kvam",
+          "position": "ST"
+        },
+        {
+          "name": "Danyello Look",
+          "position": "ST"
+        },
+        {
+          "name": "Wiebe Kooistra",
+          "position": "ST"
+        },
+        {
+          "name": "Iwan Henstra",
+          "position": "ST"
+        },
+        {
+          "name": "Jason Ceka",
+          "position": "ST"
+        }
+      ]
+    },
+    "sc-heerenveen": {
+      "sourceUrl": "https://en.wikipedia.org/wiki/SC_Heerenveen",
+      "checkedAt": "2026-10-20",
+      "players": [
+        {
+          "name": "Bernt Klaverboer",
+          "position": "GK"
+        },
+        {
+          "name": "Timo Schreuder",
+          "position": "GK"
+        },
+        {
+          "name": "Jimte Scholten",
+          "position": "GK"
+        },
+        {
+          "name": "Andries Noppert",
+          "position": "GK"
+        },
+        {
+          "name": "Mees Hilgers",
+          "position": "CB"
+        },
+        {
+          "name": "Maas Willemsen",
+          "position": "CB"
+        },
+        {
+          "name": "Sam Kersten",
+          "position": "CB"
+        },
+        {
+          "name": "Mats Egbring",
+          "position": "CB"
+        },
+        {
+          "name": "Vasilios Zagaritis",
+          "position": "CB"
+        },
+        {
+          "name": "Darling Bladi",
+          "position": "CB"
+        },
+        {
+          "name": "Hristiyan Petrov",
+          "position": "CB"
+        },
+        {
+          "name": "Oliver Braude",
+          "position": "CB"
+        },
+        {
+          "name": "Dirk Proper",
+          "position": "CM"
+        },
+        {
+          "name": "Ringo Meerveld",
+          "position": "CM"
+        },
+        {
+          "name": "Luca Oyen",
+          "position": "CM"
+        },
+        {
+          "name": "Levi Smans",
+          "position": "CM"
+        },
+        {
+          "name": "Marcus Linday",
+          "position": "CM"
+        },
+        {
+          "name": "Marko Farji",
+          "position": "CM"
+        },
+        {
+          "name": "Maxence Rivera",
+          "position": "ST"
+        },
+        {
+          "name": "Dylan Vente",
+          "position": "ST"
+        },
+        {
+          "name": "Roberts Uldriķis",
+          "position": "ST"
+        },
+        {
+          "name": "Jacob Trenskow",
+          "position": "ST"
+        },
+        {
+          "name": "Lanroy Machine",
+          "position": "ST"
+        },
+        {
+          "name": "Nolhan Courtens",
+          "position": "ST"
+        }
+      ]
+    },
+    "sparta-rotterdam": {
+      "sourceUrl": "https://en.wikipedia.org/wiki/Sparta_Rotterdam",
+      "checkedAt": "2026-10-20",
+      "players": [
+        {
+          "name": "Filip Bednarek",
+          "position": "GK"
+        },
+        {
+          "name": "Michael Brouwer",
+          "position": "GK"
+        },
+        {
+          "name": "Pascal Kuiper",
+          "position": "GK"
+        },
+        {
+          "name": "Bas Kuipers",
+          "position": "CB"
+        },
+        {
+          "name": "Max de Ligt",
+          "position": "CB"
+        },
+        {
+          "name": "Lushendry Martes",
+          "position": "CB"
+        },
+        {
+          "name": "Bruno Martins Indi",
+          "position": "CB"
+        },
+        {
+          "name": "Teo Quintero",
+          "position": "CB"
+        },
+        {
+          "name": "Boyd Reith",
+          "position": "CB"
+        },
+        {
+          "name": "Nick Verschuren",
+          "position": "CB"
+        },
+        {
+          "name": "Pelle Clement",
+          "position": "CM"
+        },
+        {
+          "name": "Ayoni Santos",
+          "position": "CM"
+        },
+        {
+          "name": "Lance Duijvestijn",
+          "position": "CM"
+        },
+        {
+          "name": "Joshua Kitolano",
+          "position": "CM"
+        },
+        {
+          "name": "Arno Verschueren",
+          "position": "CM"
+        },
+        {
+          "name": "Tobias Lauritsen",
+          "position": "ST"
+        },
+        {
+          "name": "Shunsuke Mito",
+          "position": "ST"
+        },
+        {
+          "name": "Kaylen Reitmaier",
+          "position": "ST"
+        }
+      ]
+    },
+    "telstar": {
+      "sourceUrl": "https://sctelstar.nl/mannen/selectie-staf",
+      "checkedAt": "2026-10-20",
+      "players": [
+        {
+          "name": "Ronald Koeman Jr.",
+          "position": "GK"
+        },
+        {
+          "name": "Finn Mulder",
+          "position": "GK"
+        },
+        {
+          "name": "Daan Reiziger",
+          "position": "GK"
+        },
+        {
+          "name": "Jeff Hardeveld",
+          "position": "CB"
+        },
+        {
+          "name": "Gerald Alders",
+          "position": "CB"
+        },
+        {
+          "name": "Abdelnour Soualhia",
+          "position": "CB"
+        },
+        {
+          "name": "Nigel Ogidi Nwankwo",
+          "position": "CB"
+        },
+        {
+          "name": "Sem Valk",
+          "position": "CB"
+        },
+        {
+          "name": "Gabrielle Caschili",
+          "position": "CB"
+        },
+        {
+          "name": "Rojendro Oudsten",
+          "position": "CB"
+        },
+        {
+          "name": "Ar'Jany Martha",
+          "position": "CB"
+        },
+        {
+          "name": "Marvin Peersman",
+          "position": "CB"
+        },
+        {
+          "name": "Prince Aning",
+          "position": "CM"
+        },
+        {
+          "name": "Isaiah Ahmed",
+          "position": "CM"
+        },
+        {
+          "name": "Tyrone Owusu",
+          "position": "CM"
+        },
+        {
+          "name": "Harrie Kuster",
+          "position": "CM"
+        },
+        {
+          "name": "Nils Rossen",
+          "position": "CM"
+        },
+        {
+          "name": "Noach Shenkman",
+          "position": "CM"
+        },
+        {
+          "name": "Rui Mendes",
+          "position": "ST"
+        },
+        {
+          "name": "Emirhan Demircan",
+          "position": "ST"
+        },
+        {
+          "name": "Jelani Seedorf",
+          "position": "ST"
+        },
+        {
+          "name": "Nökkvi Þórisson",
+          "position": "ST"
+        },
+        {
+          "name": "Fabiano Rust",
+          "position": "ST"
+        },
+        {
+          "name": "Fofin Turay",
+          "position": "ST"
+        },
+        {
+          "name": "Patrick Brouwer",
+          "position": "ST"
+        },
+        {
+          "name": "Kay Tejan",
+          "position": "ST"
+        }
+      ]
+    },
+    "willem-ii": {
+      "sourceUrl": "https://www.willem-ii.nl/artikel/willem-ii-op-trainingskamp-sint-michielsgestel",
+      "checkedAt": "2026-10-20",
+      "players": [
+        {
+          "name": "Chris Klompalberts",
+          "position": "GK"
+        },
+        {
+          "name": "Karst de Leeuw",
+          "position": "GK"
+        },
+        {
+          "name": "Thomas Didillon-Hödl",
+          "position": "GK"
+        },
+        {
+          "name": "Tygo Kotte",
+          "position": "GK"
+        },
+        {
+          "name": "Wouter van der Steen",
+          "position": "GK"
+        },
+        {
+          "name": "Alessandro Ciranni",
+          "position": "CB"
+        },
+        {
+          "name": "Finn Stam",
+          "position": "CB"
+        },
+        {
+          "name": "Justin Hoogma",
+          "position": "CB"
+        },
+        {
+          "name": "Nathan Tjoe-A-On",
+          "position": "CB"
+        },
+        {
+          "name": "Hidde ter Avest",
+          "position": "CB"
+        },
+        {
+          "name": "Mats Leentje Lemmens",
+          "position": "CB"
+        },
+        {
+          "name": "Amine Et-Taïbi",
+          "position": "CM"
+        },
+        {
+          "name": "Divano Fernandez",
+          "position": "CM"
+        },
+        {
+          "name": "Jari Schuurman",
+          "position": "CM"
+        },
+        {
+          "name": "Jens Mathijsen",
+          "position": "CM"
+        },
+        {
+          "name": "Per van Loon",
+          "position": "CM"
+        },
+        {
+          "name": "Reuven Niemeijer",
+          "position": "CM"
+        },
+        {
+          "name": "Sebas Wermenbol",
+          "position": "CM"
+        },
+        {
+          "name": "Devin Haen",
+          "position": "ST"
+        },
+        {
+          "name": "Jaden Slory",
+          "position": "ST"
+        },
+        {
+          "name": "Luca Maal",
+          "position": "ST"
+        },
+        {
+          "name": "Siegert Baartmans",
+          "position": "ST"
+        },
+        {
+          "name": "Thomas Verheydt",
+          "position": "ST"
+        },
+        {
+          "name": "Virgil Misidjan",
+          "position": "ST"
+        }
+      ]
+    },
+    "almere-city-fc": {
+      "sourceUrl": "https://en.wikipedia.org/wiki/Almere_City_FC",
+      "checkedAt": "2026-10-20",
+      "players": [
+        {
+          "name": "Wessel Speel",
+          "position": "GK"
+        },
+        {
+          "name": "Joey Koorevaar",
+          "position": "GK"
+        },
+        {
+          "name": "Martin Wasinski",
+          "position": "CB"
+        },
+        {
+          "name": "Joey Jacobs",
+          "position": "CB"
+        },
+        {
+          "name": "James Lawrence",
+          "position": "CB"
+        },
+        {
+          "name": "Teun Bijleveld",
+          "position": "CB"
+        },
+        {
+          "name": "Jaden Pinas",
+          "position": "CB"
+        },
+        {
+          "name": "Enzo Cornelisse",
+          "position": "CM"
+        },
+        {
+          "name": "Milan de Haan",
+          "position": "CM"
+        },
+        {
+          "name": "Jamie Jacobs",
+          "position": "CM"
+        },
+        {
+          "name": "Lev Lenssen",
+          "position": "CM"
+        },
+        {
+          "name": "Tim Receveur",
+          "position": "CM"
+        },
+        {
+          "name": "Byron Burgering",
+          "position": "ST"
+        },
+        {
+          "name": "Ferdy Druijf",
+          "position": "ST"
+        },
+        {
+          "name": "Ayoub Ait Afkir",
+          "position": "ST"
+        },
+        {
+          "name": "Bilal Ched-Dadi",
+          "position": "ST"
+        }
+      ]
+    },
+    "de-graafschap": {
+      "sourceUrl": "https://en.wikipedia.org/wiki/De_Graafschap",
+      "checkedAt": "2026-10-20",
+      "players": [
+        {
+          "name": "Ties Wieggers",
+          "position": "GK"
+        },
+        {
+          "name": "Paul Reverson",
+          "position": "GK"
+        },
+        {
+          "name": "Sam Bouwman",
+          "position": "GK"
+        },
+        {
+          "name": "Rick Jonkers",
+          "position": "GK"
+        },
+        {
+          "name": "Jannes Wieckhoff",
+          "position": "CB"
+        },
+        {
+          "name": "Rowan Besselink",
+          "position": "CB"
+        },
+        {
+          "name": "Joran Hardeman",
+          "position": "CB"
+        },
+        {
+          "name": "Levi Schoppema",
+          "position": "CB"
+        },
+        {
+          "name": "Gijs Bolk",
+          "position": "CB"
+        },
+        {
+          "name": "Thomas Kok",
+          "position": "CB"
+        },
+        {
+          "name": "Nolan Martens",
+          "position": "CB"
+        },
+        {
+          "name": "Kaya Symons",
+          "position": "CB"
+        },
+        {
+          "name": "Mark Pabai",
+          "position": "CB"
+        },
+        {
+          "name": "Tygo Grotenhuis",
+          "position": "CB"
+        },
+        {
+          "name": "Nic Hartgers",
+          "position": "CB"
+        },
+        {
+          "name": "Clint Leemans",
+          "position": "CM"
+        },
+        {
+          "name": "Donny Warmerdam",
+          "position": "CM"
+        },
+        {
+          "name": "Fedde de Jong",
+          "position": "CM"
+        },
+        {
+          "name": "Nathan Kaninda",
+          "position": "CM"
+        },
+        {
+          "name": "Denzel Eijken",
+          "position": "CM"
+        },
+        {
+          "name": "Mark Diemers",
+          "position": "CM"
+        },
+        {
+          "name": "Jason Meerstadt",
+          "position": "CM"
+        },
+        {
+          "name": "Nart Ahmeti-Grainca",
+          "position": "CM"
+        },
+        {
+          "name": "Bjorn van Zijl",
+          "position": "ST"
+        },
+        {
+          "name": "Julian Kania",
+          "position": "ST"
+        },
+        {
+          "name": "Toivo Mero",
+          "position": "ST"
+        },
+        {
+          "name": "Gabriele Finocchiaro",
+          "position": "ST"
+        },
+        {
+          "name": "Benjamin Mambo",
+          "position": "ST"
+        },
+        {
+          "name": "Kyano Kwint",
+          "position": "ST"
+        }
+      ]
+    },
+    "fc-den-bosch": {
+      "sourceUrl": "https://en.wikipedia.org/wiki/FC_Den_Bosch",
+      "checkedAt": "2026-10-20",
+      "players": [
+        {
+          "name": "Pepijn van de Merbel",
+          "position": "GK"
+        },
+        {
+          "name": "Finn Murre",
+          "position": "GK"
+        },
+        {
+          "name": "Tjemme Bijlsma",
+          "position": "GK"
+        },
+        {
+          "name": "Sheddy Barglan",
+          "position": "CB"
+        },
+        {
+          "name": "Stan Maas",
+          "position": "CB"
+        },
+        {
+          "name": "Jasper van Heertum",
+          "position": "CB"
+        },
+        {
+          "name": "Reda Akmum",
+          "position": "CB"
+        },
+        {
+          "name": "Jeffry Fortes",
+          "position": "CB"
+        },
+        {
+          "name": "Silvan Bröker",
+          "position": "CB"
+        },
+        {
+          "name": "Mees Laros",
+          "position": "CB"
+        },
+        {
+          "name": "Devon De Corte",
+          "position": "CM"
+        },
+        {
+          "name": "Hessel Eikelboom",
+          "position": "CM"
+        },
+        {
+          "name": "Boris van Schuppen",
+          "position": "CM"
+        },
+        {
+          "name": "Ilias Boumassaoudi",
+          "position": "CM"
+        },
+        {
+          "name": "Genrich Sillé",
+          "position": "ST"
+        },
+        {
+          "name": "Kévin Monzialo",
+          "position": "ST"
+        },
+        {
+          "name": "Sebastian Karlsson Grach",
+          "position": "ST"
+        },
+        {
+          "name": "Jack de Vries",
+          "position": "ST"
+        },
+        {
+          "name": "Emian-Johar Semedo",
+          "position": "ST"
+        },
+        {
+          "name": "Rafi Wolters",
+          "position": "ST"
+        },
+        {
+          "name": "Lorenzo Hoffman",
+          "position": "ST"
+        },
+        {
+          "name": "Kai de Rooij",
+          "position": "ST"
+        }
+      ]
+    },
+    "fc-dordrecht": {
+      "sourceUrl": "https://en.wikipedia.org/wiki/FC_Dordrecht",
+      "checkedAt": "2026-10-20",
+      "players": [
+        {
+          "name": "Finn Oldenstam",
+          "position": "GK"
+        },
+        {
+          "name": "Dean Hogervorst",
+          "position": "GK"
+        },
+        {
+          "name": "Tim Coremans",
+          "position": "GK"
+        },
+        {
+          "name": "Adil Lechkar",
+          "position": "CB"
+        },
+        {
+          "name": "Stan Henderikx",
+          "position": "CB"
+        },
+        {
+          "name": "Jaden Pinas",
+          "position": "CB"
+        },
+        {
+          "name": "Beni Mpanzu",
+          "position": "CB"
+        },
+        {
+          "name": "Yannis M'Bemba",
+          "position": "CB"
+        },
+        {
+          "name": "Jurre van Aken",
+          "position": "CB"
+        },
+        {
+          "name": "Lucas Woudenberg",
+          "position": "CB"
+        },
+        {
+          "name": "Björn Hardley",
+          "position": "CB"
+        },
+        {
+          "name": "Lorenzo Riccio",
+          "position": "CM"
+        },
+        {
+          "name": "Senne Vugts",
+          "position": "CM"
+        },
+        {
+          "name": "Ayoub Ouarghi",
+          "position": "CM"
+        },
+        {
+          "name": "Bae Seung-gyun",
+          "position": "CM"
+        },
+        {
+          "name": "Martin Vetkal",
+          "position": "CM"
+        },
+        {
+          "name": "Dion Van Zanten",
+          "position": "CM"
+        },
+        {
+          "name": "Sidali Bouraba",
+          "position": "CM"
+        },
+        {
+          "name": "Nick Venema",
+          "position": "ST"
+        },
+        {
+          "name": "Joey de Bie",
+          "position": "ST"
+        },
+        {
+          "name": "Nicolás Rossi",
+          "position": "ST"
+        },
+        {
+          "name": "Lucas Román",
+          "position": "ST"
+        },
+        {
+          "name": "Yunus Younous",
+          "position": "ST"
+        },
+        {
+          "name": "Robin van Asten",
+          "position": "ST"
+        },
+        {
+          "name": "Ninho Felicia",
+          "position": "ST"
+        },
+        {
+          "name": "Mohamed Kessrioui",
+          "position": "ST"
+        },
+        {
+          "name": "Dario Šits",
+          "position": "ST"
+        },
+        {
+          "name": "Noah Bischof",
+          "position": "ST"
+        }
+      ]
+    },
+    "fc-eindhoven": {
+      "sourceUrl": "https://en.wikipedia.org/wiki/FC_Eindhoven",
+      "checkedAt": "2026-10-20",
+      "players": [
+        {
+          "name": "Jort Borgmans",
+          "position": "GK"
+        },
+        {
+          "name": "Nino Fancito",
+          "position": "GK"
+        },
+        {
+          "name": "Niek Janssen",
+          "position": "GK"
+        },
+        {
+          "name": "Tyrese Simons",
+          "position": "CB"
+        },
+        {
+          "name": "Junior Poortvliet",
+          "position": "CB"
+        },
+        {
+          "name": "Rens Boon",
+          "position": "CB"
+        },
+        {
+          "name": "Bram Rovers",
+          "position": "CB"
+        },
+        {
+          "name": "Luc Netten",
+          "position": "CB"
+        },
+        {
+          "name": "Raf van de Riet",
+          "position": "CB"
+        },
+        {
+          "name": "Clint Essers",
+          "position": "CB"
+        },
+        {
+          "name": "Ryan Meijer",
+          "position": "CB"
+        },
+        {
+          "name": "Hyman Ali",
+          "position": "CB"
+        },
+        {
+          "name": "Jens Elbers",
+          "position": "CB"
+        },
+        {
+          "name": "Owen Renfrum",
+          "position": "CB"
+        },
+        {
+          "name": "Guus Beaumont",
+          "position": "CM"
+        },
+        {
+          "name": "Xander Blomme",
+          "position": "CM"
+        },
+        {
+          "name": "Lasse Abildgaard",
+          "position": "CM"
+        },
+        {
+          "name": "Mika de Jonge",
+          "position": "CM"
+        },
+        {
+          "name": "Niek Munsters",
+          "position": "CM"
+        },
+        {
+          "name": "Zakaria Haddaoui",
+          "position": "CM"
+        },
+        {
+          "name": "Antonio Baždarić",
+          "position": "CM"
+        },
+        {
+          "name": "Lennon Smulders",
+          "position": "CM"
+        },
+        {
+          "name": "Emre Eksi",
+          "position": "CM"
+        },
+        {
+          "name": "Hugo Deenen",
+          "position": "ST"
+        },
+        {
+          "name": "Kevin van Veen",
+          "position": "ST"
+        },
+        {
+          "name": "Amir Bryson",
+          "position": "ST"
+        },
+        {
+          "name": "Siegert Baartmans",
+          "position": "ST"
+        },
+        {
+          "name": "Akin Ozcan",
+          "position": "ST"
+        },
+        {
+          "name": "Rayan Buifrahi",
+          "position": "ST"
+        },
+        {
+          "name": "Milan Hoek",
+          "position": "ST"
+        },
+        {
+          "name": "Vicente Besuijen",
+          "position": "ST"
+        }
+      ]
+    },
+    "fc-emmen": {
+      "sourceUrl": "https://en.wikipedia.org/wiki/FC_Emmen",
+      "checkedAt": "2026-10-20",
+      "players": [
+        {
+          "name": "Sam Karssies",
+          "position": "GK"
+        },
+        {
+          "name": "Dirk Baron",
+          "position": "GK"
+        },
+        {
+          "name": "Joshua Mukeh",
+          "position": "CB"
+        },
+        {
+          "name": "Yanis Dede-Lhomme",
+          "position": "CB"
+        },
+        {
+          "name": "Christian Østergaard",
+          "position": "CB"
+        },
+        {
+          "name": "David Voûte",
+          "position": "CB"
+        },
+        {
+          "name": "Luca Everink",
+          "position": "CB"
+        },
+        {
+          "name": "Bart Kemper",
+          "position": "CB"
+        },
+        {
+          "name": "Casper Staring",
+          "position": "CM"
+        },
+        {
+          "name": "Torben Rhein",
+          "position": "CM"
+        },
+        {
+          "name": "Luca Denk",
+          "position": "CM"
+        },
+        {
+          "name": "Michael Breij",
+          "position": "CM"
+        },
+        {
+          "name": "Jack Cooper-Love",
+          "position": "CM"
+        },
+        {
+          "name": "Jack Cooper-Love",
+          "position": "ST"
+        },
+        {
+          "name": "Mustafa Abdullatif",
+          "position": "ST"
+        },
+        {
+          "name": "Nelson Amadin",
+          "position": "ST"
+        },
+        {
+          "name": "Romano Postema",
+          "position": "ST"
+        },
+        {
+          "name": "Rui Mendes",
+          "position": "ST"
+        }
+      ]
+    },
+    "fc-volendam": {
+      "sourceUrl": "https://fcvolendam.nl/voetbal/1e-elftal/selectie/",
+      "checkedAt": "2026-10-20",
+      "players": [
+        {
+          "name": "Hidde Jurjus",
+          "position": "GK"
+        },
+        {
+          "name": "Roy Steur",
+          "position": "GK"
+        },
+        {
+          "name": "Dion Vlak",
+          "position": "GK"
+        },
+        {
+          "name": "Precious Ugwu",
+          "position": "CB"
+        },
+        {
+          "name": "Mawouna Amevor",
+          "position": "CB"
+        },
+        {
+          "name": "Erik Schouten",
+          "position": "CB"
+        },
+        {
+          "name": "Daan Bisschops",
+          "position": "CB"
+        },
+        {
+          "name": "Déron Payne",
+          "position": "CB"
+        },
+        {
+          "name": "Mike Kleijn",
+          "position": "CB"
+        },
+        {
+          "name": "Luca Blondeau",
+          "position": "CB"
+        },
+        {
+          "name": "Jaïr Haakmat",
+          "position": "CB"
+        },
+        {
+          "name": "Alex Plat",
+          "position": "CM"
+        },
+        {
+          "name": "Daan Huisman",
+          "position": "CM"
+        },
+        {
+          "name": "Reuven Niemeijer",
+          "position": "CM"
+        },
+        {
+          "name": "Nordin Bukala",
+          "position": "CM"
+        },
+        {
+          "name": "Younes Jaber el Meftahi",
+          "position": "CM"
+        },
+        {
+          "name": "Mohammed Belfqih",
+          "position": "CM"
+        },
+        {
+          "name": "Nick Doodeman",
+          "position": "ST"
+        },
+        {
+          "name": "Henk Veerman",
+          "position": "ST"
+        },
+        {
+          "name": "Kayden Wolff",
+          "position": "ST"
+        },
+        {
+          "name": "Serigne Deme",
+          "position": "ST"
+        },
+        {
+          "name": "Jesper Tielemans",
+          "position": "ST"
+        },
+        {
+          "name": "Frederik Ihler",
+          "position": "ST"
+        },
+        {
+          "name": "Jahmani Gambier",
+          "position": "ST"
+        }
+      ]
+    },
+    "helmond-sport": {
+      "sourceUrl": "https://en.wikipedia.org/wiki/Helmond_Sport",
+      "checkedAt": "2026-10-20",
+      "players": [
+        {
+          "name": "Menno Bergsen",
+          "position": "GK"
+        },
+        {
+          "name": "Rayen van Bree",
+          "position": "CB"
+        },
+        {
+          "name": "Flor Van den Eynden",
+          "position": "CB"
+        },
+        {
+          "name": "Brian Koglin",
+          "position": "CB"
+        },
+        {
+          "name": "Thomas Poll",
+          "position": "CB"
+        },
+        {
+          "name": "Michel Ludwig",
+          "position": "CM"
+        },
+        {
+          "name": "Joep van der Sluijs",
+          "position": "CM"
+        },
+        {
+          "name": "Pol Llonch",
+          "position": "CM"
+        },
+        {
+          "name": "Dean Huiberts",
+          "position": "CM"
+        },
+        {
+          "name": "Labinot Bajrami",
+          "position": "ST"
+        },
+        {
+          "name": "Livio Cicero",
+          "position": "ST"
+        },
+        {
+          "name": "Kiton Ekoli",
+          "position": "ST"
+        },
+        {
+          "name": "Lorenzo Riccio",
+          "position": "ST"
+        }
+      ]
+    },
+    "heracles-almelo": {
+      "sourceUrl": "https://en.wikipedia.org/wiki/Heracles_Almelo",
+      "checkedAt": "2026-10-20",
+      "players": [
+        {
+          "name": "Fabian de Keijzer",
+          "position": "GK"
+        },
+        {
+          "name": "Timo Jansink",
+          "position": "GK"
+        },
+        {
+          "name": "Leco Zeevalkink",
+          "position": "GK"
+        },
+        {
+          "name": "Mimeirhel Benita",
+          "position": "CB"
+        },
+        {
+          "name": "Mario Borac",
+          "position": "CB"
+        },
+        {
+          "name": "Damon Mirani",
+          "position": "CB"
+        },
+        {
+          "name": "David Vicente",
+          "position": "CB"
+        },
+        {
+          "name": "Mike te Wierik",
+          "position": "CB"
+        },
+        {
+          "name": "Manny Rodríguez",
+          "position": "CB"
+        },
+        {
+          "name": "Stijn Bultman",
+          "position": "CB"
+        },
+        {
+          "name": "Djevencio van der Kust",
+          "position": "CM"
+        },
+        {
+          "name": "David Tomić",
+          "position": "CM"
+        },
+        {
+          "name": "Thomas Bruns",
+          "position": "CM"
+        },
+        {
+          "name": "Jeff Reine-Adélaïde",
+          "position": "CM"
+        },
+        {
+          "name": "Maurice Wrusch",
+          "position": "CM"
+        },
+        {
+          "name": "Rhys Bozinovski",
+          "position": "CM"
+        },
+        {
+          "name": "Yvandro Borges Sanches",
+          "position": "CM"
+        },
+        {
+          "name": "Daniël van Kaam",
+          "position": "CM"
+        },
+        {
+          "name": "Sem Scheperman",
+          "position": "CM"
+        },
+        {
+          "name": "Chafik Abbas",
+          "position": "ST"
+        },
+        {
+          "name": "Mario Engels",
+          "position": "ST"
+        },
+        {
+          "name": "Vincent Poppler",
+          "position": "ST"
+        },
+        {
+          "name": "Tarık Hamamioğlu",
+          "position": "ST"
+        },
+        {
+          "name": "Jean-Paul N'Djoli",
+          "position": "ST"
+        },
+        {
+          "name": "Giandro Sambo",
+          "position": "ST"
+        },
+        {
+          "name": "Diego van Oorschot",
+          "position": "ST"
+        },
+        {
+          "name": "Fodé Fofana",
+          "position": "ST"
+        }
+      ]
+    },
+    "jong-ajax": {
+      "sourceUrl": "https://www.vi.nl/clubs/jong-ajax/selectie",
+      "checkedAt": "2026-10-20",
+      "players": [
+        {
+          "name": "Joeri Heerkens",
+          "position": "GK"
+        },
+        {
+          "name": "Charlie Setford",
+          "position": "GK"
+        },
+        {
+          "name": "Aymean El Hani",
+          "position": "GK"
+        },
+        {
+          "name": "Valentijn van der Velde",
+          "position": "GK"
+        },
+        {
+          "name": "Jahyendrow Amour",
+          "position": "CB"
+        },
+        {
+          "name": "Avery Appiah",
+          "position": "CB"
+        },
+        {
+          "name": "Luuk Beekman",
+          "position": "CB"
+        },
+        {
+          "name": "Sinclair de Falco",
+          "position": "CB"
+        },
+        {
+          "name": "Leroy Fränkel",
+          "position": "CB"
+        },
+        {
+          "name": "Dies Janse",
+          "position": "CB"
+        },
+        {
+          "name": "Marvyn Muzungu",
+          "position": "CB"
+        },
+        {
+          "name": "Ryan van de Pavert",
+          "position": "CB"
+        },
+        {
+          "name": "Jinairo Johnson",
+          "position": "CB"
+        },
+        {
+          "name": "Mylo van der Lans",
+          "position": "CB"
+        },
+        {
+          "name": "Gerónimo Spina",
+          "position": "CB"
+        },
+        {
+          "name": "Mark Verkuijl",
+          "position": "CM"
+        },
+        {
+          "name": "Tijn Peters",
+          "position": "CM"
+        },
+        {
+          "name": "Damián van der Vaart",
+          "position": "CM"
+        },
+        {
+          "name": "Luca Messori",
+          "position": "CM"
+        },
+        {
+          "name": "Mohamed Abdalla",
+          "position": "CM"
+        },
+        {
+          "name": "Emre Ünüvar",
+          "position": "ST"
+        },
+        {
+          "name": "Pharell Nash",
+          "position": "ST"
+        },
+        {
+          "name": "Don-Angelo Konadu",
+          "position": "ST"
+        },
+        {
+          "name": "Rayane Bounida",
+          "position": "ST"
+        }
+      ]
+    },
+    "jong-az": {
+      "sourceUrl": "https://www.vi.nl/clubs/jong-az/selectie",
+      "checkedAt": "2026-10-20",
+      "players": [
+        {
+          "name": "Kiyani Zeggen",
+          "position": "GK"
+        },
+        {
+          "name": "Ismail Ka",
+          "position": "GK"
+        },
+        {
+          "name": "Rome-Jayden Owusu-Oduro",
+          "position": "GK"
+        },
+        {
+          "name": "Jur Schipper",
+          "position": "GK"
+        },
+        {
+          "name": "Koen Schilder",
+          "position": "GK"
+        },
+        {
+          "name": "Nick Homan",
+          "position": "GK"
+        },
+        {
+          "name": "Jesper Zwart",
+          "position": "CB"
+        },
+        {
+          "name": "Andrea Natali",
+          "position": "CB"
+        },
+        {
+          "name": "Kiani Inge",
+          "position": "CB"
+        },
+        {
+          "name": "Mathijs Menu",
+          "position": "CB"
+        },
+        {
+          "name": "Jeremiah Esajas",
+          "position": "CB"
+        },
+        {
+          "name": "Kevin van Ouytsel",
+          "position": "CB"
+        },
+        {
+          "name": "Daniël Deen",
+          "position": "CM"
+        },
+        {
+          "name": "Julian Oerip",
+          "position": "CM"
+        },
+        {
+          "name": "Saviola Simons",
+          "position": "CM"
+        },
+        {
+          "name": "Rayan Atikallah",
+          "position": "CM"
+        },
+        {
+          "name": "Iain De Jongh",
+          "position": "CM"
+        },
+        {
+          "name": "Bendegúz Kovács",
+          "position": "CM"
+        },
+        {
+          "name": "Jerolldino Bergraaf",
+          "position": "ST"
+        },
+        {
+          "name": "Wassim Bouziane",
+          "position": "ST"
+        }
+      ]
+    },
+    "jong-fc-utrecht": {
+      "sourceUrl": "https://www.vi.nl/clubs/jong-fc-utrecht/selectie",
+      "checkedAt": "2026-10-20",
+      "players": [
+        {
+          "name": "Mees Eppink",
+          "position": "GK"
+        },
+        {
+          "name": "Kevin Gadellaa",
+          "position": "GK"
+        },
+        {
+          "name": "Justin Eversen",
+          "position": "GK"
+        },
+        {
+          "name": "Martin Tsankov",
+          "position": "GK"
+        },
+        {
+          "name": "Laolu Oladipo",
+          "position": "GK"
+        },
+        {
+          "name": "Massien Ghaddari",
+          "position": "CB"
+        },
+        {
+          "name": "Jamie Schuldes",
+          "position": "CB"
+        },
+        {
+          "name": "Viggo Plantinga",
+          "position": "CB"
+        },
+        {
+          "name": "Wessel Kooy",
+          "position": "CB"
+        },
+        {
+          "name": "Jessey Sneijder",
+          "position": "CB"
+        },
+        {
+          "name": "Kenji Goes",
+          "position": "CB"
+        },
+        {
+          "name": "Jaygo van Ommeren",
+          "position": "CB"
+        },
+        {
+          "name": "Matyás Havelka",
+          "position": "CB"
+        },
+        {
+          "name": "Oualid Agougil",
+          "position": "CB"
+        },
+        {
+          "name": "Nick de Vos",
+          "position": "CB"
+        },
+        {
+          "name": "Abdullah Aslani",
+          "position": "CM"
+        },
+        {
+          "name": "Noa Dundas",
+          "position": "CM"
+        },
+        {
+          "name": "Thomas Reinders",
+          "position": "CM"
+        },
+        {
+          "name": "Björn Menzo",
+          "position": "ST"
+        },
+        {
+          "name": "Tijn den Boggende",
+          "position": "ST"
+        },
+        {
+          "name": "Emmanuel Owen",
+          "position": "ST"
+        },
+        {
+          "name": "Nana Gyamfi-Amoah",
+          "position": "ST"
+        },
+        {
+          "name": "Richie Omorowa",
+          "position": "ST"
+        },
+        {
+          "name": "Levi Rietveld",
+          "position": "ST"
+        }
+      ]
+    },
+    "jong-psv": {
+      "sourceUrl": "https://www.vi.nl/clubs/jong-psv/selectie",
+      "checkedAt": "2026-10-20",
+      "players": [
+        {
+          "name": "Khadim Ngom",
+          "position": "GK"
+        },
+        {
+          "name": "Tijn Smolenaars",
+          "position": "GK"
+        },
+        {
+          "name": "Eskil Moedt",
+          "position": "GK"
+        },
+        {
+          "name": "Kane Aerts",
+          "position": "GK"
+        },
+        {
+          "name": "Stijn Kuijsten",
+          "position": "GK"
+        },
+        {
+          "name": "Fabian Merién",
+          "position": "CB"
+        },
+        {
+          "name": "Kyano Penso",
+          "position": "CB"
+        },
+        {
+          "name": "Michael Bresser",
+          "position": "CB"
+        },
+        {
+          "name": "Madi Monamay",
+          "position": "CB"
+        },
+        {
+          "name": "Rivas Manuhutu",
+          "position": "CB"
+        },
+        {
+          "name": "Dyran Stam",
+          "position": "CB"
+        },
+        {
+          "name": "Lyfe Oldenstam",
+          "position": "CB"
+        },
+        {
+          "name": "Jorvimar Martina",
+          "position": "CB"
+        },
+        {
+          "name": "King Duah",
+          "position": "CB"
+        },
+        {
+          "name": "Sébas Ditmer",
+          "position": "CB"
+        },
+        {
+          "name": "Sol Sidibe",
+          "position": "CM"
+        },
+        {
+          "name": "Shuryjano Cornecion",
+          "position": "CM"
+        },
+        {
+          "name": "Boet Mulders",
+          "position": "CM"
+        },
+        {
+          "name": "Jim Koller",
+          "position": "CM"
+        },
+        {
+          "name": "Philip Holseter-Karlsen",
+          "position": "CM"
+        },
+        {
+          "name": "Ayoni Santos",
+          "position": "CM"
+        },
+        {
+          "name": "Givenciyo Sabajo",
+          "position": "CM"
+        },
+        {
+          "name": "Noah Fernandez",
+          "position": "CM"
+        },
+        {
+          "name": "Austyn Jones",
+          "position": "ST"
+        },
+        {
+          "name": "Fabio Kluit",
+          "position": "ST"
+        },
+        {
+          "name": "Samuel Dumbili",
+          "position": "ST"
+        },
+        {
+          "name": "Gino Verhulst",
+          "position": "ST"
+        },
+        {
+          "name": "Keziah Oteng-Mensah",
+          "position": "ST"
+        },
+        {
+          "name": "Manuel Bahaty",
+          "position": "ST"
+        },
+        {
+          "name": "Jairo Beerens",
+          "position": "ST"
+        },
+        {
+          "name": "Mikkel Hansen",
+          "position": "ST"
+        },
+        {
+          "name": "Amir Bouhamdi",
+          "position": "ST"
+        },
+        {
+          "name": "Esmir Bajraktarevic",
+          "position": "ST"
+        }
+      ]
+    },
+    "mvv-maastricht": {
+      "sourceUrl": "https://en.wikipedia.org/wiki/MVV_Maastricht",
+      "checkedAt": "2026-10-20",
+      "players": [
+        {
+          "name": "Hugo Wentges",
+          "position": "GK"
+        },
+        {
+          "name": "Sep van der Heijden",
+          "position": "GK"
+        },
+        {
+          "name": "Sebastiaan Timmers",
+          "position": "GK"
+        },
+        {
+          "name": "Victor Goffings",
+          "position": "GK"
+        },
+        {
+          "name": "Milan Hofland",
+          "position": "CB"
+        },
+        {
+          "name": "Wout Coomans",
+          "position": "CB"
+        },
+        {
+          "name": "Dylan Timber",
+          "position": "CB"
+        },
+        {
+          "name": "Lars Schenk",
+          "position": "CB"
+        },
+        {
+          "name": "Finn Dicke",
+          "position": "CB"
+        },
+        {
+          "name": "Djairo Tehubijuluw",
+          "position": "CB"
+        },
+        {
+          "name": "Sven Bouland",
+          "position": "CB"
+        },
+        {
+          "name": "Yaël Liesdek",
+          "position": "CB"
+        },
+        {
+          "name": "Yanis Bourard",
+          "position": "CB"
+        },
+        {
+          "name": "Stan Van Dessel",
+          "position": "CM"
+        },
+        {
+          "name": "Olivier Dumont",
+          "position": "CM"
+        },
+        {
+          "name": "Robert Klaasen",
+          "position": "CM"
+        },
+        {
+          "name": "Sil van der Wegen",
+          "position": "CM"
+        },
+        {
+          "name": "Elias Sierra",
+          "position": "CM"
+        },
+        {
+          "name": "Mika Luijendijk",
+          "position": "CM"
+        },
+        {
+          "name": "Amine Amgar",
+          "position": "CM"
+        },
+        {
+          "name": "Adriano Mansala-Mpudi",
+          "position": "CM"
+        },
+        {
+          "name": "Naïm Matoug",
+          "position": "CM"
+        },
+        {
+          "name": "Lennerd Daneels",
+          "position": "ST"
+        },
+        {
+          "name": "Toni Vinogradac",
+          "position": "ST"
+        },
+        {
+          "name": "Thijme Verheijen",
+          "position": "ST"
+        },
+        {
+          "name": "Mats Kuipers",
+          "position": "ST"
+        },
+        {
+          "name": "Delano Asante",
+          "position": "ST"
+        },
+        {
+          "name": "Onesime Zimuangana",
+          "position": "ST"
+        }
+      ]
+    },
+    "nac-breda": {
+      "sourceUrl": "https://en.wikipedia.org/wiki/NAC_Breda",
+      "checkedAt": "2026-10-20",
+      "players": [
+        {
+          "name": "Michael Verrips",
+          "position": "GK"
+        },
+        {
+          "name": "Roy Kortsmit",
+          "position": "GK"
+        },
+        {
+          "name": "Kostas Lamprou",
+          "position": "GK"
+        },
+        {
+          "name": "Thomas Goos",
+          "position": "GK"
+        },
+        {
+          "name": "Boyd Lucassen",
+          "position": "CB"
+        },
+        {
+          "name": "Leo Greiml",
+          "position": "CB"
+        },
+        {
+          "name": "Jayden Candelaria",
+          "position": "CB"
+        },
+        {
+          "name": "Jan Van den Bergh",
+          "position": "CB"
+        },
+        {
+          "name": "Mohamed Bouchouari",
+          "position": "CB"
+        },
+        {
+          "name": "Rio Hillen",
+          "position": "CB"
+        },
+        {
+          "name": "Rayan van Aarst",
+          "position": "CB"
+        },
+        {
+          "name": "Mylan Brouwers",
+          "position": "CB"
+        },
+        {
+          "name": "Max Balard",
+          "position": "CM"
+        },
+        {
+          "name": "Fredrik Oldrup Jensen",
+          "position": "CM"
+        },
+        {
+          "name": "Mohamed Nassoh",
+          "position": "CM"
+        },
+        {
+          "name": "Gabriel Misehouy",
+          "position": "CM"
+        },
+        {
+          "name": "Mats Seuntjens",
+          "position": "CM"
+        },
+        {
+          "name": "Imran Nazih",
+          "position": "CM"
+        },
+        {
+          "name": "Jannes Van Hecke",
+          "position": "CM"
+        },
+        {
+          "name": "Moussa Soumano",
+          "position": "ST"
+        },
+        {
+          "name": "Kamal Sowah",
+          "position": "ST"
+        },
+        {
+          "name": "Paul Gladon",
+          "position": "ST"
+        },
+        {
+          "name": "Pepijn Reulen",
+          "position": "ST"
+        },
+        {
+          "name": "Charles-Andreas Brym",
+          "position": "ST"
+        },
+        {
+          "name": "Elijah Ikpia",
+          "position": "ST"
+        },
+        {
+          "name": "Brahim Ghalidi",
+          "position": "ST"
+        }
+      ]
+    },
+    "rkc-waalwijk": {
+      "sourceUrl": "https://en.wikipedia.org/wiki/RKC_Waalwijk",
+      "checkedAt": "2026-10-20",
+      "players": [
+        {
+          "name": "Niek Schiks",
+          "position": "GK"
+        },
+        {
+          "name": "Xander Mulder",
+          "position": "GK"
+        },
+        {
+          "name": "Mark Spenkelink",
+          "position": "GK"
+        },
+        {
+          "name": "Luuk Vogels",
+          "position": "GK"
+        },
+        {
+          "name": "Bjarn Zorgdrager",
+          "position": "CB"
+        },
+        {
+          "name": "Sven van der Plas",
+          "position": "CB"
+        },
+        {
+          "name": "Liam van Gelderen",
+          "position": "CB"
+        },
+        {
+          "name": "Juan Castillo",
+          "position": "CB"
+        },
+        {
+          "name": "Loek Postma",
+          "position": "CB"
+        },
+        {
+          "name": "Navajo Bakboord",
+          "position": "CB"
+        },
+        {
+          "name": "Jordy de Wijs",
+          "position": "CB"
+        },
+        {
+          "name": "Faissal Al Mazyani",
+          "position": "CB"
+        },
+        {
+          "name": "Bart Kemmeren",
+          "position": "CB"
+        },
+        {
+          "name": "Nazjir Held",
+          "position": "CB"
+        },
+        {
+          "name": "Ryan Fage",
+          "position": "CM"
+        },
+        {
+          "name": "Jochem Nap",
+          "position": "CM"
+        },
+        {
+          "name": "Thijs van Leeuwen",
+          "position": "CM"
+        },
+        {
+          "name": "Rein van Hedel",
+          "position": "CM"
+        },
+        {
+          "name": "Tim van de Loo",
+          "position": "CM"
+        },
+        {
+          "name": "Jesse van de Haar",
+          "position": "ST"
+        },
+        {
+          "name": "Yoram van der Veen",
+          "position": "ST"
+        },
+        {
+          "name": "Roy Kuijpers",
+          "position": "ST"
+        },
+        {
+          "name": "Haye van Gemert",
+          "position": "ST"
+        },
+        {
+          "name": "Keyan Varela",
+          "position": "ST"
+        },
+        {
+          "name": "Azzedine Dkidak",
+          "position": "ST"
+        },
+        {
+          "name": "Finn Stokkers",
+          "position": "ST"
+        },
+        {
+          "name": "Virgil Misidjan",
+          "position": "ST"
+        }
+      ]
+    },
+    "roda-jc-kerkrade": {
+      "sourceUrl": "https://www.vi.nl/clubs/roda-jc-kerkrade/selectie",
+      "checkedAt": "2026-10-20",
+      "players": [
+        {
+          "name": "Justin Treichel",
+          "position": "GK"
+        },
+        {
+          "name": "Martin Stojcevic",
+          "position": "GK"
+        },
+        {
+          "name": "Beer Bouvy",
+          "position": "GK"
+        },
+        {
+          "name": "Jay-Jay van Damme",
+          "position": "GK"
+        },
+        {
+          "name": "Luuk Verheij",
+          "position": "CB"
+        },
+        {
+          "name": "Marco Tol",
+          "position": "CB"
+        },
+        {
+          "name": "Koen Jansen",
+          "position": "CB"
+        },
+        {
+          "name": "Xander van den Berg",
+          "position": "CB"
+        },
+        {
+          "name": "Lucas Beerten",
+          "position": "CB"
+        },
+        {
+          "name": "Guilherme Peixoto",
+          "position": "CB"
+        },
+        {
+          "name": "Bram Marsman",
+          "position": "CB"
+        },
+        {
+          "name": "Dario Van den Buijs",
+          "position": "CB"
+        },
+        {
+          "name": "Josh Nisbet",
+          "position": "CM"
+        },
+        {
+          "name": "Mitchel Paulissen",
+          "position": "CM"
+        },
+        {
+          "name": "Jeremiah Mensah",
+          "position": "CM"
+        },
+        {
+          "name": "Dyon Dorenbusch",
+          "position": "CM"
+        },
+        {
+          "name": "Noah Crabu",
+          "position": "CM"
+        },
+        {
+          "name": "Mokrane Bentoumi",
+          "position": "CM"
+        },
+        {
+          "name": "Jérôme Déom",
+          "position": "CM"
+        },
+        {
+          "name": "Cain Seedorf",
+          "position": "ST"
+        },
+        {
+          "name": "Anthony van den Hurk",
+          "position": "ST"
+        },
+        {
+          "name": "Fynn Schenten",
+          "position": "ST"
+        },
+        {
+          "name": "Joey Sleegers",
+          "position": "ST"
+        },
+        {
+          "name": "Zakarya Khaldi",
+          "position": "ST"
+        }
+      ]
+    },
+    "top-oss": {
+      "sourceUrl": "https://en.wikipedia.org/wiki/TOP_Oss",
+      "checkedAt": "2026-10-20",
+      "players": [
+        {
+          "name": "Mike Havekotte",
+          "position": "GK"
+        },
+        {
+          "name": "Devin Remie",
+          "position": "GK"
+        },
+        {
+          "name": "Sven Jansen",
+          "position": "GK"
+        },
+        {
+          "name": "Ilounga Pata",
+          "position": "CB"
+        },
+        {
+          "name": "Leonel Miguel",
+          "position": "CB"
+        },
+        {
+          "name": "Quint Jansen",
+          "position": "CB"
+        },
+        {
+          "name": "Alvaro Henry",
+          "position": "CB"
+        },
+        {
+          "name": "Maxim Mariani",
+          "position": "CB"
+        },
+        {
+          "name": "Thomas Cox",
+          "position": "CB"
+        },
+        {
+          "name": "Delano Vianello",
+          "position": "CB"
+        },
+        {
+          "name": "Jay Kuiper",
+          "position": "CB"
+        },
+        {
+          "name": "Julian Kuijpers",
+          "position": "CB"
+        },
+        {
+          "name": "Lars Zonneveld",
+          "position": "CB"
+        },
+        {
+          "name": "Jafar Bynoe",
+          "position": "CM"
+        },
+        {
+          "name": "Milo Horemans",
+          "position": "CM"
+        },
+        {
+          "name": "Marcelencio Esajas",
+          "position": "CM"
+        },
+        {
+          "name": "Richard van der Venne",
+          "position": "CM"
+        },
+        {
+          "name": "Justin Mathieu",
+          "position": "CM"
+        },
+        {
+          "name": "Lars Mol",
+          "position": "CM"
+        },
+        {
+          "name": "Amir Rais",
+          "position": "CM"
+        },
+        {
+          "name": "Andy Visser",
+          "position": "ST"
+        },
+        {
+          "name": "Mauresmo Hinoke",
+          "position": "ST"
+        },
+        {
+          "name": "Kyanno Silva",
+          "position": "ST"
+        },
+        {
+          "name": "Franslyn Nsingi",
+          "position": "ST"
+        },
+        {
+          "name": "Mert Erkan",
+          "position": "ST"
+        },
+        {
+          "name": "Jacey Pansa",
+          "position": "ST"
+        },
+        {
+          "name": "Maurilio de Lannoy",
+          "position": "ST"
+        },
+        {
+          "name": "Siriné Doucouré",
+          "position": "ST"
+        }
+      ]
+    },
+    "vitesse": {
+      "sourceUrl": "https://en.wikipedia.org/wiki/SBV_Vitesse",
+      "checkedAt": "2026-10-20",
+      "players": [
+        {
+          "name": "Connor van den Berg",
+          "position": "GK"
+        },
+        {
+          "name": "Tom Bramel",
+          "position": "GK"
+        },
+        {
+          "name": "Solomon Bonnah",
+          "position": "CB"
+        },
+        {
+          "name": "Omar Achouitar",
+          "position": "CB"
+        },
+        {
+          "name": "Luuk Wouters",
+          "position": "CB"
+        },
+        {
+          "name": "Pontus Dahbo",
+          "position": "CB"
+        },
+        {
+          "name": "Melle Meulensteen",
+          "position": "CB"
+        },
+        {
+          "name": "Marco Schikora",
+          "position": "CM"
+        },
+        {
+          "name": "Ricardo-Felipe Schwarz",
+          "position": "CM"
+        },
+        {
+          "name": "Yuval Ranon",
+          "position": "CM"
+        },
+        {
+          "name": "Adam Tahaui",
+          "position": "CM"
+        },
+        {
+          "name": "Gabin Blancquart",
+          "position": "CM"
+        },
+        {
+          "name": "Nino Zonneveld",
+          "position": "ST"
+        },
+        {
+          "name": "Naoufal Bannis",
+          "position": "ST"
+        },
+        {
+          "name": "João Pinto",
+          "position": "ST"
+        },
+        {
+          "name": "Filipe de Carvalho",
+          "position": "ST"
+        }
+      ]
+    },
+    "vvv-venlo": {
+      "sourceUrl": "https://en.wikipedia.org/wiki/VVV-Venlo",
+      "checkedAt": "2026-10-20",
+      "players": [
+        {
+          "name": "Trevor Doornbusch",
+          "position": "GK"
+        },
+        {
+          "name": "Youri Schoonderwaldt",
+          "position": "GK"
+        },
+        {
+          "name": "Zidane Taylan",
+          "position": "GK"
+        },
+        {
+          "name": "Éanna Clancy",
+          "position": "CB"
+        },
+        {
+          "name": "Andreas Verstraeten",
+          "position": "CB"
+        },
+        {
+          "name": "Tijn Joosten",
+          "position": "CB"
+        },
+        {
+          "name": "Philip Heise",
+          "position": "CB"
+        },
+        {
+          "name": "Michael Davis",
+          "position": "CB"
+        },
+        {
+          "name": "Gabin Blancquart",
+          "position": "CB"
+        },
+        {
+          "name": "Yousri El Anbri",
+          "position": "CB"
+        },
+        {
+          "name": "Lars de Blok",
+          "position": "CM"
+        },
+        {
+          "name": "Edhy Zuliani",
+          "position": "CM"
+        },
+        {
+          "name": "Ismail Oulad M'Hand",
+          "position": "CM"
+        },
+        {
+          "name": "Alex Schalk",
+          "position": "CM"
+        },
+        {
+          "name": "Raf Vullers",
+          "position": "CM"
+        },
+        {
+          "name": "Mohammed Odriss",
+          "position": "CM"
+        },
+        {
+          "name": "Matheos Tsigkas",
+          "position": "ST"
+        },
+        {
+          "name": "Nassim Ait Mouhou",
+          "position": "ST"
+        },
+        {
+          "name": "Gino Schmidt",
+          "position": "ST"
+        },
+        {
+          "name": "Thomas Janssen",
+          "position": "ST"
+        },
+        {
+          "name": "Tristan Schenkhuizen",
+          "position": "ST"
+        },
+        {
+          "name": "Devy Hendrikx",
+          "position": "ST"
+        }
+      ]
+    }
+  }
+}
