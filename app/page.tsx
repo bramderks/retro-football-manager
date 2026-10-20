@@ -76,7 +76,7 @@ export default function Home() {
   }
   function teamStrength(team: Team, t: Tactics) {
     return team.rating + team.reputation * .12 + ({ Verdedigend: -7, Normaal: 0, Aanvallend: 7 }[t.mentality] ?? 0)
-      + ({ Kort: 3, Direct: 2, Lang: -1 }[t.passing] ?? 0) + (t.pressing ? 3 : 0) + (t.counter ? 2 : 0);
+      + ({ Kort: 3, Direct: 2, Lang: -1 }[t.passing] ?? 0) + (t.pressing ? 3 : 0) + (t.counter ? 2 : 0) + ({ "4-3-3": 2, "4-4-2": 0, "4-2-3-1": 1, "3-5-2": 1, "5-3-2": -1 }[t.formation] ?? 0);
   }
   function tacticPower(team: Team, t: Tactics) {\n    return Math.round(teamStrength(team, t) + (t.formation === "4-3-3" ? 2 : t.formation === "3-5-2" ? 1 : 0) + (t.pressing ? 1 : 0) + (t.offside ? 1 : 0));\n  }\n  function pickPlayer(team: 0 | 1, positions?: Player["position"][]) {
     const selectedId = team === 0 ? selectedHomeId : selectedAwayId;
@@ -91,7 +91,7 @@ export default function Home() {
   }
   function playMinute() {
     const m = minute + 1; setMinute(m);
-    if (m === 1) { const player = pickPlayer(0, ["midfielder"]); addEvent({ minute: "1'", text: "Aftrap! " + player.name + " tikt de bal terug en Ajax begint rustig aan de opbouw.", kind: "system" }); return; }
+    if (m === 1) { const player = pickPlayer(0, ["midfielder"]); addEvent({ minute: "1'", text: "Aftrap! " + player.name + " tikt de bal terug en " + homeTeam.name + " begint rustig aan de opbouw.", kind: "system" }); return; }
     const homeRating = teamStrength(homeTeam, homeTactics);
     const awayRating = teamStrength(awayTeam, awayTactics);
     const homeShare = Math.max(.24, Math.min(.82, .5 + (homeRating - awayRating) * .012));
@@ -105,7 +105,7 @@ export default function Home() {
     const passingBonus = ({ Kort: .035, Direct: .02, Lang: -.005 }[t.passing] ?? 0);
     const counterBonus = t.counter && opponentTactics.mentality === "Aanvallend" ? .11 : t.counter ? .035 : 0;
     const pressingBonus = t.pressing ? .045 : 0;
-    const chanceQuality = Math.max(.06, Math.min(.78, .27 + ((home ? homeRating : awayRating) - (home ? awayRating : homeRating)) * .009 + tacticalEdge + passingBonus + counterBonus + pressingBonus));
+    const chanceQuality = Math.max(.04, Math.min(.48, .16 + ((home ? homeRating : awayRating) - (home ? awayRating : homeRating)) * .0045 + tacticalEdge * .65 + passingBonus * .7 + counterBonus * .7 + pressingBonus * .65));
     const stamp = m + "'"; const r = Math.random();
     if (r < .22) {
       const passer = pickPlayer(ownIndex as 0 | 1, ["defender", "midfielder"]);
@@ -125,7 +125,7 @@ export default function Home() {
           own.onTarget++;
           const keeper = home ? awayTeam.keeper : homeTeam.keeper;
           const scorerQuality = home ? homeTeam.rating : awayTeam.rating;
-          if (Math.random() < Math.max(.035, Math.min(.72, .3 + (scorerQuality - keeper) * .012))) {
+          if (Math.random() < Math.max(.025, Math.min(.48, .20 + (scorerQuality - keeper) * .006))) {
             addEvent({ minute: "VAR", text: "VAR controleert het doelpunt op buitenspel of een overtreding.", kind: "var" });
             if (Math.random() < .10) addEvent({ minute: "VAR", text: "Doelpunt afgekeurd na VAR-check: buitenspel in de aanloop.", kind: "var" });
             else { const scorer = pickPlayer(ownIndex as 0 | 1, ["forward", "midfielder"]); const assist = Math.random() < .72 ? pickPlayer(ownIndex as 0 | 1, ["midfielder", "forward", "defender"]).name : undefined; setGoals(prev => home ? [prev[0] + 1, prev[1]] : [prev[0], prev[1] + 1]); setScorers(prev => [...prev, { team: ownIndex as 0 | 1, minute: m, name: scorer.name, assist }]); addEvent({ minute: "GOAL", text: scorer.name + " scoort een prachtige goal voor " + team + (assist ? ", op aangeven van " + assist : "") + "! De bal vliegt onhoudbaar in het doel.", kind: "goal" }); }
