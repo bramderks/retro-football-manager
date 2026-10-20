@@ -44,7 +44,7 @@ class RetroManager:
         top.pack(fill="x")
         top.pack_propagate(False)
         self.label(top, "RETRO FOOTBALL MANAGER", 20, True, ACCENT, bg="#07111b").pack(side="left", padx=22)
-        self.label(top, "DESKTOP PROTOTYPE  •  v0.2", 10, True, MUTED, bg="#07111b").pack(side="right", padx=22)
+        self.label(top, "DESKTOP PROTOTYPE  •  v0.3", 10, True, MUTED, bg="#07111b").pack(side="right", padx=22)
 
         nav = tk.Frame(self.root, bg=PANEL2, height=42)
         nav.pack(fill="x")
@@ -92,7 +92,7 @@ class RetroManager:
         controls.columnconfigure(1, weight=1)
         self.speed = tk.StringVar(value="Normaal")
         self.label(left, "Tempo", 9, False, MUTED).pack(anchor="w", padx=14, pady=(12, 2))
-        speed_box = ttk.Combobox(left, textvariable=self.speed, values=("Langzaam", "Normaal", "Snel"),
+        speed_box = ttk.Combobox(left, textvariable=self.speed, values=("Langzaam", "Normaal", "Snel", "Ultra"),
                                  state="readonly")
         speed_box.pack(fill="x", padx=14)
         speed_box.bind("<<ComboboxSelected>>", self.change_speed)
@@ -161,6 +161,7 @@ class RetroManager:
         self.update_score()
         self.update_stats()
         self.log("INFO", "De spelers staan klaar voor de aftrap.", "system")
+        self.log("VAR", "VAR is actief: doelpunten en strafschopmomenten kunnen worden herbeoordeeld.", "system")
         self.log("INFO", "Druk op Start om de wedstrijd te beginnen.", "system")
 
     def start(self):
@@ -183,7 +184,7 @@ class RetroManager:
             self.status.configure(text="PAUZE" if self.minute else "KLAAR", fg=MUTED)
 
     def change_speed(self, _event=None):
-        self.speed_ms = {"Langzaam": 1500, "Normaal": 900, "Snel": 350}.get(self.speed.get(), 900)
+        self.speed_ms = {"Langzaam": 1500, "Normaal": 900, "Snel": 350, "Ultra": 175}.get(self.speed.get(), 900)
 
     def tick(self):
         if not self.running:
