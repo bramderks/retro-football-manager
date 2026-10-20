@@ -1,7 +1,7 @@
 {
   "season": "2026-2027",
   "checkedAt": "2026-10-20",
-  "method": "Current-season club squad pages and official club/league sources; positional group normalized to game schema; on-loan players are included only where shown on current squad pages.",
+  "method": "Current-season club squad pages and official club/league sources. Player position groups are normalized for the game; on-loan players are included where shown on current squad pages. Overall/potential ratings in the database are neutral game defaults, not official scouting ratings.",
   "rosters": {
     "ado-den-haag": {
       "sourceUrl": "https://adodenhaag.nl/nl/teams/1e-elftal/selectie",
@@ -163,10 +163,6 @@
         },
         {
           "name": "Steven Berghuis",
-          "position": "CM"
-        },
-        {
-          "name": "Jorthy Mokio",
           "position": "CM"
         },
         {
@@ -2436,10 +2432,6 @@
         {
           "name": "Jack Cooper-Love",
           "position": "CM"
-        },
-        {
-          "name": "Jack Cooper-Love",
-          "position": "ST"
         },
         {
           "name": "Mustafa Abdullatif",
