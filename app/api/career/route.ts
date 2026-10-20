@@ -60,7 +60,6 @@ export async function POST(request: Request) {
    await sql.query("INSERT INTO career_news(save_id,news_date,category,headline,body) VALUES($1,$2,'club',$3,$4)",[saveId,START,"Welkom bij "+c.name,"Het bestuur heeft je aangesteld als manager. Je bent verantwoordelijk voor resultaten, financiën en de selectie."]);
       await sql.query("INSERT INTO board_objectives(id,save_id,season_id,objective_type,description,target_value) VALUES($1,$2,$3,$4,$5,$6)",["obj-"+saveId,saveId,SEASON,"league_position",Number(c.team_strength)>=78?"Eindig bij de eerste drie":Number(c.team_strength)>=68?"Eindig in de bovenste helft":"Handhaaf je in de divisie",Number(c.team_strength)>=78?3:Number(c.team_strength)>=68?9:15]);
    await sql.query("INSERT INTO club_finances(save_id,entry_date,category,description,amount,balance_after) VALUES($1,$2,'other','Beginsaldo clubkas',$3,$3)",[saveId,START,balance]);
-   if(matchRevenue>0) await sql.query("INSERT INTO club_finances(save_id,entry_date,category,description,amount,balance_after) VALUES($1,$2,$3,$4,$5,$6)",[b.saveId,day,userFixture.homeTeamId===s.club_id?"ticketing":"broadcast",userFixture.homeTeamId===s.club_id?"Wedstrijddag: kaartverkoop en horeca":"Wedstrijddag: media-inkomsten",matchRevenue,balance]);
    await sql.query("INSERT INTO player_conditions(player_id) SELECT id FROM players WHERE team_id=$1 AND is_active=TRUE ON CONFLICT(player_id) DO NOTHING",[c.id]);
    return NextResponse.json({saveId,clubId:c.id,club:c.name});
   }
@@ -107,6 +106,7 @@ export async function POST(request: Request) {
    }
    const dailyCost=Math.round(Number(s.wage_budget_weekly||0)/7+Math.max(250,Number(s.cash_balance)*.00004)); const userFixture=results.find((x:any)=>x.homeTeamId===s.club_id||x.awayTeamId===s.club_id); const matchRevenue=userFixture?(userFixture.homeTeamId===s.club_id?120000+Number(s.reputation||50)*9000:45000):0; const balance=Number(s.cash_balance)-dailyCost+matchRevenue;
    await sql.query("INSERT INTO club_finances(save_id,entry_date,category,description,amount,balance_after) VALUES($1,$2,'wages','Dagelijkse lonen en exploitatie',$3,$4)",[b.saveId,day,-dailyCost,balance]);
+    if(matchRevenue>0) await sql.query("INSERT INTO club_finances(save_id,entry_date,category,description,amount,balance_after) VALUES($1,$2,$3,$4,$5,$6)",[b.saveId,day,userFixture.homeTeamId===s.club_id?"ticketing":"broadcast",userFixture.homeTeamId===s.club_id?"Wedstrijddag: kaartverkoop en horeca":"Wedstrijddag: media-inkomsten",matchRevenue,balance]);
    await sql.query("UPDATE career_saves SET cash_balance=$1 WHERE id=$2",[balance,b.saveId]);
    const players=await sql.query("SELECT p.id,COALESCE(pc.fitness,100)::int AS fitness FROM players p LEFT JOIN player_conditions pc ON pc.player_id=p.id WHERE p.team_id=$1 AND p.is_active=TRUE",[s.club_id]);
    for(const p of players as any[]){
