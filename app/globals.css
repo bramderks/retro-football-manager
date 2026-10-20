@@ -49,3 +49,36 @@
 .scorer-side:first-child .scorer-line{text-align:left}
 @media(max-width:850px){.tactics-layout{grid-template-columns:1fr}.football-pitch{height:500px}.tactics-screen{padding:14px}}
 @media(max-width:560px){.tactics-screen-header{flex-direction:column}.tactics-screen-header h1{font-size:20px}.football-pitch{height:430px}.scorers-under-score{gap:12px;font-size:11px}.scorers-panel{padding:12px}}
+
+/* Career mode dashboard */
+.career-screen{padding:24px;min-height:calc(100vh - 150px);background:var(--bg)}
+.career-header{display:flex;justify-content:space-between;align-items:center;gap:20px;margin-bottom:22px}
+.career-header h1{font-size:26px;margin:8px 0}.career-header p{color:var(--muted);margin:0;font-size:12px}
+.primary-action{background:#28624c;border:1px solid #36795e;color:#fff;padding:12px 17px;font:800 11px Manrope;cursor:pointer;white-space:nowrap}
+.primary-action:disabled{opacity:.5;cursor:wait}
+.new-career-card{max-width:600px;background:var(--panel);border:1px solid var(--line);padding:24px;display:flex;flex-direction:column;gap:16px}
+.new-career-card>label{display:flex;flex-direction:column;gap:7px;font-size:11px;color:#b4c2c9}
+.new-career-card input,.new-career-card select{background:#0b1823;border:1px solid #2b414f;color:var(--text);padding:11px;font:12px Manrope;width:100%}
+.club-preview{padding:14px;background:#0b1923;border:1px solid #304958;font-weight:800;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.club-preview span{color:var(--muted);font-size:10px;font-weight:500}
+.career-error{margin-bottom:14px;padding:12px;border:1px solid #8b4545;background:#321f27;color:#ffb7b7}
+.career-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:16px}
+.career-kpis>div{background:var(--panel);border:1px solid var(--line);padding:16px;min-width:0}
+.career-kpis small{display:block;font:9px 'DM Mono',monospace;color:var(--muted);letter-spacing:.6px;margin-bottom:10px}
+.career-kpis strong{font:700 20px 'DM Mono',monospace;overflow-wrap:anywhere}
+.career-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:start}
+.career-panel{min-width:0;background:var(--panel);border:1px solid var(--line);padding:17px}
+.career-panel>.eyebrow{display:block;margin-bottom:14px}
+.career-table-wrap{overflow:auto;max-height:590px}
+.career-table{border-collapse:collapse;width:100%;font-size:11px;text-align:left}
+.career-table th{font:9px 'DM Mono',monospace;color:var(--muted);padding:9px 7px;border-bottom:1px solid var(--line)}
+.career-table td{padding:8px 7px;border-bottom:1px solid #203340;white-space:nowrap}
+.career-table td:first-child,.career-table td:nth-child(n+3){font-family:'DM Mono',monospace}
+.career-table tr.my-club{background:#183a31;color:#a9f1ce}
+.fixture-row{display:grid;grid-template-columns:55px minmax(0,1fr) 42px;gap:8px;align-items:center;padding:10px 0;border-bottom:1px solid #203340;font-size:10px}
+.fixture-row time{color:var(--muted);font:10px 'DM Mono',monospace}.fixture-row span{overflow-wrap:anywhere}.fixture-row strong{text-align:right;font:11px 'DM Mono',monospace}
+.fixture-row.my-fixture{color:var(--gold);font-weight:800}
+.news-row{padding:11px 0;border-bottom:1px solid #203340}.news-row small,.finance-row small{display:block;font:9px 'DM Mono',monospace;color:var(--muted);margin-bottom:5px}.news-row strong{font-size:11px}.news-row p{font-size:10px;color:#9db0bd;line-height:1.5;margin:5px 0 0}
+.finance-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid #203340;font-size:10px}.finance-row small{margin-top:4px;margin-bottom:0}.finance-row strong{font:11px 'DM Mono',monospace;white-space:nowrap}.finance-row .negative{color:#f39b9b}.finance-row .positive{color:#8be0b2}
+@media(max-width:900px){.career-grid{grid-template-columns:1fr}.career-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.career-screen{padding:14px}}
+@media(max-width:560px){.career-header{align-items:flex-start;flex-direction:column}.career-header h1{font-size:21px}.career-kpis>div{padding:12px}.career-kpis strong{font-size:16px}.new-career-card{padding:16px}.club-preview{flex-direction:column}}
