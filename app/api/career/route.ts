@@ -79,6 +79,8 @@ export async function POST(request: Request) {
   }
   if(b.action==="change_role"){
    if(!["manager","sporting_director","chairperson"].includes(b.role))return fail("Ongeldige rol.");
+   const xp=Number(s.career_xp||0),required=b.role==="sporting_director"?120:b.role==="chairperson"?250:0;
+   if(xp<required)return fail("Deze functie is nog niet ontgrendeld. Je hebt "+xp+" ervaringspunten; nodig: "+required+".");
    await sql.query("UPDATE career_saves SET role=$1,updated_at=NOW() WHERE id=$2",[b.role,b.saveId]);return NextResponse.json({ok:true,role:b.role});
   }
   if(b.action==="advance_day"){
@@ -90,7 +92,7 @@ export async function POST(request: Request) {
     const ht=f.home_team_id===s.club_id?(s.tactical_setup||{}):{},at=f.away_team_id===s.club_id?(s.tactical_setup||{}):{};
     const score=matchScore(Number(f.hs)+Number(f.hr)*.08,Number(f.aws)+Number(f.ar)*.08,ht,at);
     await sql.query("UPDATE fixtures SET home_goals=$1,away_goals=$2,status='played',played_at=NOW() WHERE id=$3",[score.homeGoals,score.awayGoals,f.id]);
-    results.push({id:f.id,...score});
+    results.push({id:f.id,homeTeamId:f.home_team_id,awayTeamId:f.away_team_id,...score});
     if(f.home_team_id===s.club_id||f.away_team_id===s.club_id){
       const gf=f.home_team_id===s.club_id?score.homeGoals:score.awayGoals,ga=f.home_team_id===s.club_id?score.awayGoals:score.homeGoals;
       const opponentId=f.home_team_id===s.club_id?f.away_team_id:f.home_team_id,op=(await sql.query("SELECT name FROM teams WHERE id=$1",[opponentId]))[0] as any;
@@ -126,6 +128,8 @@ export async function POST(request: Request) {
      await sql.query("INSERT INTO career_news(save_id,news_date,category,headline,body) VALUES($1,$2,'transfer',$3,$4)",[b.saveId,day,"Transferbod afgewezen",offer.full_name+" blijft voorlopig bij zijn huidige club."]);
     }
    }
+   const xpGain=1+results.filter((x:any)=>(x.homeTeamId===s.club_id&&x.homeGoals>x.awayGoals)||(x.awayTeamId===s.club_id&&x.awayGoals>x.homeGoals)).length*3;
+   await sql.query("UPDATE career_saves SET career_xp=career_xp+$1 WHERE id=$2",[xpGain,b.saveId]);
    return NextResponse.json({ok:true,gameDate:day,matchesPlayed:results.length,results,cashBalance:balance});
   }
   return fail("Onbekende actie.");
