@@ -53,6 +53,15 @@ export default function Home() {
   }, [stats]);
 
   useEffect(() => {
+    let cancelled = false;
+    fetch("/api/teams", { cache: "no-store" })
+      .then(response => { if (!response.ok) throw new Error("Database API unavailable"); return response.json(); })
+      .then(data => { if (!cancelled && Array.isArray(data.teams)) { setDatabaseTeams(data.teams); setDatabaseError(false); } })
+      .catch(() => { if (!cancelled) setDatabaseError(true); });
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
     if (!running || finished) return;
     const delays: Record<string, number> = { Langzaam: 1500, Normaal: 900, Snel: 350, Ultra: 175 };
     const timer = window.setTimeout(() => playMinute(), delays[speed] ?? 900);
@@ -69,7 +78,13 @@ export default function Home() {
       + ({ Kort: 3, Direct: 2, Lang: -1 }[t.passing] ?? 0) + (t.pressing ? 3 : 0) + (t.counter ? 2 : 0);
   }
   function pickPlayer(team: 0 | 1, positions?: Player["position"][]) {
-    const squad = team === 0 ? AJAX_PLAYERS : NEC_PLAYERS;
+    const selectedId = team === 0 ? selectedHomeId : selectedAwayId;
+    const dbTeam = databaseTeams.find(t => t.id === selectedId);
+    const fallback = team === 0 ? AJAX_PLAYERS : NEC_PLAYERS;
+    const squad: Player[] = dbTeam?.players.length ? dbTeam.players.map(p => ({
+      name: p.name,
+      position: p.position === "GK" ? "keeper" : p.position === "ST" || p.position === "RW" || p.position === "LW" ? "forward" : p.position === "CB" || p.position === "LB" || p.position === "RB" ? "defender" : "midfielder",
+    })) : fallback;
     const pool = positions?.length ? squad.filter(p => positions.includes(p.position)) : squad.filter(p => p.position !== "keeper");
     return pool[Math.floor(Math.random() * pool.length)] ?? squad[0];
   }
