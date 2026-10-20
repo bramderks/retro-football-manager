@@ -226,7 +226,15 @@ class RetroManager:
         self.after_id = self.root.after(self.speed_ms, self.tick)
 
     def simulate_event(self):
-        home_attacks = random.random() < 0.52
+        ht = {k: v.get() for k, v in self.tactic_vars.items()}
+        # Ajax has higher reputation and player quality; NEC can still threaten on counters.
+        home_rating = 88 + 92 * 0.12 + {"Verdedigend": -7, "Normaal": 0, "Aanvallend": 7}[ht["mentaliteit"]]
+        home_rating += {"Kort": 3, "Direct": 2, "Lang": -1}[ht["passing"]]
+        home_rating += 3 if ht["pressie"] == "Aan" else 0
+        home_rating += 2 if ht["counter"] == "Aan" else 0
+        away_rating = 70 + 68 * 0.12 + (5 if random.random() < 0.35 else 0)
+        home_share = max(0.24, min(0.82, 0.50 + (home_rating - away_rating) * 0.012))
+        home_attacks = random.random() < home_share
         team = "Ajax" if home_attacks else "NEC"
         other = "NEC" if home_attacks else "Ajax"
         own = self.home_stats if home_attacks else self.away_stats
