@@ -1,6 +1,6 @@
 {
   "season": "2026-2027",
-  "dataStatus": "clubs-verified; player rosters require official roster import before production use",
+  "dataStatus": "clubs-verified; player roster seed in data/season-2026-27-rosters.json; ratings are game defaults, not official player ratings",
   "sourceUrls": [
     "https://www.knvb.nl/node/71918",
     "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1",
@@ -13,7 +13,8 @@
       "division": "eredivisie",
       "name": "ADO Den Haag",
       "city": "Den Haag",
-      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+      "source": "https://adodenhaag.nl/nl/teams/1e-elftal/selectie",
+      "source_checked_at": "2026-10-20"
     },
     {
       "id": "ajax",
@@ -21,7 +22,8 @@
       "division": "eredivisie",
       "name": "Ajax",
       "city": "Amsterdam",
-      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+      "source": "https://www.vi.nl/clubs/ajax/selectie",
+      "source_checked_at": "2026-10-20"
     },
     {
       "id": "az",
@@ -29,7 +31,8 @@
       "division": "eredivisie",
       "name": "AZ",
       "city": "Alkmaar",
-      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+      "source": "https://www.vi.nl/clubs/az/selectie",
+      "source_checked_at": "2026-10-20"
     },
     {
       "id": "excelsior-rotterdam",
@@ -37,7 +40,8 @@
       "division": "eredivisie",
       "name": "Excelsior Rotterdam",
       "city": "Rotterdam",
-      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+      "source": "https://en.wikipedia.org/wiki/Excelsior_Rotterdam",
+      "source_checked_at": "2026-10-20"
     },
     {
       "id": "fc-groningen",
@@ -45,7 +49,8 @@
       "division": "eredivisie",
       "name": "FC Groningen",
       "city": "Groningen",
-      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+      "source": "https://www.vi.nl/clubs/fc-groningen/selectie",
+      "source_checked_at": "2026-10-20"
     },
     {
       "id": "fc-twente",
@@ -53,7 +58,8 @@
       "division": "eredivisie",
       "name": "FC Twente",
       "city": "Enschede",
-      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+      "source": "https://en.wikipedia.org/wiki/FC_Twente",
+      "source_checked_at": "2026-10-20"
     },
     {
       "id": "fc-utrecht",
@@ -61,7 +67,8 @@
       "division": "eredivisie",
       "name": "FC Utrecht",
       "city": "Utrecht",
-      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+      "source": "https://www.vi.nl/clubs/fc-utrecht/selectie",
+      "source_checked_at": "2026-10-20"
     },
     {
       "id": "feyenoord",
@@ -69,7 +76,8 @@
       "division": "eredivisie",
       "name": "Feyenoord",
       "city": "Rotterdam",
-      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+      "source": "https://en.wikipedia.org/wiki/Feyenoord",
+      "source_checked_at": "2026-10-20"
     },
     {
       "id": "fortuna-sittard",
@@ -77,7 +85,8 @@
       "division": "eredivisie",
       "name": "Fortuna Sittard",
       "city": "Sittard",
-      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+      "source": "https://en.wikipedia.org/wiki/Fortuna_Sittard",
+      "source_checked_at": "2026-10-20"
     },
     {
       "id": "go-ahead-eagles",
@@ -85,7 +94,8 @@
       "division": "eredivisie",
       "name": "Go Ahead Eagles",
       "city": "Deventer",
-      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+      "source": "https://en.wikipedia.org/wiki/Go_Ahead_Eagles",
+      "source_checked_at": "2026-10-20"
     },
     {
       "id": "nec",
@@ -93,7 +103,8 @@
       "division": "eredivisie",
       "name": "NEC",
       "city": "Nijmegen",
-      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+      "source": "https://www.uefa.com/nationalassociations/teams/52330/squad/",
+      "source_checked_at": "2026-10-20"
     },
     {
       "id": "pec-zwolle",
@@ -101,7 +112,8 @@
       "division": "eredivisie",
       "name": "PEC Zwolle",
       "city": "Zwolle",
-      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+      "source": "https://en.wikipedia.org/wiki/PEC_Zwolle",
+      "source_checked_at": "2026-10-20"
     },
     {
       "id": "psv",
@@ -109,7 +121,8 @@
       "division": "eredivisie",
       "name": "PSV",
       "city": "Eindhoven",
-      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+      "source": "https://www.supver-psv.nl/nl/seizoen/selectie.html",
+      "source_checked_at": "2026-10-20"
     },
     {
       "id": "sc-cambuur",
@@ -117,7 +130,8 @@
       "division": "eredivisie",
       "name": "SC Cambuur",
       "city": "Leeuwarden",
-      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+      "source": "https://cambuur.nl/nieuws/sc-cambuur-met-selectie-van-28-spelers-naar-bologna/",
+      "source_checked_at": "2026-10-20"
     },
     {
       "id": "sc-heerenveen",
@@ -125,7 +139,8 @@
       "division": "eredivisie",
       "name": "sc Heerenveen",
       "city": "Heerenveen",
-      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+      "source": "https://en.wikipedia.org/wiki/SC_Heerenveen",
+      "source_checked_at": "2026-10-20"
     },
     {
       "id": "sparta-rotterdam",
@@ -133,7 +148,8 @@
       "division": "eredivisie",
       "name": "Sparta Rotterdam",
       "city": "Rotterdam",
-      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+      "source": "https://en.wikipedia.org/wiki/Sparta_Rotterdam",
+      "source_checked_at": "2026-10-20"
     },
     {
       "id": "telstar",
@@ -141,7 +157,8 @@
       "division": "eredivisie",
       "name": "Telstar",
       "city": "Velsen-Zuid",
-      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+      "source": "https://sctelstar.nl/mannen/selectie-staf",
+      "source_checked_at": "2026-10-20"
     },
     {
       "id": "willem-ii",
@@ -149,7 +166,8 @@
       "division": "eredivisie",
       "name": "Willem II",
       "city": "Tilburg",
-      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+      "source": "https://www.willem-ii.nl/artikel/willem-ii-op-trainingskamp-sint-michielsgestel",
+      "source_checked_at": "2026-10-20"
     },
     {
       "id": "almere-city-fc",
@@ -157,7 +175,8 @@
       "division": "keuken-kampioen-divisie",
       "name": "Almere City FC",
       "city": "Almere",
-      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+      "source": "https://en.wikipedia.org/wiki/Almere_City_FC",
+      "source_checked_at": "2026-10-20"
     },
     {
       "id": "de-graafschap",
@@ -165,7 +184,8 @@
       "division": "keuken-kampioen-divisie",
       "name": "De Graafschap",
       "city": "Doetinchem",
-      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+      "source": "https://en.wikipedia.org/wiki/De_Graafschap",
+      "source_checked_at": "2026-10-20"
     },
     {
       "id": "fc-den-bosch",
@@ -173,7 +193,8 @@
       "division": "keuken-kampioen-divisie",
       "name": "FC Den Bosch",
       "city": "'s-Hertogenbosch",
-      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+      "source": "https://en.wikipedia.org/wiki/FC_Den_Bosch",
+      "source_checked_at": "2026-10-20"
     },
     {
       "id": "fc-dordrecht",
@@ -181,7 +202,8 @@
       "division": "keuken-kampioen-divisie",
       "name": "FC Dordrecht",
       "city": "Dordrecht",
-      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+      "source": "https://en.wikipedia.org/wiki/FC_Dordrecht",
+      "source_checked_at": "2026-10-20"
     },
     {
       "id": "fc-eindhoven",
@@ -189,7 +211,8 @@
       "division": "keuken-kampioen-divisie",
       "name": "FC Eindhoven",
       "city": "Eindhoven",
-      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+      "source": "https://en.wikipedia.org/wiki/FC_Eindhoven",
+      "source_checked_at": "2026-10-20"
     },
     {
       "id": "fc-emmen",
@@ -197,7 +220,8 @@
       "division": "keuken-kampioen-divisie",
       "name": "FC Emmen",
       "city": "Emmen",
-      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+      "source": "https://en.wikipedia.org/wiki/FC_Emmen",
+      "source_checked_at": "2026-10-20"
     },
     {
       "id": "fc-volendam",
@@ -205,7 +229,8 @@
       "division": "keuken-kampioen-divisie",
       "name": "FC Volendam",
       "city": "Volendam",
-      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+      "source": "https://fcvolendam.nl/voetbal/1e-elftal/selectie/",
+      "source_checked_at": "2026-10-20"
     },
     {
       "id": "helmond-sport",
@@ -213,7 +238,8 @@
       "division": "keuken-kampioen-divisie",
       "name": "Helmond Sport",
       "city": "Helmond",
-      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+      "source": "https://en.wikipedia.org/wiki/Helmond_Sport",
+      "source_checked_at": "2026-10-20"
     },
     {
       "id": "heracles-almelo",
@@ -221,7 +247,8 @@
       "division": "keuken-kampioen-divisie",
       "name": "Heracles Almelo",
       "city": "Almelo",
-      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+      "source": "https://en.wikipedia.org/wiki/Heracles_Almelo",
+      "source_checked_at": "2026-10-20"
     },
     {
       "id": "jong-ajax",
@@ -229,7 +256,8 @@
       "division": "keuken-kampioen-divisie",
       "name": "Jong Ajax",
       "city": "Amsterdam",
-      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+      "source": "https://www.vi.nl/clubs/jong-ajax/selectie",
+      "source_checked_at": "2026-10-20"
     },
     {
       "id": "jong-az",
@@ -237,7 +265,8 @@
       "division": "keuken-kampioen-divisie",
       "name": "Jong AZ",
       "city": "Wijdewormer",
-      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+      "source": "https://www.vi.nl/clubs/jong-az/selectie",
+      "source_checked_at": "2026-10-20"
     },
     {
       "id": "jong-fc-utrecht",
@@ -245,7 +274,8 @@
       "division": "keuken-kampioen-divisie",
       "name": "Jong FC Utrecht",
       "city": "Utrecht",
-      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+      "source": "https://www.vi.nl/clubs/jong-fc-utrecht/selectie",
+      "source_checked_at": "2026-10-20"
     },
     {
       "id": "jong-psv",
@@ -253,7 +283,8 @@
       "division": "keuken-kampioen-divisie",
       "name": "Jong PSV",
       "city": "Eindhoven",
-      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+      "source": "https://www.vi.nl/clubs/jong-psv/selectie",
+      "source_checked_at": "2026-10-20"
     },
     {
       "id": "mvv-maastricht",
@@ -261,7 +292,8 @@
       "division": "keuken-kampioen-divisie",
       "name": "MVV Maastricht",
       "city": "Maastricht",
-      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+      "source": "https://en.wikipedia.org/wiki/MVV_Maastricht",
+      "source_checked_at": "2026-10-20"
     },
     {
       "id": "nac-breda",
@@ -269,7 +301,8 @@
       "division": "keuken-kampioen-divisie",
       "name": "NAC Breda",
       "city": "Breda",
-      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+      "source": "https://en.wikipedia.org/wiki/NAC_Breda",
+      "source_checked_at": "2026-10-20"
     },
     {
       "id": "rkc-waalwijk",
@@ -277,7 +310,8 @@
       "division": "keuken-kampioen-divisie",
       "name": "RKC Waalwijk",
       "city": "Waalwijk",
-      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+      "source": "https://en.wikipedia.org/wiki/RKC_Waalwijk",
+      "source_checked_at": "2026-10-20"
     },
     {
       "id": "roda-jc-kerkrade",
@@ -285,7 +319,8 @@
       "division": "keuken-kampioen-divisie",
       "name": "Roda JC Kerkrade",
       "city": "Kerkrade",
-      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+      "source": "https://www.vi.nl/clubs/roda-jc-kerkrade/selectie",
+      "source_checked_at": "2026-10-20"
     },
     {
       "id": "top-oss",
@@ -293,7 +328,8 @@
       "division": "keuken-kampioen-divisie",
       "name": "TOP Oss",
       "city": "Oss",
-      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+      "source": "https://en.wikipedia.org/wiki/TOP_Oss",
+      "source_checked_at": "2026-10-20"
     },
     {
       "id": "vitesse",
@@ -301,7 +337,8 @@
       "division": "keuken-kampioen-divisie",
       "name": "Vitesse",
       "city": "Arnhem",
-      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+      "source": "https://en.wikipedia.org/wiki/SBV_Vitesse",
+      "source_checked_at": "2026-10-20"
     },
     {
       "id": "vvv-venlo",
@@ -309,7 +346,8 @@
       "division": "keuken-kampioen-divisie",
       "name": "VVV-Venlo",
       "city": "Venlo",
-      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+      "source": "https://en.wikipedia.org/wiki/VVV-Venlo",
+      "source_checked_at": "2026-10-20"
     }
   ]
 }
