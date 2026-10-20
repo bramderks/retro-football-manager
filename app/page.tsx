@@ -97,10 +97,10 @@ export default function Home() {
             addEvent({ minute: "VAR", text: "VAR controleert het doelpunt op buitenspel of een overtreding.", kind: "var" });
             if (Math.random() < .10) addEvent({ minute: "VAR", text: "Doelpunt afgekeurd na VAR-check: buitenspel in de aanloop.", kind: "var" });
             else { const scorer = pickPlayer(ownIndex as 0 | 1, ["forward", "midfielder"]); const assist = Math.random() < .72 ? pickPlayer(ownIndex as 0 | 1, ["midfielder", "forward", "defender"]).name : undefined; setGoals(prev => home ? [prev[0] + 1, prev[1]] : [prev[0], prev[1] + 1]); setScorers(prev => [...prev, { team: ownIndex as 0 | 1, minute: m, name: scorer.name, assist }]); addEvent({ minute: "GOAL", text: scorer.name + " scoort een prachtige goal voor " + team + (assist ? ", op aangeven van " + assist : "") + "! De bal vliegt onhoudbaar in het doel.", kind: "goal" }); }
-          } else { const keeper = pickPlayer((home ? 1 : 0) as 0 | 1, ["keeper"]); addEvent({ minute: "SAVE", text: keeper.name + redt knap op de inzet van " + shooter.name + " en houdt " + other + " op de been." }); }
+          } else { const keeper = pickPlayer((home ? 1 : 0) as 0 | 1, ["keeper"]); addEvent({ minute: "SAVE", text: keeper.name + " redt knap op de inzet van " + shooter.name + " en houdt " + other + " op de been." }); }
         } else addEvent({ minute: "SCHOT", text: shooter.name + " haalt uit, maar de bal vliegt net over of naast." });
-      } else if (Math.random() < .35) { own.corners++; const defender = pickPlayer((home ? 1 : 0) as 0 | 1, ["defender"]); addEvent({ minute: "COR", text: defender.name + werkt de voorzet weg. Corner voor " + team + "." }); }
-      else const defender = pickPlayer((home ? 1 : 0) as 0 | 1, ["defender"]); addEvent({ minute: "INFO", text: defender.name + onderschept de aanval en ruimt de bal op voor " + other + "." });
+      } else if (Math.random() < .35) { own.corners++; const defender = pickPlayer((home ? 1 : 0) as 0 | 1, ["defender"]); addEvent({ minute: "COR", text: defender.name + " werkt de voorzet weg. Corner voor " + team + "." }); }
+      else { const defender = pickPlayer((home ? 1 : 0) as 0 | 1, ["defender"]); addEvent({ minute: "INFO", text: defender.name + " onderschept de aanval en ruimt de bal op voor " + other + "." }); }
     } else if (r < .84) { own.corners++; const taker = pickPlayer(ownIndex as 0 | 1, ["midfielder", "forward"]); const target = pickPlayer(ownIndex as 0 | 1, ["forward", "defender"]); addEvent({ minute: stamp, text: "Corner voor " + team + ". " + taker.name + " slingert de bal voor het doel, waar " + target.name + " klaarstaat." }); }
     else if (r < .93) {
       const defender = pickPlayer((home ? 1 : 0) as 0 | 1, ["defender", "midfielder"]);
