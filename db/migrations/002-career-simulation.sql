@@ -149,3 +149,16 @@ INSERT INTO transfer_windows(id,season_id,country_code,window_name,opens_on,clos
 ON CONFLICT (id) DO NOTHING;
 
 ALTER TABLE career_saves ADD COLUMN IF NOT EXISTS career_xp INTEGER NOT NULL DEFAULT 0;
+
+CREATE TABLE IF NOT EXISTS board_objectives (
+  id TEXT PRIMARY KEY,
+  save_id TEXT NOT NULL REFERENCES career_saves(id) ON DELETE CASCADE,
+  season_id TEXT NOT NULL REFERENCES seasons(id),
+  objective_type TEXT NOT NULL CHECK (objective_type IN ('league_position','cup_progress','finance','youth_development','avoid_relegation')),
+  description TEXT NOT NULL,
+  target_value INTEGER NOT NULL,
+  progress_value INTEGER NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active','completed','failed')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_objectives_save ON board_objectives(save_id,status);
