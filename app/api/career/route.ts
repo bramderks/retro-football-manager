@@ -56,7 +56,7 @@ export async function POST(request: Request) {
    await sql.query("INSERT INTO career_news(save_id,news_date,category,headline,body) VALUES($1,$2,'club',$3,$4)",[saveId,START,"Welkom bij "+c.name,"Het bestuur heeft je aangesteld als manager. Je bent verantwoordelijk voor resultaten, financiën en de selectie."]);
    await sql.query("INSERT INTO club_finances(save_id,entry_date,category,description,amount,balance_after) VALUES($1,$2,'other','Beginsaldo clubkas',$3,$3)",[saveId,START,balance]);
    await sql.query("INSERT INTO player_conditions(player_id) SELECT id FROM players WHERE team_id=$1 AND is_active=TRUE ON CONFLICT(player_id) DO NOTHING",[c.id]);
-   return NextResponse.json({saveId,club:c.name});
+   return NextResponse.json({saveId,clubId:c.id,club:c.name});
   }
   if(!b.saveId)return fail("saveId ontbreekt.");
   const rows=await sql.query("SELECT s.*,t.name AS club_name,t.division_id FROM career_saves s JOIN teams t ON t.id=s.club_id WHERE s.id=$1 LIMIT 1",[b.saveId]);
