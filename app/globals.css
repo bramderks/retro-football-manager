@@ -4,3 +4,5 @@
 .scorers-under-score{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;text-align:left;font-size:10px;line-height:1.6}.scorer-side{min-width:0}.scorer-line{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#e4edf0}.scorer-side:first-child .scorer-line{text-align:right}.assist{color:#91a8b4}.goal-minute{color:var(--gold);font:10px 'DM Mono',monospace;margin-left:3px}.goal-icon,.penalty-icon{font-size:10px;margin-right:2px}.penalty-icon{display:inline-block;filter:drop-shadow(0 0 3px #d5b45c)}@media(max-width:560px){.scorers-under-score{font-size:8px;gap:5px}.goal-minute{font-size:8px}}
 
 .team-tactics{padding-top:12px;margin-top:12px;border-top:1px solid var(--line)}.team-tactics-title{font-weight:800;color:var(--gold);font-size:11px;letter-spacing:.8px;margin-bottom:6px}.team-tactics:first-of-type{border-top:0;padding-top:0;margin-top:8px}
+
+.side-section>label select{width:150px;max-width:58%;min-width:0;background:#0b1823;border:1px solid #2b414f;border-radius:2px;color:var(--text);padding:7px;font:11px Manrope}.side-section>label select:focus{outline:1px solid var(--gold)}
