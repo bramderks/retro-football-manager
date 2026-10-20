@@ -95,7 +95,7 @@ export default function Home() {
         if (Math.random() < .45) {
           addEvent({ minute: "VAR", text: "De VAR grijpt in: de scheidsrechter kent alsnog een strafschop toe!", kind: "var" });
           own.chances++;
-          if (Math.random() < (home ? .76 : .68)) { setGoals(prev => home ? [prev[0] + 1, prev[1]] : [prev[0], prev[1] + 1]); const scorer = (home ? AJAX_PLAYERS : NEC_PLAYERS)[Math.floor(Math.random() * (home ? AJAX_PLAYERS : NEC_PLAYERS).length)]; setScorers(prev => [...prev, { team: ownIndex as 0 | 1, minute: m, name: scorer, penalty: true }]); addEvent({ minute: "PEN", text: "DOELPUNT! " + team + " benut de strafschop. " + scorer scoort vanaf elf meter.", kind: "goal" }); }
+          if (Math.random() < (home ? .76 : .68)) { setGoals(prev => home ? [prev[0] + 1, prev[1]] : [prev[0], prev[1] + 1]); const scorer = (home ? AJAX_PLAYERS : NEC_PLAYERS)[Math.floor(Math.random() * (home ? AJAX_PLAYERS : NEC_PLAYERS).length)]; setScorers(prev => [...prev, { team: ownIndex as 0 | 1, minute: m, name: scorer, penalty: true }]); addEvent({ minute: "PEN", text: "DOELPUNT! " + team + " benut de strafschop. " + scorer + " scoort vanaf elf meter.", kind: "goal" }); }
           else addEvent({ minute: "PEN", text: "GEMISTE STRAFSCHOP! " + team + " mist vanaf elf meter; de keeper van " + other + " redt de penalty.", kind: "var" });
         } else addEvent({ minute: "VAR", text: "De scheidsrechter draait zijn beslissing terug na de VAR-check: geen penalty.", kind: "var" });
       }
