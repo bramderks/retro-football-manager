@@ -31,7 +31,8 @@ export default function Home() {
   const [feed, setFeed] = useState<EventLine[]>([
     { minute: "INFO", text: "Ajax – NEC · Eredivisie. Druk op Start om af te trappen.", kind: "system" },
   ]);
-  const [tactics, setTactics] = useState<Tactics>(initialTactics);
+  const [homeTactics, setHomeTactics] = useState<Tactics>({ ...initialTactics });
+  const [awayTactics, setAwayTactics] = useState<Tactics>({ mentality: "Verdedigend", passing: "Direct", pressing: false, offside: false, counter: true, hardTackles: false });
   const [speed, setSpeed] = useState("Normaal");
   const [running, setRunning] = useState(false);
   const finished = minute >= 90;
@@ -65,22 +66,27 @@ export default function Home() {
   function playMinute() {
     const m = minute + 1; setMinute(m);
     if (m === 1) { const player = pickPlayer(0, ["midfielder"]); addEvent({ minute: "1'", text: "Aftrap! " + player.name + " tikt de bal terug en Ajax begint rustig aan de opbouw.", kind: "system" }); return; }
-    const homeRating = teamStrength(AJAX, tactics);
-    const awayTactics: Tactics = { mentality: Math.random() < .35 ? "Verdedigend" : "Normaal", passing: "Direct", pressing: false, offside: false, counter: Math.random() < .45, hardTackles: false };
+    const homeRating = teamStrength(AJAX, homeTactics);
     const awayRating = teamStrength(NEC, awayTactics);
     const homeShare = Math.max(.24, Math.min(.82, .5 + (homeRating - awayRating) * .012));
     const home = Math.random() < homeShare;
     const team = home ? AJAX.name : NEC.name; const other = home ? NEC.name : AJAX.name;
     const ownIndex = home ? 0 : 1; const own = { ...stats[ownIndex] };
-    const t = home ? tactics : awayTactics;
-    const chanceQuality = Math.max(.08, Math.min(.78, .29 + ((home ? homeRating : awayRating) - (home ? awayRating : homeRating)) * .012 + (t.counter && t.mentality === "Verdedigend" ? .1 : 0)));
+    const t = home ? homeTactics : awayTactics;
+    const opponentTactics = home ? awayTactics : homeTactics;
+    const tacticalEdge = ({ Verdedigend: -.08, Normaal: 0, Aanvallend: .09 }[t.mentality] ?? 0)
+      - ({ Verdedigend: -.08, Normaal: 0, Aanvallend: .09 }[opponentTactics.mentality] ?? 0);
+    const passingBonus = ({ Kort: .035, Direct: .02, Lang: -.005 }[t.passing] ?? 0);
+    const counterBonus = t.counter && opponentTactics.mentality === "Aanvallend" ? .11 : t.counter ? .035 : 0;
+    const pressingBonus = t.pressing ? .045 : 0;
+    const chanceQuality = Math.max(.06, Math.min(.78, .27 + ((home ? homeRating : awayRating) - (home ? awayRating : homeRating)) * .009 + tacticalEdge + passingBonus + counterBonus + pressingBonus));
     const stamp = m + "'"; const r = Math.random();
     if (r < .22) {
       const passer = pickPlayer(ownIndex as 0 | 1, ["defender", "midfielder"]);
       const receiver = pickPlayer(ownIndex as 0 | 1, ["midfielder", "forward"]);
       addEvent({ minute: stamp, text: t.passing === "Kort" ? passer.name + " combineert met " + receiver.name + " en zoekt een opening." : t.passing === "Lang" ? passer.name + " verstuurt een lange bal richting " + receiver.name + " achter de verdediging." : passer.name + " speelt direct vooruit op " + receiver.name + "." });
     }
-    else if (r < .38 && t.pressing && home) { const tackler = pickPlayer(0, ["midfielder", "defender"]); addEvent({ minute: stamp, text: "Ajax voert de druk op: " + tackler.name + " jaagt door, verovert de bal en zet NEC vast op eigen helft." }); }
+    else if (r < .38 && t.pressing) { const tackler = pickPlayer(ownIndex as 0 | 1, ["midfielder", "defender"]); addEvent({ minute: stamp, text: team + " voert de druk op: " + tackler.name + " jaagt door, verovert de bal en zet " + other + " vast op eigen helft." }); }
     else if (r < .60 || r < .76) {
       const creator = pickPlayer(ownIndex as 0 | 1, ["midfielder", "forward"]);
       const runner = pickPlayer(ownIndex as 0 | 1, ["forward", "midfielder"]);
@@ -106,8 +112,8 @@ export default function Home() {
       const defender = pickPlayer((home ? 1 : 0) as 0 | 1, ["defender", "midfielder"]);
       const attacker = pickPlayer(ownIndex as 0 | 1, ["forward", "midfielder"]);
       addEvent({ minute: stamp, text: defender.name + " komt te laat in op " + attacker.name + ". De scheidsrechter fluit voor een overtreding." });
-      if (t.hardTackles && Math.random() < .22) addEvent({ minute: "KAART", text: "Stevige tackle van " + defender.name + "! De scheidsrechter toont hem geel." });
-      if (Math.random() < .10) {
+      if (opponentTactics.hardTackles && Math.random() < .22) addEvent({ minute: "KAART", text: "Stevige tackle van " + defender.name + "! De scheidsrechter toont hem geel." });
+      if (Math.random() < (opponentTactics.hardTackles ? .16 : .10)) {
         addEvent({ minute: "VAR", text: "VAR bekijkt een mogelijk strafschopmoment voor " + team + ".", kind: "var" });
         if (Math.random() < .45) {
           addEvent({ minute: "VAR", text: "De VAR grijpt in: de scheidsrechter kent alsnog een strafschop toe!", kind: "var" });
@@ -128,7 +134,11 @@ export default function Home() {
     <div className="workspace">
       <aside className="sidebar"><section className="side-section"><div className="eyebrow">WEDSTRIJDINFO</div><div className="fixture-title">Eredivisie</div><div className="muted">Competitiewedstrijd</div><div className="stadium">◈ Amsterdam Arena · 20:00</div></section>
       <section className="side-section"><div className="eyebrow">WEDSTRIJDSTATISTIEKEN</div>{[["Balbezit", possession[0] + "% — " + possession[1] + "%"],["Schoten",stats[0].shots+" — "+stats[1].shots],["Op doel",stats[0].onTarget+" — "+stats[1].onTarget],["Kansen",stats[0].chances+" — "+stats[1].chances],["Corners",stats[0].corners+" — "+stats[1].corners]].map(([k,v]) => <div className="stat-row" key={k}><span>{k}</span><strong>{v}</strong></div>)}</section>
-      <section className="side-section tactics"><div className="eyebrow">TACTISCHE INSTELLINGEN</div><label>Mentaliteit<select value={tactics.mentality} onChange={e=>setTactics({...tactics,mentality:e.target.value})}><option>Verdedigend</option><option>Normaal</option><option>Aanvallend</option></select></label><label>Passing<select value={tactics.passing} onChange={e=>setTactics({...tactics,passing:e.target.value})}><option>Kort</option><option>Direct</option><option>Lang</option></select></label>{([["pressing","Pressie"],["offside","Buitenspelval"],["counter","Counter"],["hardTackles","Hard tackelen"]] as const).map(([key,label])=><label className="toggle-row" key={key}>{label}<input type="checkbox" checked={tactics[key]} onChange={e=>setTactics({...tactics,[key]:e.target.checked})}/><span className="toggle"/></label>)}</section>
+      <section className="side-section tactics"><div className="eyebrow">TACTIEK PER TEAM</div>
+      {([{name:"Ajax",value:homeTactics,set:setHomeTactics},{name:"NEC",value:awayTactics,set:setAwayTactics}] as const).map(({name,value,set})=><div className="team-tactics" key={name}><div className="team-tactics-title">{name}</div>
+      <label>Mentaliteit<select value={value.mentality} onChange={e=>set({...value,mentality:e.target.value})}><option>Verdedigend</option><option>Normaal</option><option>Aanvallend</option></select></label>
+      <label>Passing<select value={value.passing} onChange={e=>set({...value,passing:e.target.value})}><option>Kort</option><option>Direct</option><option>Lang</option></select></label>
+      {([["pressing","Pressie"],["offside","Buitenspelval"],["counter","Counter"],["hardTackles","Hard tackelen"]] as const).map(([key,label])=><label className="toggle-row" key={key}>{label}<input type="checkbox" checked={value[key]} onChange={e=>set({...value,[key]:e.target.checked})}/><span className="toggle"/></label>)}</div>)}</section>
       <section className="side-section"><div className="eyebrow">WEDSTRIJDREGELAARS</div><div className="control-grid"><button className="start-button" onClick={()=>!finished&&setRunning(true)} disabled={running||finished}>▶ Start</button><button onClick={()=>setRunning(false)}>Ⅱ Pauze</button><button onClick={()=>!finished&&setRunning(true)} disabled={running||finished}>▶▶ Verder</button><button onClick={newMatch}>↻ Nieuwe match</button></div><label className="speed-label">Wedstrijdtempo<select value={speed} onChange={e=>setSpeed(e.target.value)}><option>Langzaam</option><option>Normaal</option><option>Snel</option><option>Ultra</option></select></label></section></aside>
       <section className="match-area"><div className="match-meta"><span>● LIVE MATCH CENTRE</span><span>SEIZOEN 2026/27 · SPEELDAG 1</span></div><div className="scoreboard"><div className="team"><div className="crest ajax">A</div><div><div className="team-name">AJAX</div><div className="team-meta">AMSTERDAM</div></div></div><div className="score-block"><div className="score">{goals[0]} <span>:</span> {goals[1]}</div><div className="clock">{String(minute).padStart(2,"0")}:00 <span>·</span> {finished?"AFGELOPEN":running?"LIVE WEDSTRIJD":minute?"GEPAUZEERD":"WACHT OP AFTRAP"}</div><div className="scorers-under-score">{[0,1].map(side => <div className="scorer-side" key={side}>{scorers.filter(s => s.team === side).map((s,i) => <div className="scorer-line" key={i}>{s.penalty ? <span className="penalty-icon" title="Penaltydoelpunt">⚽🥅</span> : <span className="goal-icon">⚽</span>} {s.name} {s.assist ? <span className="assist">({s.assist})</span> : null} <span className="goal-minute">{s.minute}\u0027</span></div>)}</div>)}</div></div><div className="team away"><div><div className="team-name">NEC</div><div className="team-meta">NIJMEGEN</div></div><div className="crest nec">N</div></div></div>
       <div className="commentary-head"><div><span className="eyebrow">MATCH FEED</span><h2>Live wedstrijdcommentaar</h2></div><span className={running?"status-live":"status-idle"}>{running?"● LIVE":finished?"AFGELOPEN":"KLAAR"}</span></div><div className="commentary" key="commentary">{feed.map((line,i)=><div className={"event "+(line.kind||"")} key={i}><div className="event-minute">{line.minute}</div><div className="event-text">{line.text}</div></div>)}</div>
