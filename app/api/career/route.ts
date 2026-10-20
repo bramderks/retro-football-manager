@@ -38,7 +38,10 @@ export async function GET(request: Request) {
     const news=await sql.query("SELECT id,news_date,category,headline,body,is_read FROM career_news WHERE save_id=$1 ORDER BY id DESC LIMIT 25",[saveId]);
     const finances=await sql.query("SELECT entry_date,category,description,amount,balance_after FROM club_finances WHERE save_id=$1 ORDER BY id DESC LIMIT 20",[saveId]);
     const squad=await sql.query("SELECT p.id,p.full_name,p.position,p.overall_rating,p.potential_rating,COALESCE(pc.fitness,100)::int AS fitness,COALESCE(pc.morale,60)::int AS morale,COALESCE(pc.sharpness,50)::int AS sharpness,pc.injury_type,pc.injury_until FROM players p LEFT JOIN player_conditions pc ON pc.player_id=p.id WHERE p.team_id=$1 AND p.is_active=TRUE ORDER BY p.overall_rating DESC,p.full_name LIMIT 40",[save.club_id]);
-    return NextResponse.json({season:SEASON,save,standings,fixtures,news,finances,squad},{headers:{"Cache-Control":"no-store"}});
+    const windowRows=await sql.query("SELECT id,window_name,opens_on,closes_on FROM transfer_windows WHERE season_id=$1 AND opens_on <= $2 AND closes_on >= $2 ORDER BY opens_on LIMIT 1",[SEASON,dateOnly(save.game_date)]);
+    const market=await sql.query("SELECT p.id,p.full_name,p.position,p.overall_rating,p.potential_rating,p.date_of_birth,t.id AS club_id,t.name AS club_name,t.reputation AS club_reputation, GREATEST(50000,p.overall_rating*p.overall_rating*450) AS asking_price FROM players p JOIN teams t ON t.id=p.team_id WHERE p.is_active=TRUE AND t.id<>$1 AND p.overall_rating>=58 AND t.id NOT LIKE 'jong-%' ORDER BY p.potential_rating DESC,p.overall_rating DESC LIMIT 60",[save.club_id]);
+    const offers=await sql.query("SELECT o.id,o.fee,o.wage_offer,o.status,o.submitted_on,o.expires_on,p.full_name,t.name AS buying_club FROM transfer_offers o JOIN players p ON p.id=o.player_id JOIN teams t ON t.id=o.buying_club_id WHERE o.save_id=$1 ORDER BY o.id DESC LIMIT 20",[saveId]);
+    return NextResponse.json({season:SEASON,save,standings,fixtures,news,finances,squad,transferWindow:windowRows[0]||null,market,offers},{headers:{"Cache-Control":"no-store"}});
   }catch(e){console.error("career GET",e);return fail("Carrière kon niet worden geladen.",500);}
 }
 export async function POST(request: Request) {
@@ -62,6 +65,18 @@ export async function POST(request: Request) {
   const rows=await sql.query("SELECT s.*,t.name AS club_name,t.division_id FROM career_saves s JOIN teams t ON t.id=s.club_id WHERE s.id=$1 LIMIT 1",[b.saveId]);
   if(!rows.length)return fail("Carrière niet gevonden.",404);const s:any=rows[0];
   if(b.action==="tactics"){await sql.query("UPDATE career_saves SET tactical_setup=$1::jsonb,updated_at=NOW() WHERE id=$2",[JSON.stringify(b.tactics||{}),b.saveId]);return NextResponse.json({ok:true});}
+  if(b.action==="offer_transfer"){
+   const playerId=String(b.playerId||""),fee=Math.max(0,Math.round(Number(b.fee)||0)),wage=Math.max(0,Math.round(Number(b.wage)||0));
+   const win=await sql.query("SELECT id FROM transfer_windows WHERE season_id=$1 AND opens_on <= $2 AND closes_on >= $2 LIMIT 1",[SEASON,dateOnly(s.game_date)]);
+   if(!win.length)return fail("De transfermarkt is gesloten. Je kunt alleen binnen een transferwindow onderhandelen.");
+   const player=await sql.query("SELECT p.id,p.team_id,p.full_name,p.overall_rating,t.name AS club_name FROM players p JOIN teams t ON t.id=p.team_id WHERE p.id=$1 AND p.is_active=TRUE AND p.team_id<>$2 LIMIT 1",[playerId,s.club_id]);
+   if(!player.length)return fail("Deze speler is niet beschikbaar voor een bod.",404);
+   if(fee>Number(s.transfer_budget))return fail("Dit bod ligt boven het beschikbare transferbudget.");
+   const p:any=player[0],offerId="offer-"+crypto.randomUUID(),expires=new Date(String(s.game_date)+"T12:00:00Z");expires.setUTCDate(expires.getUTCDate()+7);
+   await sql.query("INSERT INTO transfer_offers(id,save_id,player_id,buying_club_id,selling_club_id,fee,wage_offer,status,submitted_on,expires_on,notes) VALUES($1,$2,$3,$4,$5,$6,$7,'pending',$8,$9,$10)",[offerId,b.saveId,p.id,s.club_id,p.team_id,fee,wage,dateOnly(s.game_date),dateOnly(expires),"Bod uitgebracht op "+p.full_name]);
+   await sql.query("INSERT INTO career_news(save_id,news_date,category,headline,body) VALUES($1,$2,'transfer',$3,$4)",[b.saveId,dateOnly(s.game_date),"Transferbod uitgebracht","Een bod van €"+fee.toLocaleString("nl-NL")+" is uitgebracht op "+p.full_name+" ("+p.club_name+"). De club reageert na onderhandelingen."]);
+   return NextResponse.json({ok:true,offerId});
+  }
   if(b.action==="change_role"){
    if(!["manager","sporting_director","chairperson"].includes(b.role))return fail("Ongeldige rol.");
    await sql.query("UPDATE career_saves SET role=$1,updated_at=NOW() WHERE id=$2",[b.role,b.saveId]);return NextResponse.json({ok:true,role:b.role});
