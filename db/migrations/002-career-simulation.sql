@@ -142,3 +142,8 @@ CREATE INDEX IF NOT EXISTS idx_saves_club ON career_saves(club_id);
 CREATE INDEX IF NOT EXISTS idx_news_save_date ON career_news(save_id, news_date DESC);
 CREATE INDEX IF NOT EXISTS idx_finances_save_date ON club_finances(save_id, entry_date DESC);
 CREATE INDEX IF NOT EXISTS idx_offers_save_status ON transfer_offers(save_id, status);
+
+INSERT INTO transfer_windows(id,season_id,country_code,window_name,opens_on,closes_on) VALUES
+('ned-summer-2026','2026-2027','NED','Zomertransferwindow','2026-06-16','2026-09-01'),
+('ned-winter-2027','2026-2027','NED','Wintertransferwindow','2027-01-02','2027-02-02')
+ON CONFLICT (id) DO NOTHING;
