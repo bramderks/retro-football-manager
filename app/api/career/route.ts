@@ -105,10 +105,26 @@ export async function POST(request: Request) {
    await sql.query("UPDATE career_saves SET cash_balance=$1 WHERE id=$2",[balance,b.saveId]);
    const players=await sql.query("SELECT p.id,COALESCE(pc.fitness,100)::int AS fitness FROM players p LEFT JOIN player_conditions pc ON pc.player_id=p.id WHERE p.team_id=$1 AND p.is_active=TRUE",[s.club_id]);
    for(const p of players as any[]){
-    const injury=Math.random()<.0005,fit=Math.max(45,Math.min(100,Number(p.fitness)+(Math.random()<.35?2:1))),kind=injury?(Math.random()<.5?"Hamstringblessure":"Enkelblessure"):null;
+    const injury=Math.random()<(results.length>0?.003:.0002),fit=Math.max(40,Math.min(100,Number(p.fitness)+(results.length>0?-(8+Math.floor(Math.random()*10)):Math.random()<.45?1:0))),kind=injury?(Math.random()<.5?"Hamstringblessure":"Enkelblessure"):null;
     const until=injury?dateOnly(new Date(dayDate.getTime()+(7+Math.floor(Math.random()*35))*86400000)):null;
     await sql.query("INSERT INTO player_conditions(player_id,fitness,injury_type,injury_until) VALUES($1,$2,$3,$4) ON CONFLICT(player_id) DO UPDATE SET fitness=$2,injury_type=CASE WHEN $3::text IS NOT NULL THEN $3 WHEN player_conditions.injury_until < $5::date THEN NULL ELSE player_conditions.injury_type END,injury_until=CASE WHEN $3::text IS NOT NULL THEN $4 WHEN player_conditions.injury_until < $5::date THEN NULL ELSE player_conditions.injury_until END,updated_at=NOW()",[p.id,fit,kind,until,day]);
     if(injury)await sql.query("INSERT INTO career_news(save_id,news_date,category,headline,body) VALUES($1,$2,'injury','Blessure tijdens training','Een speler is geblesseerd geraakt; de medische staf beoordeelt de verwachte herstelduur.')",[b.saveId,day]);
+   }
+   const pending=await sql.query("SELECT o.*,p.full_name,p.overall_rating FROM transfer_offers o JOIN players p ON p.id=o.player_id WHERE o.save_id=$1 AND o.status='pending' AND o.submitted_on <= $2::date - INTERVAL '3 days'",[b.saveId,day]);
+   for(const offer of pending as any[]){
+    const asking=Math.max(50000,Number(offer.overall_rating)*Number(offer.overall_rating)*450);
+    const accepted=Number(offer.fee)>=asking*.92?Math.random()<.78:Number(offer.fee)>=asking*.7?Math.random()<.32:Math.random()<.08;
+    if(accepted&&Number(offer.fee)<=balance){
+     await sql.query("UPDATE transfer_offers SET status='completed' WHERE id=$1",[offer.id]);
+     await sql.query("UPDATE players SET team_id=$1 WHERE id=$2",[s.club_id,offer.player_id]);
+     await sql.query("INSERT INTO player_contracts(id,player_id,club_id,start_date,end_date,weekly_wage,squad_status) VALUES($1,$2,$3,$4,'2028-06-30',$5,'rotation')",["contract-"+crypto.randomUUID(),offer.player_id,s.club_id,day,offer.wage_offer]);
+     await sql.query("UPDATE career_saves SET cash_balance=cash_balance-$1,transfer_budget=GREATEST(0,transfer_budget-$1) WHERE id=$2",[offer.fee,b.saveId]);
+     await sql.query("INSERT INTO club_finances(save_id,entry_date,category,description,amount,balance_after) VALUES($1,$2,'transfer_out',$3,$4,$5)",[b.saveId,day,"Transfervergoeding "+offer.full_name,-Number(offer.fee),balance-Number(offer.fee)]);
+     await sql.query("INSERT INTO career_news(save_id,news_date,category,headline,body) VALUES($1,$2,'transfer',$3,$4)",[b.saveId,day,"Transfer afgerond: "+offer.full_name,offer.full_name+" komt naar "+s.club_name+" voor €"+Number(offer.fee).toLocaleString("nl-NL")+"."]);
+    }else if(new Date(offer.expires_on)<=new Date(day)){
+     await sql.query("UPDATE transfer_offers SET status='rejected' WHERE id=$1",[offer.id]);
+     await sql.query("INSERT INTO career_news(save_id,news_date,category,headline,body) VALUES($1,$2,'transfer',$3,$4)",[b.saveId,day,"Transferbod afgewezen",offer.full_name+" blijft voorlopig bij zijn huidige club."]);
+    }
    }
    return NextResponse.json({ok:true,gameDate:day,matchesPlayed:results.length,results,cashBalance:balance});
   }
