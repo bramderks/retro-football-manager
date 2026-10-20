@@ -82,3 +82,7 @@
 .finance-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid #203340;font-size:10px}.finance-row small{margin-top:4px;margin-bottom:0}.finance-row strong{font:11px 'DM Mono',monospace;white-space:nowrap}.finance-row .negative{color:#f39b9b}.finance-row .positive{color:#8be0b2}
 @media(max-width:900px){.career-grid{grid-template-columns:1fr}.career-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.career-screen{padding:14px}}
 @media(max-width:560px){.career-header{align-items:flex-start;flex-direction:column}.career-header h1{font-size:21px}.career-kpis>div{padding:12px}.career-kpis strong{font-size:16px}.new-career-card{padding:16px}.club-preview{flex-direction:column}}
+
+.transfer-budget{display:flex;flex-direction:column;gap:7px;color:var(--muted);font-size:10px}.transfer-budget strong{font:700 19px 'DM Mono',monospace;color:var(--text)}
+.transfer-table td{padding:9px 6px}.offer-button{background:#244d3d;color:#a9f1ce;border:1px solid #39765a;padding:6px 8px;font:700 10px Manrope;cursor:pointer}.offer-button:disabled{opacity:.35;cursor:not-allowed}
+@media(max-width:900px){.transfer-budget{align-self:flex-start}}
