@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 type Team = { name: string; city?: string; rating: number; reputation: number; keeper: number };
-type Tactics = { mentality: string; passing: string; pressing: boolean; offside: boolean; counter: boolean; hardTackles: boolean };
+type Tactics = { mentality: string; passing: string; pressing: boolean; offside: boolean; counter: boolean; hardTackles: boolean; formation: string };
 type EventLine = { minute: number | string; text: string; kind?: "goal" | "var" | "system" };
 type Scorer = { team: 0 | 1; minute: number; name: string; assist?: string; penalty?: boolean };
 type Player = { name: string; position: "keeper" | "defender" | "midfielder" | "forward" };
@@ -22,7 +22,7 @@ const NEC_PLAYERS: Player[] = [
 type Stats = { shots: number; onTarget: number; chances: number; corners: number };
 const AJAX: Team = { name: "Ajax", city: "Amsterdam", rating: 88, reputation: 92, keeper: 78 };
 const NEC: Team = { name: "NEC", city: "Nijmegen", rating: 70, reputation: 68, keeper: 74 };
-const initialTactics: Tactics = { mentality: "Normaal", passing: "Direct", pressing: false, offside: false, counter: false, hardTackles: false };
+const initialTactics: Tactics = { mentality: "Normaal", passing: "Direct", pressing: false, offside: false, counter: false, hardTackles: false, formation: "4-3-3" };
 const zeroStats = (): Stats => ({ shots: 0, onTarget: 0, chances: 0, corners: 0 });
 
 export default function Home() {
@@ -33,8 +33,9 @@ export default function Home() {
   const [feed, setFeed] = useState<EventLine[]>([
     { minute: "INFO", text: "Ajax – NEC · Eredivisie. Druk op Start om af te trappen.", kind: "system" },
   ]);
+  const [activeScreen, setActiveScreen] = useState("Wedstrijd");
   const [homeTactics, setHomeTactics] = useState<Tactics>({ ...initialTactics });
-  const [awayTactics, setAwayTactics] = useState<Tactics>({ mentality: "Verdedigend", passing: "Direct", pressing: false, offside: false, counter: true, hardTackles: false });
+  const [awayTactics, setAwayTactics] = useState<Tactics>({ mentality: "Verdedigend", passing: "Direct", pressing: false, offside: false, counter: true, hardTackles: false, formation: "4-4-2" });
   const [databaseTeams, setDatabaseTeams] = useState<DatabaseTeam[]>([]);
   const [databaseError, setDatabaseError] = useState(false);
   const [selectedHomeId, setSelectedHomeId] = useState("ajax");
@@ -77,7 +78,7 @@ export default function Home() {
     return team.rating + team.reputation * .12 + ({ Verdedigend: -7, Normaal: 0, Aanvallend: 7 }[t.mentality] ?? 0)
       + ({ Kort: 3, Direct: 2, Lang: -1 }[t.passing] ?? 0) + (t.pressing ? 3 : 0) + (t.counter ? 2 : 0);
   }
-  function pickPlayer(team: 0 | 1, positions?: Player["position"][]) {
+  function tacticPower(team: Team, t: Tactics) {\n    return Math.round(teamStrength(team, t) + (t.formation === "4-3-3" ? 2 : t.formation === "3-5-2" ? 1 : 0) + (t.pressing ? 1 : 0) + (t.offside ? 1 : 0));\n  }\n  function pickPlayer(team: 0 | 1, positions?: Player["position"][]) {
     const selectedId = team === 0 ? selectedHomeId : selectedAwayId;
     const dbTeam = databaseTeams.find(t => t.id === selectedId);
     const fallback = team === 0 ? AJAX_PLAYERS : NEC_PLAYERS;
@@ -155,8 +156,23 @@ export default function Home() {
 
   return <main className="app-shell">
     <header className="topbar"><div className="brand"><span className="brand-mark">RFM</span><div><div className="brand-title">RETRO FOOTBALL MANAGER</div><div className="brand-sub">THE CLASSIC GAME, REBUILT</div></div></div><div className="live-pill"><span className="pulse" /> WEB EDITION · v0.1</div></header>
-    <nav className="nav">{["Overzicht", "Wedstrijd", "Selectie", "Tactiek", "Competitie", "Transfers"].map((n, i) => <button key={n} className={i === 1 ? "nav-button active" : "nav-button"} onClick={() => i !== 1 && addEvent({ minute: "INFO", text: n + ": dit onderdeel wordt in een volgende ontwikkelstap gebouwd.", kind: "system" })}>{n}</button>)}</nav>
-    <div className="workspace">
+    <nav className="nav">{["Overzicht", "Wedstrijd", "Selectie", "Tactiek", "Competitie", "Transfers"].map(n => <button key={n} className={activeScreen === n ? "nav-button active" : "nav-button"} onClick={() => setActiveScreen(n)}>{n}</button>)}</nav>
+    {activeScreen === "Tactiek" ? <main className="tactics-screen">
+      <div className="tactics-screen-header"><div><div className="eyebrow">MANAGER / TACTIEK</div><h1>{homeTeam.name} · Tactische opstelling</h1><p>Pas de formatie en speelwijze van jouw team aan. De tegenstander wordt aangestuurd door de computer.</p></div><button className="back-match" onClick={() => setActiveScreen("Wedstrijd")}>Terug naar wedstrijd</button></div>
+      <div className="tactics-layout">
+        <section className="pitch-panel"><div className="pitch-heading"><span>OPSTELLING</span><label>Formatie<select value={homeTactics.formation} onChange={e => setHomeTactics({...homeTactics,formation:e.target.value})}><option>4-3-3</option><option>4-4-2</option><option>4-2-3-1</option><option>3-5-2</option><option>5-3-2</option></select></label></div>
+          <div className="football-pitch"><div className="pitch-line halfway"/><div className="pitch-circle"/><div className="penalty-box top"/><div className="penalty-box bottom"/><div className="goal-box top"/><div className="goal-box bottom"/>
+            {([{x:50,y:91,p:"GK"},{x:18,y:73,p:"LB"},{x:39,y:76,p:"CB"},{x:61,y:76,p:"CB"},{x:82,y:73,p:"RB"},{x:30,y:51,p:"CM"},{x:50,y:56,p:"CM"},{x:70,y:51,p:"CM"},{x:18,y:26,p:"LW"},{x:50,y:19,p:"ST"},{x:82,y:26,p:"RW"}]).map((p,i)=><div key={i} className="player-dot" style={{left:p.x+"%",top:p.y+"%"}}><span>{i+1}</span><small>{p.p}</small></div>)}
+          </div><div className="pitch-legend">11 posities · Positieschema is de basis voor de volgende stap: spelers aan posities koppelen.</div>
+        </section>
+        <section className="tactics-controls"><div className="eyebrow">SPEELWIJZE</div><div className="tactic-setting"><label htmlFor="mentality">Mentaliteit</label><select id="mentality" value={homeTactics.mentality} onChange={e=>setHomeTactics({...homeTactics,mentality:e.target.value})}><option>Verdedigend</option><option>Normaal</option><option>Aanvallend</option></select><p>Stelt in hoeveel risico het team neemt bij aanvallen.</p></div>
+          <div className="tactic-setting"><label htmlFor="passing">Passing</label><select id="passing" value={homeTactics.passing} onChange={e=>setHomeTactics({...homeTactics,passing:e.target.value})}><option>Kort</option><option>Direct</option><option>Lang</option></select><p>Bepaalt hoe het team de bal naar voren brengt.</p></div>
+          {([[ "pressing","Pressie","Meer balveroveringen, maar hogere belasting." ],["offside","Buitenspelval","De verdediging probeert aanvallers buitenspel te zetten."],["counter","Counter","Snelle omschakeling, vooral tegen aanvallende teams."],["hardTackles","Hard tackelen","Meer fysieke duels, met extra risico op kaarten."]] as const).map(([key,label,help])=><label className="tactic-check" key={key}><span><strong>{label}</strong><small>{help}</small></span><input type="checkbox" checked={homeTactics[key]} onChange={e=>setHomeTactics({...homeTactics,[key]:e.target.checked})}/></label>)}
+          <div className="power-card"><div><span>TACTISCHE KRACHT</span><strong>{tacticPower(homeTeam,homeTactics)}</strong></div><div className="power-meter"><i style={{width:Math.max(5,Math.min(100,tacticPower(homeTeam,homeTactics)))+"%"}}/></div><p>Dit is een relatieve enginescore op basis van teamsterkte, mentaliteit, passing, formatie en instructies. De engine gebruikt deze bij kansen en wedstrijdverloop.</p></div>
+          <div className="ai-note"><strong>Computertegenstander · {awayTeam.name}</strong><p>De AI kiest zelf mentaliteit, passing, pressie, buitenspelval, counter en tackles. Deze instellingen zijn niet door jou bedienbaar.</p></div>
+        </section>
+      </div>
+    </main> : <div className="workspace">
       <aside className="sidebar"><section className="side-section"><div className="eyebrow">WEDSTRIJDINFO</div><div className="fixture-title">{databaseHome?.division ?? "Eredivisie"}</div><div className="muted">Seizoen 2026/27 · Competitiewedstrijd</div><div className="stadium">◈ {homeTeam.city ?? "Amsterdam"} · 20:00</div></section>
       <section className="side-section"><div className="eyebrow">TEAMS UIT DATABASE</div><label>Thuis<select value={selectedHomeId} onChange={e => { const id = e.target.value; setSelectedHomeId(id); setMinute(0); setGoals([0,0]); setScorers([]); setStats([zeroStats(),zeroStats()]); setRunning(false); setFeed([{ minute: "INFO", text: (databaseTeams.find(t => t.id === id)?.name ?? "Thuisploeg") + " – " + awayTeam.name + ". Druk op Start om af te trappen.", kind: "system" }]); }}>{databaseTeams.filter(t => t.id !== selectedAwayId || t.id === selectedHomeId).filter(t => t.tier === 1).map(t => <option key={t.id} value={t.id}>{t.name}</option>)}{databaseTeams.filter(t => t.id !== selectedAwayId || t.id === selectedHomeId).filter(t => t.tier === 2).map(t => <option key={t.id} value={t.id}>{t.name}</option>)}</select></label><label>Uit<select value={selectedAwayId} onChange={e => { const id = e.target.value; setSelectedAwayId(id); setMinute(0); setGoals([0,0]); setScorers([]); setStats([zeroStats(),zeroStats()]); setRunning(false); setFeed([{ minute: "INFO", text: homeTeam.name + " – " + (databaseTeams.find(t => t.id === id)?.name ?? "Uitploeg") + ". Druk op Start om af te trappen.", kind: "system" }]); }}>{databaseTeams.filter(t => t.id !== selectedHomeId).map(t => <option key={t.id} value={t.id}>{t.name}</option>)}</select></label><div className="muted">{databaseTeams.length ? databaseTeams.length + " clubs geladen" : databaseError ? "Database niet bereikbaar" : "Database laden…"}</div></section><section className="side-section"><div className="eyebrow">WEDSTRIJDSTATISTIEKEN</div>{[["Balbezit", possession[0] + "% — " + possession[1] + "%"],["Schoten",stats[0].shots+" — "+stats[1].shots],["Op doel",stats[0].onTarget+" — "+stats[1].onTarget],["Kansen",stats[0].chances+" — "+stats[1].chances],["Corners",stats[0].corners+" — "+stats[1].corners]].map(([k,v]) => <div className="stat-row" key={k}><span>{k}</span><strong>{v}</strong></div>)}</section>
       <section className="side-section tactics"><div className="eyebrow">TACTIEK PER TEAM</div>
@@ -168,6 +184,6 @@ export default function Home() {
       <section className="match-area"><div className="match-meta"><span>● LIVE MATCH CENTRE</span><span>SEIZOEN 2026/27 · SPEELDAG 1</span></div><div className="scoreboard"><div className="team"><div className="crest ajax">{homeTeam.name.slice(0,1).toUpperCase()}</div><div><div className="team-name">{homeTeam.name.toUpperCase()}</div><div className="team-meta">{(homeTeam.city ?? "THUIS").toUpperCase()}</div></div></div><div className="score-block"><div className="score">{goals[0]} <span>:</span> {goals[1]}</div><div className="clock">{String(minute).padStart(2,"0")}:00 <span>·</span> {finished?"AFGELOPEN":running?"LIVE WEDSTRIJD":minute?"GEPAUZEERD":"WACHT OP AFTRAP"}</div><div className="scorers-under-score">{[0,1].map(side => <div className="scorer-side" key={side}>{scorers.filter(s => s.team === side).map((s,i) => <div className="scorer-line" key={i}>{s.penalty ? <span className="penalty-icon" title="Penaltydoelpunt">⚽🥅</span> : <span className="goal-icon">⚽</span>} {s.name} {s.assist ? <span className="assist">({s.assist})</span> : null} <span className="goal-minute">{s.minute}\u0027</span></div>)}</div>)}</div></div><div className="team away"><div><div className="team-name">{awayTeam.name.toUpperCase()}</div><div className="team-meta">{(awayTeam.city ?? "UIT").toUpperCase()}</div></div><div className="crest nec">{awayTeam.name.slice(0,1).toUpperCase()}</div></div></div>
       <div className="commentary-head"><div><span className="eyebrow">MATCH FEED</span><h2>Live wedstrijdcommentaar</h2></div><span className={running?"status-live":"status-idle"}>{running?"● LIVE":finished?"AFGELOPEN":"KLAAR"}</span></div><div className="commentary" key="commentary">{feed.map((line,i)=><div className={"event "+(line.kind||"")} key={i}><div className="event-minute">{line.minute}</div><div className="event-text">{line.text}</div></div>)}</div>
       <footer className="match-footer"><span>◉ ENGINE STATUS</span><span>LIVE MATCH ENGINE</span><span>VAR SYSTEM ACTIVE</span><span>{databaseError ? "DB OFFLINE" : databaseTeams.length ? "DB ONLINE · " + databaseTeams.reduce((n, t) => n + t.players.length, 0) + " SPELERS" : "DB VERBINDEN…"}</span></footer></section>
-    </div><div className="bottom-note">RETRO FOOTBALL MANAGER <span>Een doorlopende ontwikkeling vanuit GitHub · Wedstrijdopslag volgt</span></div>
+    </div>}<div className="bottom-note">RETRO FOOTBALL MANAGER <span>Een doorlopende ontwikkeling vanuit GitHub · Wedstrijdopslag volgt</span></div>
   </main>;
 }
