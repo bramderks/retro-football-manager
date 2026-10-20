@@ -6,8 +6,17 @@ type Team = { name: string; rating: number; reputation: number; keeper: number }
 type Tactics = { mentality: string; passing: string; pressing: boolean; offside: boolean; counter: boolean; hardTackles: boolean };
 type EventLine = { minute: number | string; text: string; kind?: "goal" | "var" | "system" };
 type Scorer = { team: 0 | 1; minute: number; name: string; assist?: string; penalty?: boolean };
-const AJAX_PLAYERS = ["Klaassen", "Brobbey", "Taylor", "Berghuis", "Godts", "Hato"];
-const NEC_PLAYERS = ["Ogawa", "Chery", "Proper", "Sano", "Hansen", "Dasa"];
+type Player = { name: string; position: "keeper" | "defender" | "midfielder" | "forward" };
+const AJAX_PLAYERS: Player[] = [
+  { name: "Pasveer", position: "keeper" }, { name: "Hato", position: "defender" }, { name: "Sutalo", position: "defender" }, { name: "Rensch", position: "defender" },
+  { name: "Taylor", position: "midfielder" }, { name: "Klaassen", position: "midfielder" }, { name: "Berghuis", position: "midfielder" },
+  { name: "Godts", position: "forward" }, { name: "Brobbey", position: "forward" }, { name: "Akpom", position: "forward" }
+];
+const NEC_PLAYERS: Player[] = [
+  { name: "Cillessen", position: "keeper" }, { name: "Dasa", position: "defender" }, { name: "Sandler", position: "defender" }, { name: "Nuytinck", position: "defender" },
+  { name: "Proper", position: "midfielder" }, { name: "Sano", position: "midfielder" }, { name: "Chery", position: "midfielder" },
+  { name: "Hansen", position: "forward" }, { name: "Ogawa", position: "forward" }, { name: "González", position: "forward" }
+];
 type Stats = { shots: number; onTarget: number; chances: number; corners: number };
 const AJAX: Team = { name: "Ajax", rating: 88, reputation: 92, keeper: 78 };
 const NEC: Team = { name: "NEC", rating: 70, reputation: 68, keeper: 74 };
@@ -20,9 +29,7 @@ export default function Home() {
   const [scorers, setScorers] = useState<Scorer[]>([]);
   const [stats, setStats] = useState<[Stats, Stats]>([zeroStats(), zeroStats()]);
   const [feed, setFeed] = useState<EventLine[]>([
-    { minute: "INFO", text: "Ajax ontvangt NEC in de Eredivisie.", kind: "system" },
-    { minute: "VAR", text: "VAR is actief bij doelpunten en strafschopmomenten.", kind: "var" },
-    { minute: "INFO", text: "Druk op Start om af te trappen.", kind: "system" },
+    { minute: "INFO", text: "Ajax – NEC · Eredivisie. Druk op Start om af te trappen.", kind: "system" },
   ]);
   const [tactics, setTactics] = useState<Tactics>(initialTactics);
   const [speed, setSpeed] = useState("Normaal");
@@ -44,19 +51,20 @@ export default function Home() {
   function addEvent(item: EventLine) { setFeed(prev => [...prev, item].slice(-300)); }
   function newMatch() {
     setRunning(false); setMinute(0); setGoals([0, 0]); setScorers([]); setStats([zeroStats(), zeroStats()]);
-    setFeed([
-      { minute: "INFO", text: "Ajax ontvangt NEC in de Eredivisie.", kind: "system" },
-      { minute: "VAR", text: "VAR is actief: doelpunten en strafschopmomenten kunnen worden herbeoordeeld.", kind: "var" },
-      { minute: "INFO", text: "Druk op Start om af te trappen.", kind: "system" },
-    ]);
+    setFeed([{ minute: "INFO", text: "Ajax – NEC · Eredivisie. Druk op Start om af te trappen.", kind: "system" }]);
   }
   function teamStrength(team: Team, t: Tactics) {
     return team.rating + team.reputation * .12 + ({ Verdedigend: -7, Normaal: 0, Aanvallend: 7 }[t.mentality] ?? 0)
       + ({ Kort: 3, Direct: 2, Lang: -1 }[t.passing] ?? 0) + (t.pressing ? 3 : 0) + (t.counter ? 2 : 0);
   }
+  function pickPlayer(team: 0 | 1, positions?: Player["position"][]) {
+    const squad = team === 0 ? AJAX_PLAYERS : NEC_PLAYERS;
+    const pool = positions?.length ? squad.filter(p => positions.includes(p.position)) : squad.filter(p => p.position !== "keeper");
+    return pool[Math.floor(Math.random() * pool.length)] ?? squad[0];
+  }
   function playMinute() {
     const m = minute + 1; setMinute(m);
-    if (m === 1) { addEvent({ minute: "1'", text: "Aftrap! Ajax begint met balbezit en zoekt ruimte tussen de linies.", kind: "system" }); return; }
+    if (m === 1) { const player = pickPlayer(0, ["midfielder"]); addEvent({ minute: "1'", text: "Aftrap! " + player.name + " tikt de bal terug en Ajax begint rustig aan de opbouw.", kind: "system" }); return; }
     const homeRating = teamStrength(AJAX, tactics);
     const awayTactics: Tactics = { mentality: Math.random() < .35 ? "Verdedigend" : "Normaal", passing: "Direct", pressing: false, offside: false, counter: Math.random() < .45, hardTackles: false };
     const awayRating = teamStrength(NEC, awayTactics);
@@ -67,13 +75,20 @@ export default function Home() {
     const t = home ? tactics : awayTactics;
     const chanceQuality = Math.max(.08, Math.min(.78, .29 + ((home ? homeRating : awayRating) - (home ? awayRating : homeRating)) * .012 + (t.counter && t.mentality === "Verdedigend" ? .1 : 0)));
     const stamp = m + "'"; const r = Math.random();
-    if (r < .22) addEvent({ minute: stamp, text: team + (t.passing === "Kort" ? " combineert met korte passes en zoekt een opening." : t.passing === "Lang" ? " verstuurt een lange bal achter de verdediging." : " bouwt direct op richting het strafschopgebied.") });
-    else if (r < .38 && t.pressing && home) addEvent({ minute: stamp, text: "Ajax zet hoog druk, verovert de bal en houdt NEC vast op eigen helft." });
+    if (r < .22) {
+      const passer = pickPlayer(ownIndex as 0 | 1, ["defender", "midfielder"]);
+      const receiver = pickPlayer(ownIndex as 0 | 1, ["midfielder", "forward"]);
+      addEvent({ minute: stamp, text: t.passing === "Kort" ? passer.name + " combineert met " + receiver.name + " en zoekt een opening." : t.passing === "Lang" ? passer.name + " verstuurt een lange bal richting " + receiver.name + " achter de verdediging." : passer.name + " speelt direct vooruit op " + receiver.name + "." });
+    }
+    else if (r < .38 && t.pressing && home) { const tackler = pickPlayer(0, ["midfielder", "defender"]); addEvent({ minute: stamp, text: "Ajax voert de druk op: " + tackler.name + " jaagt door, verovert de bal en zet NEC vast op eigen helft." }); }
     else if (r < .60 || r < .76) {
-      addEvent({ minute: stamp, text: team + (r < .60 ? " komt door over de flank en geeft voor." : " speelt een steekpass door het centrum!") });
+      const creator = pickPlayer(ownIndex as 0 | 1, ["midfielder", "forward"]);
+      const runner = pickPlayer(ownIndex as 0 | 1, ["forward", "midfielder"]);
+      addEvent({ minute: stamp, text: r < .60 ? creator.name + " versnelt over de flank en geeft voor op " + runner.name + "." : creator.name + " steekt de bal prachtig door het centrum richting " + runner.name + "!" });
       if (Math.random() < chanceQuality * (t.mentality === "Aanvallend" ? 1.18 : 1)) {
         own.chances++; own.shots++;
-        addEvent({ minute: "KANS", text: team + " krijgt een schietkans in het strafschopgebied!" });
+        const shooter = pickPlayer(ownIndex as 0 | 1, ["forward", "midfielder"]);
+        addEvent({ minute: "KANS", text: shooter.name + " krijgt ruimte in het strafschopgebied en haalt uit!" });
         if (Math.random() < .66) {
           own.onTarget++;
           const keeper = home ? NEC.keeper : AJAX.keeper;
@@ -81,25 +96,27 @@ export default function Home() {
           if (Math.random() < Math.max(.035, Math.min(.72, .3 + (scorerQuality - keeper) * .012))) {
             addEvent({ minute: "VAR", text: "VAR controleert het doelpunt op buitenspel of een overtreding.", kind: "var" });
             if (Math.random() < .10) addEvent({ minute: "VAR", text: "Doelpunt afgekeurd na VAR-check: buitenspel in de aanloop.", kind: "var" });
-            else { setGoals(prev => home ? [prev[0] + 1, prev[1]] : [prev[0], prev[1] + 1]); const scorer = (home ? AJAX_PLAYERS : NEC_PLAYERS)[Math.floor(Math.random() * (home ? AJAX_PLAYERS : NEC_PLAYERS).length)]; const assist = Math.random() < .72 ? (home ? AJAX_PLAYERS : NEC_PLAYERS).filter(p => p !== scorer)[Math.floor(Math.random() * ((home ? AJAX_PLAYERS : NEC_PLAYERS).length - 1))] : undefined; setScorers(prev => [...prev, { team: ownIndex as 0 | 1, minute: m, name: scorer, assist }]); addEvent({ minute: "GOAL", text: "DOELPUNT voor " + team + "! " + scorer + (assist ? " na een assist van " + assist : "") + ".", kind: "goal" }); }
+            else { const scorer = pickPlayer(ownIndex as 0 | 1, ["forward", "midfielder"]); const assist = Math.random() < .72 ? pickPlayer(ownIndex as 0 | 1, ["midfielder", "forward", "defender"]).name : undefined; setGoals(prev => home ? [prev[0] + 1, prev[1]] : [prev[0], prev[1] + 1]); setScorers(prev => [...prev, { team: ownIndex as 0 | 1, minute: m, name: scorer.name, assist }]); addEvent({ minute: "GOAL", text: scorer.name + " scoort een prachtige goal voor " + team + (assist ? ", op aangeven van " + assist : "") + "! De bal vliegt onhoudbaar in het doel.", kind: "goal" }); }
           } else addEvent({ minute: "SAVE", text: "Uitstekende redding van de doelman van " + other + "." });
         } else addEvent({ minute: "SCHOT", text: "De poging vliegt net over of naast." });
       } else if (Math.random() < .35) { own.corners++; addEvent({ minute: "COR", text: "De verdediging werkt de bal weg: corner voor " + team + "." }); }
       else addEvent({ minute: "INFO", text: other + " verdedigt compact en ruimt op." });
-    } else if (r < .84) { own.corners++; addEvent({ minute: stamp, text: "Corner voor " + team + ". De bal wordt gevaarlijk voor het doel gebracht." }); }
+    } else if (r < .84) { own.corners++; const taker = pickPlayer(ownIndex as 0 | 1, ["midfielder", "forward"]); const target = pickPlayer(ownIndex as 0 | 1, ["forward", "defender"]); addEvent({ minute: stamp, text: "Corner voor " + team + ". " + taker.name + " slingert de bal voor het doel, waar " + target.name + " klaarstaat." }); }
     else if (r < .93) {
-      addEvent({ minute: stamp, text: "Overtreding van " + other + ". De scheidsrechter fluit." });
-      if (t.hardTackles && Math.random() < .22) addEvent({ minute: "KAART", text: "Stevige tackle! De scheidsrechter toont geel aan " + other + "." });
+      const defender = pickPlayer((home ? 1 : 0) as 0 | 1, ["defender", "midfielder"]);
+      const attacker = pickPlayer(ownIndex as 0 | 1, ["forward", "midfielder"]);
+      addEvent({ minute: stamp, text: defender.name + " komt te laat in op " + attacker.name + ". De scheidsrechter fluit voor een overtreding." });
+      if (t.hardTackles && Math.random() < .22) addEvent({ minute: "KAART", text: "Stevige tackle van " + defender.name + "! De scheidsrechter toont hem geel." });
       if (Math.random() < .10) {
         addEvent({ minute: "VAR", text: "VAR bekijkt een mogelijk strafschopmoment voor " + team + ".", kind: "var" });
         if (Math.random() < .45) {
           addEvent({ minute: "VAR", text: "De VAR grijpt in: de scheidsrechter kent alsnog een strafschop toe!", kind: "var" });
           own.chances++;
-          if (Math.random() < (home ? .76 : .68)) { setGoals(prev => home ? [prev[0] + 1, prev[1]] : [prev[0], prev[1] + 1]); const scorer = (home ? AJAX_PLAYERS : NEC_PLAYERS)[Math.floor(Math.random() * (home ? AJAX_PLAYERS : NEC_PLAYERS).length)]; setScorers(prev => [...prev, { team: ownIndex as 0 | 1, minute: m, name: scorer, penalty: true }]); addEvent({ minute: "PEN", text: "DOELPUNT! " + team + " benut de strafschop. " + scorer + " scoort vanaf elf meter.", kind: "goal" }); }
+          if (Math.random() < (home ? .76 : .68)) { const scorer = pickPlayer(ownIndex as 0 | 1, ["forward", "midfielder"]); setGoals(prev => home ? [prev[0] + 1, prev[1]] : [prev[0], prev[1] + 1]); setScorers(prev => [...prev, { team: ownIndex as 0 | 1, minute: m, name: scorer.name, penalty: true }]); addEvent({ minute: "PEN", text: scorer.name + blijft koel vanaf elf meter en schiet de penalty binnen voor " + team + "!", kind: "goal" }); }
           else addEvent({ minute: "PEN", text: "GEMISTE STRAFSCHOP! " + team + " mist vanaf elf meter; de keeper van " + other + " redt de penalty.", kind: "var" });
         } else addEvent({ minute: "VAR", text: "De scheidsrechter draait zijn beslissing terug na de VAR-check: geen penalty.", kind: "var" });
       }
-    } else addEvent({ minute: stamp, text: "Wat een mogelijkheid voor " + team + ", maar de afronding ontbreekt." });
+    } else { const player = pickPlayer(ownIndex as 0 | 1, ["forward", "midfielder"]); addEvent({ minute: stamp, text: player.name + " krijgt een grote mogelijkheid voor " + team + ", maar schiet naast het doel." }); }
     setStats(prev => ownIndex === 0 ? [own, prev[1]] : [prev[0], own]);
     if (m === 45) addEvent({ minute: "45'", text: "Rust! De spelers zoeken de kleedkamer op.", kind: "system" });
     if (m >= 90) { setRunning(false); addEvent({ minute: "90'", text: "Afgefloten! De wedstrijd is afgelopen.", kind: "goal" }); }
