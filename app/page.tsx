@@ -97,10 +97,10 @@ export default function Home() {
             addEvent({ minute: "VAR", text: "VAR controleert het doelpunt op buitenspel of een overtreding.", kind: "var" });
             if (Math.random() < .10) addEvent({ minute: "VAR", text: "Doelpunt afgekeurd na VAR-check: buitenspel in de aanloop.", kind: "var" });
             else { const scorer = pickPlayer(ownIndex as 0 | 1, ["forward", "midfielder"]); const assist = Math.random() < .72 ? pickPlayer(ownIndex as 0 | 1, ["midfielder", "forward", "defender"]).name : undefined; setGoals(prev => home ? [prev[0] + 1, prev[1]] : [prev[0], prev[1] + 1]); setScorers(prev => [...prev, { team: ownIndex as 0 | 1, minute: m, name: scorer.name, assist }]); addEvent({ minute: "GOAL", text: scorer.name + " scoort een prachtige goal voor " + team + (assist ? ", op aangeven van " + assist : "") + "! De bal vliegt onhoudbaar in het doel.", kind: "goal" }); }
-          } else addEvent({ minute: "SAVE", text: "Uitstekende redding van de doelman van " + other + "." });
-        } else addEvent({ minute: "SCHOT", text: "De poging vliegt net over of naast." });
-      } else if (Math.random() < .35) { own.corners++; addEvent({ minute: "COR", text: "De verdediging werkt de bal weg: corner voor " + team + "." }); }
-      else addEvent({ minute: "INFO", text: other + " verdedigt compact en ruimt op." });
+          } else { const keeper = pickPlayer((home ? 1 : 0) as 0 | 1, ["keeper"]); addEvent({ minute: "SAVE", text: keeper.name + redt knap op de inzet van " + shooter.name + " en houdt " + other + " op de been." }); }
+        } else addEvent({ minute: "SCHOT", text: shooter.name + " haalt uit, maar de bal vliegt net over of naast." });
+      } else if (Math.random() < .35) { own.corners++; const defender = pickPlayer((home ? 1 : 0) as 0 | 1, ["defender"]); addEvent({ minute: "COR", text: defender.name + werkt de voorzet weg. Corner voor " + team + "." }); }
+      else const defender = pickPlayer((home ? 1 : 0) as 0 | 1, ["defender"]); addEvent({ minute: "INFO", text: defender.name + onderschept de aanval en ruimt de bal op voor " + other + "." });
     } else if (r < .84) { own.corners++; const taker = pickPlayer(ownIndex as 0 | 1, ["midfielder", "forward"]); const target = pickPlayer(ownIndex as 0 | 1, ["forward", "defender"]); addEvent({ minute: stamp, text: "Corner voor " + team + ". " + taker.name + " slingert de bal voor het doel, waar " + target.name + " klaarstaat." }); }
     else if (r < .93) {
       const defender = pickPlayer((home ? 1 : 0) as 0 | 1, ["defender", "midfielder"]);
@@ -112,8 +112,8 @@ export default function Home() {
         if (Math.random() < .45) {
           addEvent({ minute: "VAR", text: "De VAR grijpt in: de scheidsrechter kent alsnog een strafschop toe!", kind: "var" });
           own.chances++;
-          if (Math.random() < (home ? .76 : .68)) { const scorer = pickPlayer(ownIndex as 0 | 1, ["forward", "midfielder"]); setGoals(prev => home ? [prev[0] + 1, prev[1]] : [prev[0], prev[1] + 1]); setScorers(prev => [...prev, { team: ownIndex as 0 | 1, minute: m, name: scorer.name, penalty: true }]); addEvent({ minute: "PEN", text: scorer.name + blijft koel vanaf elf meter en schiet de penalty binnen voor " + team + "!", kind: "goal" }); }
-          else addEvent({ minute: "PEN", text: "GEMISTE STRAFSCHOP! " + team + " mist vanaf elf meter; de keeper van " + other + " redt de penalty.", kind: "var" });
+          if (Math.random() < (home ? .76 : .68)) { const scorer = pickPlayer(ownIndex as 0 | 1, ["forward", "midfielder"]); setGoals(prev => home ? [prev[0] + 1, prev[1]] : [prev[0], prev[1] + 1]); setScorers(prev => [...prev, { team: ownIndex as 0 | 1, minute: m, name: scorer.name, penalty: true }]); addEvent({ minute: "PEN", text: scorer.name + " blijft koel vanaf elf meter en schiet de penalty binnen voor " + team + "!", kind: "goal" }); }
+          else { const keeper = pickPlayer((home ? 1 : 0) as 0 | 1, ["keeper"]); const taker = pickPlayer(ownIndex as 0 | 1, ["forward", "midfielder"]); addEvent({ minute: "PEN", text: "GEMISTE STRAFSCHOP! " + taker.name + " ziet zijn penalty gekeerd door " + keeper.name + " van " + other + ".", kind: "var" }); }
         } else addEvent({ minute: "VAR", text: "De scheidsrechter draait zijn beslissing terug na de VAR-check: geen penalty.", kind: "var" });
       }
     } else { const player = pickPlayer(ownIndex as 0 | 1, ["forward", "midfielder"]); addEvent({ minute: stamp, text: player.name + " krijgt een grote mogelijkheid voor " + team + ", maar schiet naast het doel." }); }
