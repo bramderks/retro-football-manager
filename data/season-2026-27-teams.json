@@ -1,0 +1,315 @@
+{
+  "season": "2026-2027",
+  "dataStatus": "clubs-verified; player rosters require official roster import before production use",
+  "sourceUrls": [
+    "https://www.knvb.nl/node/71918",
+    "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1",
+    "https://www.transfermarkt.nl/Keuken-Kampioen-Divisie/startseite/wettbewerb/NL2"
+  ],
+  "teams": [
+    {
+      "id": "ado-den-haag",
+      "season": "2026-2027",
+      "division": "eredivisie",
+      "name": "ADO Den Haag",
+      "city": "Den Haag",
+      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+    },
+    {
+      "id": "ajax",
+      "season": "2026-2027",
+      "division": "eredivisie",
+      "name": "Ajax",
+      "city": "Amsterdam",
+      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+    },
+    {
+      "id": "az",
+      "season": "2026-2027",
+      "division": "eredivisie",
+      "name": "AZ",
+      "city": "Alkmaar",
+      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+    },
+    {
+      "id": "excelsior-rotterdam",
+      "season": "2026-2027",
+      "division": "eredivisie",
+      "name": "Excelsior Rotterdam",
+      "city": "Rotterdam",
+      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+    },
+    {
+      "id": "fc-groningen",
+      "season": "2026-2027",
+      "division": "eredivisie",
+      "name": "FC Groningen",
+      "city": "Groningen",
+      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+    },
+    {
+      "id": "fc-twente",
+      "season": "2026-2027",
+      "division": "eredivisie",
+      "name": "FC Twente",
+      "city": "Enschede",
+      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+    },
+    {
+      "id": "fc-utrecht",
+      "season": "2026-2027",
+      "division": "eredivisie",
+      "name": "FC Utrecht",
+      "city": "Utrecht",
+      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+    },
+    {
+      "id": "feyenoord",
+      "season": "2026-2027",
+      "division": "eredivisie",
+      "name": "Feyenoord",
+      "city": "Rotterdam",
+      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+    },
+    {
+      "id": "fortuna-sittard",
+      "season": "2026-2027",
+      "division": "eredivisie",
+      "name": "Fortuna Sittard",
+      "city": "Sittard",
+      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+    },
+    {
+      "id": "go-ahead-eagles",
+      "season": "2026-2027",
+      "division": "eredivisie",
+      "name": "Go Ahead Eagles",
+      "city": "Deventer",
+      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+    },
+    {
+      "id": "nec",
+      "season": "2026-2027",
+      "division": "eredivisie",
+      "name": "NEC",
+      "city": "Nijmegen",
+      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+    },
+    {
+      "id": "pec-zwolle",
+      "season": "2026-2027",
+      "division": "eredivisie",
+      "name": "PEC Zwolle",
+      "city": "Zwolle",
+      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+    },
+    {
+      "id": "psv",
+      "season": "2026-2027",
+      "division": "eredivisie",
+      "name": "PSV",
+      "city": "Eindhoven",
+      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+    },
+    {
+      "id": "sc-cambuur",
+      "season": "2026-2027",
+      "division": "eredivisie",
+      "name": "SC Cambuur",
+      "city": "Leeuwarden",
+      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+    },
+    {
+      "id": "sc-heerenveen",
+      "season": "2026-2027",
+      "division": "eredivisie",
+      "name": "sc Heerenveen",
+      "city": "Heerenveen",
+      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+    },
+    {
+      "id": "sparta-rotterdam",
+      "season": "2026-2027",
+      "division": "eredivisie",
+      "name": "Sparta Rotterdam",
+      "city": "Rotterdam",
+      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+    },
+    {
+      "id": "telstar",
+      "season": "2026-2027",
+      "division": "eredivisie",
+      "name": "Telstar",
+      "city": "Velsen-Zuid",
+      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+    },
+    {
+      "id": "willem-ii",
+      "season": "2026-2027",
+      "division": "eredivisie",
+      "name": "Willem II",
+      "city": "Tilburg",
+      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+    },
+    {
+      "id": "almere-city-fc",
+      "season": "2026-2027",
+      "division": "keuken-kampioen-divisie",
+      "name": "Almere City FC",
+      "city": "Almere",
+      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+    },
+    {
+      "id": "de-graafschap",
+      "season": "2026-2027",
+      "division": "keuken-kampioen-divisie",
+      "name": "De Graafschap",
+      "city": "Doetinchem",
+      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+    },
+    {
+      "id": "fc-den-bosch",
+      "season": "2026-2027",
+      "division": "keuken-kampioen-divisie",
+      "name": "FC Den Bosch",
+      "city": "'s-Hertogenbosch",
+      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+    },
+    {
+      "id": "fc-dordrecht",
+      "season": "2026-2027",
+      "division": "keuken-kampioen-divisie",
+      "name": "FC Dordrecht",
+      "city": "Dordrecht",
+      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+    },
+    {
+      "id": "fc-eindhoven",
+      "season": "2026-2027",
+      "division": "keuken-kampioen-divisie",
+      "name": "FC Eindhoven",
+      "city": "Eindhoven",
+      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+    },
+    {
+      "id": "fc-emmen",
+      "season": "2026-2027",
+      "division": "keuken-kampioen-divisie",
+      "name": "FC Emmen",
+      "city": "Emmen",
+      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+    },
+    {
+      "id": "fc-volendam",
+      "season": "2026-2027",
+      "division": "keuken-kampioen-divisie",
+      "name": "FC Volendam",
+      "city": "Volendam",
+      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+    },
+    {
+      "id": "helmond-sport",
+      "season": "2026-2027",
+      "division": "keuken-kampioen-divisie",
+      "name": "Helmond Sport",
+      "city": "Helmond",
+      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+    },
+    {
+      "id": "heracles-almelo",
+      "season": "2026-2027",
+      "division": "keuken-kampioen-divisie",
+      "name": "Heracles Almelo",
+      "city": "Almelo",
+      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+    },
+    {
+      "id": "jong-ajax",
+      "season": "2026-2027",
+      "division": "keuken-kampioen-divisie",
+      "name": "Jong Ajax",
+      "city": "Amsterdam",
+      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+    },
+    {
+      "id": "jong-az",
+      "season": "2026-2027",
+      "division": "keuken-kampioen-divisie",
+      "name": "Jong AZ",
+      "city": "Wijdewormer",
+      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+    },
+    {
+      "id": "jong-fc-utrecht",
+      "season": "2026-2027",
+      "division": "keuken-kampioen-divisie",
+      "name": "Jong FC Utrecht",
+      "city": "Utrecht",
+      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+    },
+    {
+      "id": "jong-psv",
+      "season": "2026-2027",
+      "division": "keuken-kampioen-divisie",
+      "name": "Jong PSV",
+      "city": "Eindhoven",
+      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+    },
+    {
+      "id": "mvv-maastricht",
+      "season": "2026-2027",
+      "division": "keuken-kampioen-divisie",
+      "name": "MVV Maastricht",
+      "city": "Maastricht",
+      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+    },
+    {
+      "id": "nac-breda",
+      "season": "2026-2027",
+      "division": "keuken-kampioen-divisie",
+      "name": "NAC Breda",
+      "city": "Breda",
+      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+    },
+    {
+      "id": "rkc-waalwijk",
+      "season": "2026-2027",
+      "division": "keuken-kampioen-divisie",
+      "name": "RKC Waalwijk",
+      "city": "Waalwijk",
+      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+    },
+    {
+      "id": "roda-jc-kerkrade",
+      "season": "2026-2027",
+      "division": "keuken-kampioen-divisie",
+      "name": "Roda JC Kerkrade",
+      "city": "Kerkrade",
+      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+    },
+    {
+      "id": "top-oss",
+      "season": "2026-2027",
+      "division": "keuken-kampioen-divisie",
+      "name": "TOP Oss",
+      "city": "Oss",
+      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+    },
+    {
+      "id": "vitesse",
+      "season": "2026-2027",
+      "division": "keuken-kampioen-divisie",
+      "name": "Vitesse",
+      "city": "Arnhem",
+      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+    },
+    {
+      "id": "vvv-venlo",
+      "season": "2026-2027",
+      "division": "keuken-kampioen-divisie",
+      "name": "VVV-Venlo",
+      "city": "Venlo",
+      "source": "https://www.transfermarkt.nl/eredivisie/startseite/wettbewerb/NL1"
+    }
+  ]
+}
