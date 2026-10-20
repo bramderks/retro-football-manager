@@ -38,6 +38,13 @@ export default function Home() {
   const [awayTactics, setAwayTactics] = useState<Tactics>({ mentality: "Verdedigend", passing: "Direct", pressing: false, offside: false, counter: true, hardTackles: false, formation: "4-4-2" });
   const [databaseTeams, setDatabaseTeams] = useState<DatabaseTeam[]>([]);
   const [databaseError, setDatabaseError] = useState(false);
+  const [careerClubs, setCareerClubs] = useState<any[]>([]);
+  const [careerSaveId, setCareerSaveId] = useState("");
+  const [careerData, setCareerData] = useState<any>(null);
+  const [managerName, setManagerName] = useState("Nieuwe manager");
+  const [careerClubId, setCareerClubId] = useState("ajax");
+  const [careerBusy, setCareerBusy] = useState(false);
+  const [careerError, setCareerError] = useState("");
   const [selectedHomeId, setSelectedHomeId] = useState("ajax");
   const [selectedAwayId, setSelectedAwayId] = useState("nec");
   const databaseHome = databaseTeams.find(t => t.id === selectedHomeId);
@@ -62,6 +69,28 @@ export default function Home() {
     return () => { cancelled = true; };
   }, []);
 
+  useEffect(() => {
+    fetch("/api/career", { cache: "no-store" }).then(r => r.json()).then(d => { if (Array.isArray(d.clubs)) { setCareerClubs(d.clubs); if (d.clubs.length && !d.clubs.some((x:any) => x.id === careerClubId)) setCareerClubId(d.clubs[0].id); } }).catch(() => setCareerError("Competitiedatabase kon niet worden geladen."));
+    const saved = window.localStorage.getItem("rfm-career-save"); if (saved) setCareerSaveId(saved);
+  }, []);
+  useEffect(() => {
+    if (!careerSaveId) return;
+    let cancelled = false;
+    fetch("/api/career?saveId=" + encodeURIComponent(careerSaveId), { cache: "no-store" }).then(r => r.json()).then(d => { if (!cancelled && d.save) { setCareerData(d); setSelectedHomeId(d.save.club_id); setHomeTactics({ ...initialTactics, ...(d.save.tactical_setup || {}) }); } }).catch(() => { if (!cancelled) setCareerError("Carrière kon niet worden geladen."); });
+    return () => { cancelled = true; };
+  }, [careerSaveId]);
+  async function createCareer() {
+    setCareerBusy(true); setCareerError("");
+    try { const r = await fetch("/api/career", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "create", clubId: careerClubId, managerName }) }); const d = await r.json(); if (!r.ok) throw new Error(d.error || "Carrière starten mislukt."); window.localStorage.setItem("rfm-career-save", d.saveId); setCareerSaveId(d.saveId); setSelectedHomeId(d.clubId); setActiveScreen("Overzicht"); } catch (e) { setCareerError(e instanceof Error ? e.message : "Carrière starten mislukt."); } finally { setCareerBusy(false); }
+  }
+  async function advanceCareerDay() {
+    if (!careerSaveId || careerBusy) return; setCareerBusy(true); setCareerError("");
+    try { const r = await fetch("/api/career", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "advance_day", saveId: careerSaveId }) }); const d = await r.json(); if (!r.ok) throw new Error(d.error || "Dag doorspelen mislukt."); const refreshed = await fetch("/api/career?saveId=" + encodeURIComponent(careerSaveId), { cache: "no-store" }).then(x => x.json()); setCareerData(refreshed); } catch (e) { setCareerError(e instanceof Error ? e.message : "Dag doorspelen mislukt."); } finally { setCareerBusy(false); }
+  }
+  async function saveCareerTactics(tactics: Tactics) {
+    setHomeTactics(tactics); if (!careerSaveId) return;
+    fetch("/api/career", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "tactics", saveId: careerSaveId, tactics }) }).catch(() => setCareerError("Tactiek kon niet worden opgeslagen."));
+  }
   useEffect(() => {
     if (!running || finished) return;
     const delays: Record<string, number> = { Langzaam: 1500, Normaal: 900, Snel: 350, Ultra: 175 };
@@ -160,17 +189,27 @@ export default function Home() {
   return <main className="app-shell">
     <header className="topbar"><div className="brand"><span className="brand-mark">RFM</span><div><div className="brand-title">RETRO FOOTBALL MANAGER</div><div className="brand-sub">THE CLASSIC GAME, REBUILT</div></div></div><div className="live-pill"><span className="pulse" /> WEB EDITION · v0.1</div></header>
     <nav className="nav">{["Overzicht", "Wedstrijd", "Selectie", "Tactiek", "Competitie", "Transfers"].map(n => <button key={n} className={activeScreen === n ? "nav-button active" : "nav-button"} onClick={() => setActiveScreen(n)}>{n}</button>)}</nav>
-    {activeScreen === "Tactiek" ? <main className="tactics-screen">
+    {activeScreen === "Tactiek" ? {activeScreen === "Overzicht" ? <main className="career-screen">
+      <div className="career-header"><div><div className="eyebrow">CLUBMANAGEMENT / SEIZOEN 2026/27</div><h1>{careerData ? careerData.save.club_name : "Begin jouw voetbalcarrière"}</h1><p>{careerData ? careerData.save.manager_name + " · " + careerData.save.division + " · " + new Date(careerData.save.game_date).toLocaleDateString("nl-NL") : "Kies een club, word manager en bouw aan jouw eigen voetbalgeschiedenis."}</p></div>{careerData ? <button className="primary-action" disabled={careerBusy} onClick={advanceCareerDay}>{careerBusy ? "Even wachten…" : "▶ Volgende dag"}</button> : null}</div>
+      {careerError ? <div className="career-error">{careerError}</div> : null}
+      {!careerData ? <section className="new-career-card"><div className="eyebrow">NIEUWE CARRIÈRE</div><label>Naam manager<input value={managerName} onChange={e=>setManagerName(e.target.value)} placeholder="Jouw naam"/></label><label>Kies jouw club<select value={careerClubId} onChange={e=>setCareerClubId(e.target.value)}>{careerClubs.map((club:any)=><option key={club.id} value={club.id}>{club.name} · {club.division}</option>)}</select></label><div className="club-preview">{careerClubs.find((x:any)=>x.id===careerClubId)?.name || "Club"} <span>Reputatie {careerClubs.find((x:any)=>x.id===careerClubId)?.reputation ?? "—"} · Teamkracht {careerClubs.find((x:any)=>x.id===careerClubId)?.team_strength ?? "—"}</span></div><button className="primary-action" disabled={careerBusy||!careerClubs.length} onClick={createCareer}>{careerBusy ? "Carrière aanmaken…" : "Start carrière"}</button></section> :
+      <>
+      <div className="career-kpis"><div><small>CLUBKAS</small><strong>€{Number(careerData.save.cash_balance).toLocaleString("nl-NL")}</strong></div><div><small>TRANSFERBUDGET</small><strong>€{Number(careerData.save.transfer_budget).toLocaleString("nl-NL")}</strong></div><div><small>BESTUURVERTROUWEN</small><strong>{careerData.save.board_confidence}%</strong></div><div><small>SELECTIEMORAAL</small><strong>{careerData.save.club_morale}%</strong></div></div>
+      <div className="career-grid"><section className="career-panel"><div className="eyebrow">COMPETITIESTAND</div><div className="career-table-wrap"><table className="career-table"><thead><tr><th>#</th><th>Club</th><th>G</th><th>DS</th><th>P</th></tr></thead><tbody>{careerData.standings.map((team:any,i:number)=><tr key={team.id} className={team.id===careerData.save.club_id?"my-club":""}><td>{i+1}</td><td>{team.name}</td><td>{team.played}</td><td>{team.gf-team.ga}</td><td><strong>{team.points}</strong></td></tr>)}</tbody></table></div></section>
+      <section className="career-panel"><div className="eyebrow">KALENDER & VOLGENDE WEDSTRIJDEN</div>{careerData.fixtures.slice(0,8).map((f:any)=><div className={"fixture-row "+(f.user_match?"my-fixture":"")} key={f.id}><time>{new Date(f.kickoff_date).toLocaleDateString("nl-NL",{day:"2-digit",month:"short"})}</time><span>{f.home_team} – {f.away_team}</span><strong>{f.status==="played"?f.home_goals+" - "+f.away_goals:"—"}</strong></div>)}</section>
+      <section className="career-panel"><div className="eyebrow">CLUBNIEUWS</div>{careerData.news.map((n:any)=><article className="news-row" key={n.id}><small>{new Date(n.news_date).toLocaleDateString("nl-NL")} · {n.category.toUpperCase()}</small><strong>{n.headline}</strong><p>{n.body}</p></article>)}</section>
+      <section className="career-panel"><div className="eyebrow">LAATSTE FINANCIËLE MUTATIES</div>{careerData.finances.slice(0,8).map((f:any,i:number)=><div className="finance-row" key={i}><span>{f.description}<small>{new Date(f.entry_date).toLocaleDateString("nl-NL")}</small></span><strong className={Number(f.amount)<0?"negative":"positive"}>{Number(f.amount)<0?"−":"+"}€{Math.abs(Number(f.amount)).toLocaleString("nl-NL")}</strong></div>)}</section></div></>}
+    </main> : activeScreen === "Tactiek" ? 
       <div className="tactics-screen-header"><div><div className="eyebrow">MANAGER / TACTIEK</div><h1>{homeTeam.name} · Tactische opstelling</h1><p>Pas de formatie en speelwijze van jouw team aan. De tegenstander wordt aangestuurd door de computer.</p></div><button className="back-match" onClick={() => setActiveScreen("Wedstrijd")}>Terug naar wedstrijd</button></div>
       <div className="tactics-layout">
-        <section className="pitch-panel"><div className="pitch-heading"><span>OPSTELLING</span><label>Formatie<select value={homeTactics.formation} onChange={e => setHomeTactics({...homeTactics,formation:e.target.value})}><option>4-3-3</option><option>4-4-2</option><option>4-2-3-1</option><option>3-5-2</option><option>5-3-2</option></select></label></div>
+        <section className="pitch-panel"><div className="pitch-heading"><span>OPSTELLING</span><label>Formatie<select value={homeTactics.formation} onChange={e => saveCareerTactics({...homeTactics,formation:e.target.value})}><option>4-3-3</option><option>4-4-2</option><option>4-2-3-1</option><option>3-5-2</option><option>5-3-2</option></select></label></div>
           <div className="football-pitch"><div className="pitch-line halfway"/><div className="pitch-circle"/><div className="penalty-box top"/><div className="penalty-box bottom"/><div className="goal-box top"/><div className="goal-box bottom"/>
             {([{x:50,y:91,p:"GK"},{x:18,y:73,p:"LB"},{x:39,y:76,p:"CB"},{x:61,y:76,p:"CB"},{x:82,y:73,p:"RB"},{x:30,y:51,p:"CM"},{x:50,y:56,p:"CM"},{x:70,y:51,p:"CM"},{x:18,y:26,p:"LW"},{x:50,y:19,p:"ST"},{x:82,y:26,p:"RW"}]).map((p,i)=><div key={i} className="player-dot" style={{left:p.x+"%",top:p.y+"%"}}><span>{i+1}</span><small>{p.p}</small></div>)}
           </div><div className="pitch-legend">11 posities · Positieschema is de basis voor de volgende stap: spelers aan posities koppelen.</div>
         </section>
-        <section className="tactics-controls"><div className="eyebrow">SPEELWIJZE</div><div className="tactic-setting"><label htmlFor="mentality">Mentaliteit</label><select id="mentality" value={homeTactics.mentality} onChange={e=>setHomeTactics({...homeTactics,mentality:e.target.value})}><option>Verdedigend</option><option>Normaal</option><option>Aanvallend</option></select><p>Stelt in hoeveel risico het team neemt bij aanvallen.</p></div>
-          <div className="tactic-setting"><label htmlFor="passing">Passing</label><select id="passing" value={homeTactics.passing} onChange={e=>setHomeTactics({...homeTactics,passing:e.target.value})}><option>Kort</option><option>Direct</option><option>Lang</option></select><p>Bepaalt hoe het team de bal naar voren brengt.</p></div>
-          {([[ "pressing","Pressie","Meer balveroveringen, maar hogere belasting." ],["offside","Buitenspelval","De verdediging probeert aanvallers buitenspel te zetten."],["counter","Counter","Snelle omschakeling, vooral tegen aanvallende teams."],["hardTackles","Hard tackelen","Meer fysieke duels, met extra risico op kaarten."]] as const).map(([key,label,help])=><label className="tactic-check" key={key}><span><strong>{label}</strong><small>{help}</small></span><input type="checkbox" checked={homeTactics[key]} onChange={e=>setHomeTactics({...homeTactics,[key]:e.target.checked})}/></label>)}
+        <section className="tactics-controls"><div className="eyebrow">SPEELWIJZE</div><div className="tactic-setting"><label htmlFor="mentality">Mentaliteit</label><select id="mentality" value={homeTactics.mentality} onChange={e=>saveCareerTactics({...homeTactics,mentality:e.target.value})}><option>Verdedigend</option><option>Normaal</option><option>Aanvallend</option></select><p>Stelt in hoeveel risico het team neemt bij aanvallen.</p></div>
+          <div className="tactic-setting"><label htmlFor="passing">Passing</label><select id="passing" value={homeTactics.passing} onChange={e=>saveCareerTactics({...homeTactics,passing:e.target.value})}><option>Kort</option><option>Direct</option><option>Lang</option></select><p>Bepaalt hoe het team de bal naar voren brengt.</p></div>
+          {([[ "pressing","Pressie","Meer balveroveringen, maar hogere belasting." ],["offside","Buitenspelval","De verdediging probeert aanvallers buitenspel te zetten."],["counter","Counter","Snelle omschakeling, vooral tegen aanvallende teams."],["hardTackles","Hard tackelen","Meer fysieke duels, met extra risico op kaarten."]] as const).map(([key,label,help])=><label className="tactic-check" key={key}><span><strong>{label}</strong><small>{help}</small></span><input type="checkbox" checked={homeTactics[key]} onChange={e=>saveCareerTactics({...homeTactics,[key]:e.target.checked})}/></label>)}
           <div className="power-card"><div><span>TACTISCHE KRACHT</span><strong>{tacticPower(homeTeam,homeTactics)}</strong></div><div className="power-meter"><i style={{width:Math.max(5,Math.min(100,tacticPower(homeTeam,homeTactics)))+"%"}}/></div><p>Dit is een relatieve enginescore op basis van teamsterkte, mentaliteit, passing, formatie en instructies. De engine gebruikt deze bij kansen en wedstrijdverloop.</p></div>
           <div className="ai-note"><strong>Computertegenstander · {awayTeam.name}</strong><p>De AI kiest zelf mentaliteit, passing, pressie, buitenspelval, counter en tackles. Deze instellingen zijn niet door jou bedienbaar.</p></div>
         </section>
