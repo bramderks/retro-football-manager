@@ -2,11 +2,13 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-type Team = { name: string; rating: number; reputation: number; keeper: number };
+type Team = { name: string; city?: string; rating: number; reputation: number; keeper: number };
 type Tactics = { mentality: string; passing: string; pressing: boolean; offside: boolean; counter: boolean; hardTackles: boolean };
 type EventLine = { minute: number | string; text: string; kind?: "goal" | "var" | "system" };
 type Scorer = { team: 0 | 1; minute: number; name: string; assist?: string; penalty?: boolean };
 type Player = { name: string; position: "keeper" | "defender" | "midfielder" | "forward" };
+type DatabasePlayer = { id: string; name: string; position: string; overallRating: number; potentialRating: number; sourceUrl: string | null };
+type DatabaseTeam = { id: string; name: string; city: string; division: string; tier: number; reputation: number; teamStrength: number; players: DatabasePlayer[] };
 const AJAX_PLAYERS: Player[] = [
   { name: "Pasveer", position: "keeper" }, { name: "Hato", position: "defender" }, { name: "Sutalo", position: "defender" }, { name: "Rensch", position: "defender" },
   { name: "Taylor", position: "midfielder" }, { name: "Klaassen", position: "midfielder" }, { name: "Berghuis", position: "midfielder" },
@@ -18,8 +20,8 @@ const NEC_PLAYERS: Player[] = [
   { name: "Hansen", position: "forward" }, { name: "Ogawa", position: "forward" }, { name: "González", position: "forward" }
 ];
 type Stats = { shots: number; onTarget: number; chances: number; corners: number };
-const AJAX: Team = { name: "Ajax", rating: 88, reputation: 92, keeper: 78 };
-const NEC: Team = { name: "NEC", rating: 70, reputation: 68, keeper: 74 };
+const AJAX: Team = { name: "Ajax", city: "Amsterdam", rating: 88, reputation: 92, keeper: 78 };
+const NEC: Team = { name: "NEC", city: "Nijmegen", rating: 70, reputation: 68, keeper: 74 };
 const initialTactics: Tactics = { mentality: "Normaal", passing: "Direct", pressing: false, offside: false, counter: false, hardTackles: false };
 const zeroStats = (): Stats => ({ shots: 0, onTarget: 0, chances: 0, corners: 0 });
 
@@ -33,6 +35,14 @@ export default function Home() {
   ]);
   const [homeTactics, setHomeTactics] = useState<Tactics>({ ...initialTactics });
   const [awayTactics, setAwayTactics] = useState<Tactics>({ mentality: "Verdedigend", passing: "Direct", pressing: false, offside: false, counter: true, hardTackles: false });
+  const [databaseTeams, setDatabaseTeams] = useState<DatabaseTeam[]>([]);
+  const [databaseError, setDatabaseError] = useState(false);
+  const [selectedHomeId, setSelectedHomeId] = useState("ajax");
+  const [selectedAwayId, setSelectedAwayId] = useState("nec");
+  const databaseHome = databaseTeams.find(t => t.id === selectedHomeId);
+  const databaseAway = databaseTeams.find(t => t.id === selectedAwayId);
+  const homeTeam: Team = databaseHome ? { name: databaseHome.name, city: databaseHome.city, rating: databaseHome.teamStrength, reputation: databaseHome.reputation, keeper: databaseHome.players.find(p => p.position === "GK")?.overallRating ?? 56 } : AJAX;
+  const awayTeam: Team = databaseAway ? { name: databaseAway.name, city: databaseAway.city, rating: databaseAway.teamStrength, reputation: databaseAway.reputation, keeper: databaseAway.players.find(p => p.position === "GK")?.overallRating ?? 56 } : NEC;
   const [speed, setSpeed] = useState("Normaal");
   const [running, setRunning] = useState(false);
   const finished = minute >= 90;
@@ -52,7 +62,7 @@ export default function Home() {
   function addEvent(item: EventLine) { setFeed(prev => [...prev, item].slice(-300)); }
   function newMatch() {
     setRunning(false); setMinute(0); setGoals([0, 0]); setScorers([]); setStats([zeroStats(), zeroStats()]);
-    setFeed([{ minute: "INFO", text: "Ajax – NEC · Eredivisie. Druk op Start om af te trappen.", kind: "system" }]);
+    setFeed([{ minute: "INFO", text: homeTeam.name + " – " + awayTeam.name + " · " + (databaseHome?.division ?? "Eredivisie") + ". Druk op Start om af te trappen.", kind: "system" }]);
   }
   function teamStrength(team: Team, t: Tactics) {
     return team.rating + team.reputation * .12 + ({ Verdedigend: -7, Normaal: 0, Aanvallend: 7 }[t.mentality] ?? 0)
@@ -66,11 +76,11 @@ export default function Home() {
   function playMinute() {
     const m = minute + 1; setMinute(m);
     if (m === 1) { const player = pickPlayer(0, ["midfielder"]); addEvent({ minute: "1'", text: "Aftrap! " + player.name + " tikt de bal terug en Ajax begint rustig aan de opbouw.", kind: "system" }); return; }
-    const homeRating = teamStrength(AJAX, homeTactics);
-    const awayRating = teamStrength(NEC, awayTactics);
+    const homeRating = teamStrength(homeTeam, homeTactics);
+    const awayRating = teamStrength(awayTeam, awayTactics);
     const homeShare = Math.max(.24, Math.min(.82, .5 + (homeRating - awayRating) * .012));
     const home = Math.random() < homeShare;
-    const team = home ? AJAX.name : NEC.name; const other = home ? NEC.name : AJAX.name;
+    const team = home ? homeTeam.name : awayTeam.name; const other = home ? awayTeam.name : homeTeam.name;
     const ownIndex = home ? 0 : 1; const own = { ...stats[ownIndex] };
     const t = home ? homeTactics : awayTactics;
     const opponentTactics = home ? awayTactics : homeTactics;
@@ -97,8 +107,8 @@ export default function Home() {
         addEvent({ minute: "KANS", text: shooter.name + " krijgt ruimte in het strafschopgebied en haalt uit!" });
         if (Math.random() < .66) {
           own.onTarget++;
-          const keeper = home ? NEC.keeper : AJAX.keeper;
-          const scorerQuality = home ? AJAX.rating : NEC.rating;
+          const keeper = home ? awayTeam.keeper : homeTeam.keeper;
+          const scorerQuality = home ? homeTeam.rating : awayTeam.rating;
           if (Math.random() < Math.max(.035, Math.min(.72, .3 + (scorerQuality - keeper) * .012))) {
             addEvent({ minute: "VAR", text: "VAR controleert het doelpunt op buitenspel of een overtreding.", kind: "var" });
             if (Math.random() < .10) addEvent({ minute: "VAR", text: "Doelpunt afgekeurd na VAR-check: buitenspel in de aanloop.", kind: "var" });
@@ -132,17 +142,17 @@ export default function Home() {
     <header className="topbar"><div className="brand"><span className="brand-mark">RFM</span><div><div className="brand-title">RETRO FOOTBALL MANAGER</div><div className="brand-sub">THE CLASSIC GAME, REBUILT</div></div></div><div className="live-pill"><span className="pulse" /> WEB EDITION · v0.1</div></header>
     <nav className="nav">{["Overzicht", "Wedstrijd", "Selectie", "Tactiek", "Competitie", "Transfers"].map((n, i) => <button key={n} className={i === 1 ? "nav-button active" : "nav-button"} onClick={() => i !== 1 && addEvent({ minute: "INFO", text: n + ": dit onderdeel wordt in een volgende ontwikkelstap gebouwd.", kind: "system" })}>{n}</button>)}</nav>
     <div className="workspace">
-      <aside className="sidebar"><section className="side-section"><div className="eyebrow">WEDSTRIJDINFO</div><div className="fixture-title">Eredivisie</div><div className="muted">Competitiewedstrijd</div><div className="stadium">◈ Amsterdam Arena · 20:00</div></section>
-      <section className="side-section"><div className="eyebrow">WEDSTRIJDSTATISTIEKEN</div>{[["Balbezit", possession[0] + "% — " + possession[1] + "%"],["Schoten",stats[0].shots+" — "+stats[1].shots],["Op doel",stats[0].onTarget+" — "+stats[1].onTarget],["Kansen",stats[0].chances+" — "+stats[1].chances],["Corners",stats[0].corners+" — "+stats[1].corners]].map(([k,v]) => <div className="stat-row" key={k}><span>{k}</span><strong>{v}</strong></div>)}</section>
+      <aside className="sidebar"><section className="side-section"><div className="eyebrow">WEDSTRIJDINFO</div><div className="fixture-title">{databaseHome?.division ?? "Eredivisie"}</div><div className="muted">Seizoen 2026/27 · Competitiewedstrijd</div><div className="stadium">◈ {homeTeam.city ?? "Amsterdam"} · 20:00</div></section>
+      <section className="side-section"><div className="eyebrow">TEAMS UIT DATABASE</div><label>Thuis<select value={selectedHomeId} onChange={e => { const id = e.target.value; setSelectedHomeId(id); setMinute(0); setGoals([0,0]); setScorers([]); setStats([zeroStats(),zeroStats()]); setRunning(false); setFeed([{ minute: "INFO", text: (databaseTeams.find(t => t.id === id)?.name ?? "Thuisploeg") + " – " + awayTeam.name + ". Druk op Start om af te trappen.", kind: "system" }]); }}>{databaseTeams.filter(t => t.tier === 1).map(t => <option key={t.id} value={t.id}>{t.name}</option>)}{databaseTeams.filter(t => t.tier === 2).map(t => <option key={t.id} value={t.id}>{t.name}</option>)}</select></label><label>Uit<select value={selectedAwayId} onChange={e => { const id = e.target.value; setSelectedAwayId(id); setMinute(0); setGoals([0,0]); setScorers([]); setStats([zeroStats(),zeroStats()]); setRunning(false); setFeed([{ minute: "INFO", text: homeTeam.name + " – " + (databaseTeams.find(t => t.id === id)?.name ?? "Uitploeg") + ". Druk op Start om af te trappen.", kind: "system" }]); }}>{databaseTeams.filter(t => t.id !== selectedHomeId).map(t => <option key={t.id} value={t.id}>{t.name}</option>)}</select></label><div className="muted">{databaseTeams.length ? databaseTeams.length + " clubs geladen" : databaseError ? "Database niet bereikbaar" : "Database laden…"}</div></section><section className="side-section"><div className="eyebrow">WEDSTRIJDSTATISTIEKEN</div>{[["Balbezit", possession[0] + "% — " + possession[1] + "%"],["Schoten",stats[0].shots+" — "+stats[1].shots],["Op doel",stats[0].onTarget+" — "+stats[1].onTarget],["Kansen",stats[0].chances+" — "+stats[1].chances],["Corners",stats[0].corners+" — "+stats[1].corners]].map(([k,v]) => <div className="stat-row" key={k}><span>{k}</span><strong>{v}</strong></div>)}</section>
       <section className="side-section tactics"><div className="eyebrow">TACTIEK PER TEAM</div>
       {([{name:"Ajax",value:homeTactics,set:setHomeTactics},{name:"NEC",value:awayTactics,set:setAwayTactics}] as const).map(({name,value,set})=><div className="team-tactics" key={name}><div className="team-tactics-title">{name}</div>
       <label>Mentaliteit<select value={value.mentality} onChange={e=>set({...value,mentality:e.target.value})}><option>Verdedigend</option><option>Normaal</option><option>Aanvallend</option></select></label>
       <label>Passing<select value={value.passing} onChange={e=>set({...value,passing:e.target.value})}><option>Kort</option><option>Direct</option><option>Lang</option></select></label>
       {([["pressing","Pressie"],["offside","Buitenspelval"],["counter","Counter"],["hardTackles","Hard tackelen"]] as const).map(([key,label])=><label className="toggle-row" key={key}>{label}<input type="checkbox" checked={value[key]} onChange={e=>set({...value,[key]:e.target.checked})}/><span className="toggle"/></label>)}</div>)}</section>
       <section className="side-section"><div className="eyebrow">WEDSTRIJDREGELAARS</div><div className="control-grid"><button className="start-button" onClick={()=>!finished&&setRunning(true)} disabled={running||finished}>▶ Start</button><button onClick={()=>setRunning(false)}>Ⅱ Pauze</button><button onClick={()=>!finished&&setRunning(true)} disabled={running||finished}>▶▶ Verder</button><button onClick={newMatch}>↻ Nieuwe match</button></div><label className="speed-label">Wedstrijdtempo<select value={speed} onChange={e=>setSpeed(e.target.value)}><option>Langzaam</option><option>Normaal</option><option>Snel</option><option>Ultra</option></select></label></section></aside>
-      <section className="match-area"><div className="match-meta"><span>● LIVE MATCH CENTRE</span><span>SEIZOEN 2026/27 · SPEELDAG 1</span></div><div className="scoreboard"><div className="team"><div className="crest ajax">A</div><div><div className="team-name">AJAX</div><div className="team-meta">AMSTERDAM</div></div></div><div className="score-block"><div className="score">{goals[0]} <span>:</span> {goals[1]}</div><div className="clock">{String(minute).padStart(2,"0")}:00 <span>·</span> {finished?"AFGELOPEN":running?"LIVE WEDSTRIJD":minute?"GEPAUZEERD":"WACHT OP AFTRAP"}</div><div className="scorers-under-score">{[0,1].map(side => <div className="scorer-side" key={side}>{scorers.filter(s => s.team === side).map((s,i) => <div className="scorer-line" key={i}>{s.penalty ? <span className="penalty-icon" title="Penaltydoelpunt">⚽🥅</span> : <span className="goal-icon">⚽</span>} {s.name} {s.assist ? <span className="assist">({s.assist})</span> : null} <span className="goal-minute">{s.minute}\u0027</span></div>)}</div>)}</div></div><div className="team away"><div><div className="team-name">NEC</div><div className="team-meta">NIJMEGEN</div></div><div className="crest nec">N</div></div></div>
+      <section className="match-area"><div className="match-meta"><span>● LIVE MATCH CENTRE</span><span>SEIZOEN 2026/27 · SPEELDAG 1</span></div><div className="scoreboard"><div className="team"><div className="crest ajax">{homeTeam.name.slice(0,1).toUpperCase()}</div><div><div className="team-name">{homeTeam.name.toUpperCase()}</div><div className="team-meta">{(homeTeam.city ?? "THUIS").toUpperCase()}</div></div></div><div className="score-block"><div className="score">{goals[0]} <span>:</span> {goals[1]}</div><div className="clock">{String(minute).padStart(2,"0")}:00 <span>·</span> {finished?"AFGELOPEN":running?"LIVE WEDSTRIJD":minute?"GEPAUZEERD":"WACHT OP AFTRAP"}</div><div className="scorers-under-score">{[0,1].map(side => <div className="scorer-side" key={side}>{scorers.filter(s => s.team === side).map((s,i) => <div className="scorer-line" key={i}>{s.penalty ? <span className="penalty-icon" title="Penaltydoelpunt">⚽🥅</span> : <span className="goal-icon">⚽</span>} {s.name} {s.assist ? <span className="assist">({s.assist})</span> : null} <span className="goal-minute">{s.minute}\u0027</span></div>)}</div>)}</div></div><div className="team away"><div><div className="team-name">{awayTeam.name.toUpperCase()}</div><div className="team-meta">{(awayTeam.city ?? "UIT").toUpperCase()}</div></div><div className="crest nec">{awayTeam.name.slice(0,1).toUpperCase()}</div></div></div>
       <div className="commentary-head"><div><span className="eyebrow">MATCH FEED</span><h2>Live wedstrijdcommentaar</h2></div><span className={running?"status-live":"status-idle"}>{running?"● LIVE":finished?"AFGELOPEN":"KLAAR"}</span></div><div className="commentary" key="commentary">{feed.map((line,i)=><div className={"event "+(line.kind||"")} key={i}><div className="event-minute">{line.minute}</div><div className="event-text">{line.text}</div></div>)}</div>
-      <footer className="match-footer"><span>◉ ENGINE STATUS</span><span>LIVE MATCH ENGINE</span><span>VAR SYSTEM ACTIVE</span><span>BUILD 0.1.0</span></footer></section>
+      <footer className="match-footer"><span>◉ ENGINE STATUS</span><span>LIVE MATCH ENGINE</span><span>VAR SYSTEM ACTIVE</span><span>{databaseError ? "DB OFFLINE" : databaseTeams.length ? "DB ONLINE · " + databaseTeams.reduce((n, t) => n + t.players.length, 0) + " SPELERS" : "DB VERBINDEN…"}</span></footer></section>
     </div><div className="bottom-note">RETRO FOOTBALL MANAGER <span>Een doorlopende ontwikkeling vanuit GitHub · Wedstrijdopslag volgt</span></div>
   </main>;
 }
