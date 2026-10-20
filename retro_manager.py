@@ -143,7 +143,7 @@ class RetroManager:
 
     def log(self, prefix, message, tag=None):
         self.feed.configure(state="normal")
-        self.feed.insert("end", f"{prefix:>4}  {message}\n", tag or "")
+        self.feed.insert("end", f"{prefix:>4}  {message}\n", tag) if tag else self.feed.insert("end", f"{prefix:>4}  {message}\n")
         self.feed.see("end")
         self.feed.configure(state="disabled")
 
