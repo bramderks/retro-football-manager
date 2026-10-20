@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS career_saves (
   manager_id TEXT NOT NULL REFERENCES managers(id),
   club_id TEXT NOT NULL REFERENCES teams(id),
   role TEXT NOT NULL DEFAULT 'manager' CHECK (role IN ('manager','sporting_director','chairperson')),
-  current_date DATE NOT NULL DEFAULT '2026-08-01',
+  game_date DATE NOT NULL DEFAULT '2026-08-01',
   season_id TEXT NOT NULL REFERENCES seasons(id),
   status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active','sacked','resigned','retired')),
   cash_balance BIGINT NOT NULL DEFAULT 0,
