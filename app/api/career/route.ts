@@ -84,7 +84,7 @@ export async function POST(request: Request) {
   if(b.action==="advance_day"){
    const dayDate=new Date(dateOnly(s.game_date)+"T12:00:00Z");dayDate.setUTCDate(dayDate.getUTCDate()+1);const day=dateOnly(dayDate);
    await sql.query("UPDATE career_saves SET game_date=$1,updated_at=NOW() WHERE id=$2",[day,b.saveId]);
-   const scheduled=await sql.query("SELECT f.*,h.team_strength AS hs,h.reputation AS hr,a.team_strength AS aws,a.reputation AS ar FROM fixtures f JOIN teams h ON h.id=f.home_team_id JOIN teams a ON a.id=f.away_team_id WHERE f.kickoff_date=$1 AND f.status='scheduled' AND f.division_id=$2",[day,s.division_id]);
+   const scheduled=await sql.query("SELECT f.*,h.team_strength AS hs,h.reputation AS hr,a.team_strength AS aws,a.reputation AS ar FROM fixtures f JOIN teams h ON h.id=f.home_team_id JOIN teams a ON a.id=f.away_team_id WHERE f.kickoff_date=$1 AND f.status='scheduled'",[day]);
    const results=[];
    for(const f of scheduled as any[]){
     const ht=f.home_team_id===s.club_id?(s.tactical_setup||{}):{},at=f.away_team_id===s.club_id?(s.tactical_setup||{}):{};
