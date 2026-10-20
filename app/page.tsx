@@ -135,20 +135,25 @@ export default function Home() {
   function playMinute() {
     const m = minute + 1; setMinute(m);
     if (m === 1) { const player = pickPlayer(0, ["midfielder"]); addEvent({ minute: "1'", text: "Aftrap! " + player.name + " tikt de bal terug en " + homeTeam.name + " begint rustig aan de opbouw.", kind: "system" }); return; }
-    const homeRating = teamStrength(homeTeam, homeTactics);
-    const awayRating = teamStrength(awayTeam, awayTactics);
+    const homeLeadNow = goals[0] - goals[1];
+    const effectiveHomeTactics: Tactics = homeLeadNow >= 3 ? { ...homeTactics, mentality: "Verdedigend", pressing: false, counter: true } : homeLeadNow <= -2 ? { ...homeTactics, mentality: "Aanvallend", pressing: true } : homeTactics;
+    const effectiveAwayTactics: Tactics = goals[1] - goals[0] >= 3 ? { ...awayTactics, mentality: "Verdedigend", pressing: false, counter: true } : goals[1] - goals[0] <= -2 ? { ...awayTactics, mentality: "Aanvallend", pressing: true } : awayTactics;
+    const homeRating = teamStrength(homeTeam, effectiveHomeTactics);
+    const awayRating = teamStrength(awayTeam, effectiveAwayTactics);
     const homeShare = Math.max(.24, Math.min(.82, .5 + (homeRating - awayRating) * .012));
     const home = Math.random() < homeShare;
     const team = home ? homeTeam.name : awayTeam.name; const other = home ? awayTeam.name : homeTeam.name;
     const ownIndex = home ? 0 : 1; const own = { ...stats[ownIndex] };
-    const t = home ? homeTactics : awayTactics;
-    const opponentTactics = home ? awayTactics : homeTactics;
+    const t = home ? effectiveHomeTactics : effectiveAwayTactics;
+    const opponentTactics = home ? effectiveAwayTactics : effectiveHomeTactics;
     const tacticalEdge = ({ Verdedigend: -.08, Normaal: 0, Aanvallend: .09 }[t.mentality] ?? 0)
       - ({ Verdedigend: -.08, Normaal: 0, Aanvallend: .09 }[opponentTactics.mentality] ?? 0);
     const passingBonus = ({ Kort: .035, Direct: .02, Lang: -.005 }[t.passing] ?? 0);
     const counterBonus = t.counter && opponentTactics.mentality === "Aanvallend" ? .11 : t.counter ? .035 : 0;
     const pressingBonus = t.pressing ? .045 : 0;
-    const chanceQuality = Math.max(.04, Math.min(.48, .16 + ((home ? homeRating : awayRating) - (home ? awayRating : homeRating)) * .0045 + tacticalEdge * .65 + passingBonus * .7 + counterBonus * .7 + pressingBonus * .65));
+    const scoreLead = home ? goals[0] - goals[1] : goals[1] - goals[0];
+    const gameStateFactor = scoreLead >= 4 ? .38 : scoreLead >= 3 ? .52 : scoreLead >= 2 ? .76 : scoreLead <= -3 ? 1.22 : scoreLead <= -2 ? 1.12 : 1;
+    const chanceQuality = Math.max(.025, Math.min(.42, (.16 + ((home ? homeRating : awayRating) - (home ? awayRating : homeRating)) * .0045 + tacticalEdge * .65 + passingBonus * .7 + counterBonus * .7 + pressingBonus * .65) * gameStateFactor));
     const stamp = m + "'"; const r = Math.random();
     if (r < .22) {
       const passer = pickPlayer(ownIndex as 0 | 1, ["defender", "midfielder"]);
@@ -168,7 +173,7 @@ export default function Home() {
           own.onTarget++;
           const keeper = home ? awayTeam.keeper : homeTeam.keeper;
           const scorerQuality = home ? homeTeam.rating : awayTeam.rating;
-          if (Math.random() < Math.max(.025, Math.min(.48, .20 + (scorerQuality - keeper) * .006))) {
+          if (Math.random() < Math.max(.025, Math.min(.42, (.17 + (scorerQuality - keeper) * .0055) * gameStateFactor))) {
             addEvent({ minute: "VAR", text: "VAR controleert het doelpunt op buitenspel of een overtreding.", kind: "var" });
             if (Math.random() < .10) addEvent({ minute: "VAR", text: "Doelpunt afgekeurd na VAR-check: buitenspel in de aanloop.", kind: "var" });
             else { const scorer = pickPlayer(ownIndex as 0 | 1, ["forward", "midfielder"]); const assist = Math.random() < .72 ? pickPlayer(ownIndex as 0 | 1, ["midfielder", "forward", "defender"]).name : undefined; setGoals(prev => home ? [prev[0] + 1, prev[1]] : [prev[0], prev[1] + 1]); setScorers(prev => [...prev, { team: ownIndex as 0 | 1, minute: m, name: scorer.name, assist }]); addEvent({ minute: "GOAL", text: scorer.name + " scoort een prachtige goal voor " + team + (assist ? ", op aangeven van " + assist : "") + "! De bal vliegt onhoudbaar in het doel.", kind: "goal" }); }
