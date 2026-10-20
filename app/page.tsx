@@ -78,7 +78,10 @@ export default function Home() {
     return team.rating + team.reputation * .12 + ({ Verdedigend: -7, Normaal: 0, Aanvallend: 7 }[t.mentality] ?? 0)
       + ({ Kort: 3, Direct: 2, Lang: -1 }[t.passing] ?? 0) + (t.pressing ? 3 : 0) + (t.counter ? 2 : 0) + ({ "4-3-3": 2, "4-4-2": 0, "4-2-3-1": 1, "3-5-2": 1, "5-3-2": -1 }[t.formation] ?? 0);
   }
-  function tacticPower(team: Team, t: Tactics) {\n    return Math.round(teamStrength(team, t) + (t.formation === "4-3-3" ? 2 : t.formation === "3-5-2" ? 1 : 0) + (t.pressing ? 1 : 0) + (t.offside ? 1 : 0));\n  }\n  function pickPlayer(team: 0 | 1, positions?: Player["position"][]) {
+  function tacticPower(team: Team, t: Tactics) {
+    return Math.round(teamStrength(team, t) + (t.formation === "4-3-3" ? 2 : t.formation === "3-5-2" ? 1 : 0) + (t.pressing ? 1 : 0) + (t.offside ? 1 : 0));
+  }
+  function pickPlayer(team: 0 | 1, positions?: Player["position"][]) {
     const selectedId = team === 0 ? selectedHomeId : selectedAwayId;
     const dbTeam = databaseTeams.find(t => t.id === selectedId);
     const fallback = team === 0 ? AJAX_PLAYERS : NEC_PLAYERS;
