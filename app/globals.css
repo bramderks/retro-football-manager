@@ -86,3 +86,7 @@
 .transfer-budget{display:flex;flex-direction:column;gap:7px;color:var(--muted);font-size:10px}.transfer-budget strong{font:700 19px 'DM Mono',monospace;color:var(--text)}
 .transfer-table td{padding:9px 6px}.offer-button{background:#244d3d;color:#a9f1ce;border:1px solid #39765a;padding:6px 8px;font:700 10px Manrope;cursor:pointer}.offer-button:disabled{opacity:.35;cursor:not-allowed}
 @media(max-width:900px){.transfer-budget{align-self:flex-start}}
+
+.role-panel{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:14px}.role-panel p{max-width:620px}.role-actions{display:flex;flex-wrap:wrap;gap:7px}.role-actions button{background:#203442;color:#d3dde1;border:1px solid #314654;padding:9px 11px;font:700 10px Manrope;cursor:pointer}.role-actions button:disabled{opacity:.35;cursor:not-allowed}
+.career-kpis{grid-template-columns:repeat(5,minmax(0,1fr))}
+@media(max-width:900px){.career-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.role-panel{align-items:flex-start;flex-direction:column}}
