@@ -28,7 +28,7 @@ export async function GET(request: Request) {
   const conn=process.env.DATABASE_URL;if(!conn)return fail("DATABASE_URL ontbreekt.",503);
   try{
     const sql=neon(conn), url=new URL(request.url), saveId=url.searchParams.get("saveId");
-    const clubs=await sql.query("SELECT t.id,t.name,t.city,t.reputation,t.team_strength,d.name AS division,d.tier FROM teams t JOIN divisions d ON d.id=t.division_id WHERE d.season_id=$1 AND t.id NOT LIKE 'jong-%' ORDER BY d.tier,t.name",[SEASON]);
+    const clubs=await sql.query("SELECT t.id,t.name,t.city,t.reputation,t.team_strength,d.name AS division,d.tier FROM teams t JOIN divisions d ON d.id=t.division_id WHERE d.season_id=$1 ORDER BY d.tier,t.name",[SEASON]);
     if(!saveId)return NextResponse.json({season:SEASON,clubs});
     const got=await sql.query("SELECT s.*,m.full_name AS manager_name,t.name AS club_name,t.city,t.reputation,t.team_strength,d.name AS division,d.id AS division_id FROM career_saves s JOIN managers m ON m.id=s.manager_id JOIN teams t ON t.id=s.club_id JOIN divisions d ON d.id=t.division_id WHERE s.id=$1 LIMIT 1",[saveId]);
     if(!got.length)return fail("Carrière niet gevonden.",404);
