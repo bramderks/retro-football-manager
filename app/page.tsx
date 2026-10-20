@@ -33,7 +33,7 @@ export default function Home() {
   const [feed, setFeed] = useState<EventLine[]>([
     { minute: "INFO", text: "Ajax – NEC · Eredivisie. Druk op Start om af te trappen.", kind: "system" },
   ]);
-  const [activeScreen, setActiveScreen] = useState("Wedstrijd");
+  const [activeScreen, setActiveScreen] = useState("Overzicht");
   const [homeTactics, setHomeTactics] = useState<Tactics>({ ...initialTactics });
   const [awayTactics, setAwayTactics] = useState<Tactics>({ mentality: "Verdedigend", passing: "Direct", pressing: false, offside: false, counter: true, hardTackles: false, formation: "4-4-2" });
   const [databaseTeams, setDatabaseTeams] = useState<DatabaseTeam[]>([]);
