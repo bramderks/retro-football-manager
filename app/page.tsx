@@ -62,7 +62,7 @@ export default function Home() {
     const team = home ? AJAX.name : NEC.name; const other = home ? NEC.name : AJAX.name;
     const ownIndex = home ? 0 : 1; const own = { ...stats[ownIndex] };
     const t = home ? tactics : awayTactics;
-    const chanceQuality = Math.max(.08, Math.min(.78, .29 + ((home ? homeRating : awayRating) - (home ? awayRating : homeRating)) * .012 + (t.counter && t.mentality === "Verdedigend" ? .1 : 0));
+    const chanceQuality = Math.max(.08, Math.min(.78, .29 + ((home ? homeRating : awayRating) - (home ? awayRating : homeRating)) * .012 + (t.counter && t.mentality === "Verdedigend" ? .1 : 0)));
     const stamp = m + "'"; const r = Math.random();
     if (r < .22) addEvent({ minute: stamp, text: team + (t.passing === "Kort" ? " combineert met korte passes en zoekt een opening." : t.passing === "Lang" ? " verstuurt een lange bal achter de verdediging." : " bouwt direct op richting het strafschopgebied.") });
     else if (r < .38 && t.pressing && home) addEvent({ minute: stamp, text: "Ajax zet hoog druk, verovert de bal en houdt NEC vast op eigen helft." });
