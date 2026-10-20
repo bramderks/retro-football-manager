@@ -147,3 +147,5 @@ INSERT INTO transfer_windows(id,season_id,country_code,window_name,opens_on,clos
 ('ned-summer-2026','2026-2027','NED','Zomertransferwindow','2026-06-16','2026-09-01'),
 ('ned-winter-2027','2026-2027','NED','Wintertransferwindow','2027-01-02','2027-02-02')
 ON CONFLICT (id) DO NOTHING;
+
+ALTER TABLE career_saves ADD COLUMN IF NOT EXISTS career_xp INTEGER NOT NULL DEFAULT 0;
