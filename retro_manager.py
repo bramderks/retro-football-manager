@@ -74,6 +74,14 @@ class RetroManager:
             val.pack(side="right")
             self.stat_labels[key] = val
         self.label(left, "SPELREGELAARS", 10, True, ACCENT).pack(anchor="w", padx=14, pady=(25, 8))
+        self.label(left, "TACTISCHE INSTELLINGEN", 10, True, ACCENT).pack(anchor="w", padx=14, pady=(12, 5))
+        self.tactic_vars = {}
+        self.add_choice(left, "Mentaliteit", "mentaliteit", ("Verdedigend", "Normaal", "Aanvallend"), "Normaal")
+        self.add_choice(left, "Passing", "passing", ("Kort", "Direct", "Lang"), "Direct")
+        self.add_choice(left, "Pressie", "pressie", ("Uit", "Aan"), "Uit")
+        self.add_choice(left, "Buitenspelval", "offside", ("Uit", "Aan"), "Uit")
+        self.add_choice(left, "Counter", "counter", ("Uit", "Aan"), "Uit")
+        self.add_choice(left, "Tackelen", "tackles", ("Normaal", "Hard"), "Normaal")
         controls = tk.Frame(left, bg=PANEL)
         controls.pack(fill="x", padx=12)
         self.start_btn = tk.Button(controls, text="▶  Start", command=self.start,
@@ -136,6 +144,15 @@ class RetroManager:
         self.footer_text = self.label(footer, "Retro Football Manager • lokaal prototype • voortgang wordt nog niet opgeslagen",
                                       9, False, MUTED, bg="#07111b")
         self.footer_text.pack(side="left", padx=16, pady=8)
+
+    def add_choice(self, parent, title, key, options, default):
+        row = tk.Frame(parent, bg=PANEL)
+        row.pack(fill="x", padx=14, pady=2)
+        self.label(row, title, 9, False, MUTED).pack(side="left")
+        var = tk.StringVar(value=default)
+        self.tactic_vars[key] = var
+        box = ttk.Combobox(row, textvariable=var, values=options, state="readonly", width=12)
+        box.pack(side="right")
 
     def nav_click(self, name):
         if name != "Wedstrijd":
