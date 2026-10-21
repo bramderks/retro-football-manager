@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 type Team = { name: string; city?: string; rating: number; reputation: number; keeper: number };
-type Tactics = { mentality: string; passing: string; pressing: boolean; offside: boolean; counter: boolean; hardTackles: boolean; formation: string };
+type Tactics = { mentality: string; passing: string; pressing: boolean; offside: boolean; counter: boolean; hardTackles: boolean; formation: string; lineup?: Record<string,string> };
 type EventLine = { minute: number | string; text: string; kind?: "goal" | "var" | "system" };
 type Scorer = { team: 0 | 1; minute: number; name: string; assist?: string; penalty?: boolean };
 type Player = { name: string; position: "keeper" | "defender" | "midfielder" | "forward" };
@@ -22,7 +22,18 @@ const NEC_PLAYERS: Player[] = [
 type Stats = { shots: number; onTarget: number; chances: number; corners: number };
 const AJAX: Team = { name: "Ajax", city: "Amsterdam", rating: 88, reputation: 92, keeper: 78 };
 const NEC: Team = { name: "NEC", city: "Nijmegen", rating: 70, reputation: 68, keeper: 74 };
-const initialTactics: Tactics = { mentality: "Normaal", passing: "Direct", pressing: false, offside: false, counter: false, hardTackles: false, formation: "4-3-3" };
+const initialTactics: Tactics = { mentality: "Normaal", passing: "Direct", pressing: false, offside: false, counter: false, hardTackles: false, formation: "4-3-3", lineup: {} };
+type FormationSlot = { key: string; role: string; x: number; y: number };
+function formationSlots(formation: string): FormationSlot[] {
+  const rows: Record<string, Array<[string,string,number,number]>> = {
+    "4-3-3": [["GK","K",50,91],["LB","LV",17,73],["CB1","CV",39,77],["CB2","CV",61,77],["RB","RV",83,73],["DM","VM",50,63],["CM1","CM",34,50],["CM2","CM",66,50],["LW","LA",18,27],["ST","SP",50,19],["RW","RA",82,27]],
+    "4-4-2": [["GK","K",50,91],["LB","LV",17,73],["CB1","CV",39,77],["CB2","CV",61,77],["RB","RV",83,73],["LM","LM",16,52],["CM1","CM",39,55],["CM2","CM",61,55],["RM","RM",84,52],["ST1","SP",39,24],["ST2","SP",61,24]],
+    "4-2-3-1": [["GK","K",50,91],["LB","LV",17,73],["CB1","CV",39,77],["CB2","CV",61,77],["RB","RV",83,73],["DM1","VM",39,62],["DM2","VM",61,62],["LW","LA",20,38],["AM","AM",50,43],["RW","RA",80,38],["ST","SP",50,19]],
+    "3-5-2": [["GK","K",50,91],["CB1","CV",27,77],["CB2","CV",50,80],["CB3","CV",73,77],["LWB","WB",12,54],["CM1","CM",34,59],["DM","VM",50,66],["CM2","CM",66,59],["RWB","WB",88,54],["ST1","SP",39,24],["ST2","SP",61,24]],
+    "5-3-2": [["GK","K",50,91],["LB","LV",12,72],["CB1","CV",31,78],["CB2","CV",50,80],["CB3","CV",69,78],["RB","RV",88,72],["CM1","CM",32,52],["CM2","CM",50,57],["CM3","CM",68,52],["ST1","SP",39,24],["ST2","SP",61,24]]
+  };
+  return (rows[formation] || rows["4-3-3"]).map(([key,role,x,y])=>({key,role,x,y}));
+}
 const zeroStats = (): Stats => ({ shots: 0, onTarget: 0, chances: 0, corners: 0 });
 
 export default function Home() {
@@ -48,6 +59,9 @@ export default function Home() {
   const [careerClubId, setCareerClubId] = useState("ajax");
   const [careerBusy, setCareerBusy] = useState(false);
   const [careerError, setCareerError] = useState("");
+  const [pendingCareerFixture, setPendingCareerFixture] = useState<any>(null);
+  const [matchSaving, setMatchSaving] = useState(false);
+  const [savedMatchFixture, setSavedMatchFixture] = useState("");
   const [uefaData, setUefaData] = useState<any>(null);
   const [uefaCompetition, setUefaCompetition] = useState("UCL");
   const [selectedHomeId, setSelectedHomeId] = useState("ajax");
@@ -98,7 +112,17 @@ export default function Home() {
   function startNewCareer() { setCareerData(null); setCareerSaveId(""); window.localStorage.removeItem("rfm-career-save"); setIsCreatingCareer(true); setCareerError(""); setActiveScreen("Overzicht"); }
   async function advanceCareerDay() {
     if (!careerSaveId || careerBusy) return; setCareerBusy(true); setCareerError("");
-    try { const r = await fetch("/api/career", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "advance_day", saveId: careerSaveId }) }); const d = await r.json(); if (!r.ok) throw new Error(d.error || "Dag doorspelen mislukt."); const refreshed = await fetch("/api/career?saveId=" + encodeURIComponent(careerSaveId), { cache: "no-store" }).then(x => x.json()); setCareerData(refreshed); await refreshSavedCareers(); } catch (e) { setCareerError(e instanceof Error ? e.message : "Dag doorspelen mislukt."); } finally { setCareerBusy(false); }
+    try {
+      const r = await fetch("/api/career", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "advance_day", saveId: careerSaveId }) });
+      const d = await r.json(); if (!r.ok) throw new Error(d.error || "Dag doorspelen mislukt.");
+      if (d.needsMatch && d.fixture) {
+        setPendingCareerFixture(d.fixture); setSavedMatchFixture(""); setSelectedHomeId(d.fixture.home_team_id); setSelectedAwayId(d.fixture.away_team_id);
+        setMinute(0); setGoals([0,0]); setScorers([]); setStats([zeroStats(),zeroStats()]); setRunning(false);
+        setFeed([{ minute: "WEDSTRIJDDAG", text: d.fixture.home_name + " – " + d.fixture.away_name + ". Druk op Start om de wedstrijd te spelen.", kind: "system" }]);
+        setActiveScreen("Wedstrijd"); return;
+      }
+      const refreshed = await fetch("/api/career?saveId=" + encodeURIComponent(careerSaveId), { cache: "no-store" }).then(x => x.json()); setCareerData(refreshed); await refreshSavedCareers();
+    } catch (e) { setCareerError(e instanceof Error ? e.message : "Dag doorspelen mislukt."); } finally { setCareerBusy(false); }
   }
   async function changeCareerRole(role: string) {
     if (!careerSaveId || careerBusy) return; setCareerBusy(true); setCareerError("");
@@ -116,6 +140,17 @@ export default function Home() {
     setHomeTactics(tactics); if (!careerSaveId) return;
     fetch("/api/career", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "tactics", saveId: careerSaveId, tactics }) }).catch(() => setCareerError("Tactiek kon niet worden opgeslagen."));
   }
+  useEffect(() => {
+    if (!pendingCareerFixture || !finished || !careerSaveId || savedMatchFixture === pendingCareerFixture.id || matchSaving) return;
+    let cancelled = false;
+    setMatchSaving(true);
+    fetch("/api/career", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "finish_match", saveId: careerSaveId, fixtureId: pendingCareerFixture.id, homeGoals: goals[0], awayGoals: goals[1] }) })
+      .then(async response => { const data = await response.json(); if (!response.ok) throw new Error(data.error || "Wedstrijd kon niet worden opgeslagen."); return data; })
+      .then(async () => { if (cancelled) return; setSavedMatchFixture(pendingCareerFixture.id); setMatchSaving(false); const fresh = await fetch("/api/career?saveId=" + encodeURIComponent(careerSaveId), { cache: "no-store" }).then(x => x.json()); setCareerData(fresh); setPendingCareerFixture(null); await refreshSavedCareers(); })
+      .catch(error => { if (!cancelled) setCareerError(error instanceof Error ? error.message : "Wedstrijd kon niet worden opgeslagen."); })
+      .finally(() => { if (!cancelled) setMatchSaving(false); });
+    return () => { cancelled = true; };
+  }, [pendingCareerFixture, finished, careerSaveId, goals, savedMatchFixture]);
   useEffect(() => {
     if (!running || finished) return;
     const delays: Record<string, number> = { Langzaam: 1500, Normaal: 900, Snel: 350, Ultra: 175 };
@@ -150,8 +185,10 @@ export default function Home() {
     const m = minute + 1; setMinute(m);
     if (m === 1) { const player = pickPlayer(0, ["midfielder"]); addEvent({ minute: "1'", text: "Aftrap! " + player.name + " tikt de bal terug en " + homeTeam.name + " begint rustig aan de opbouw.", kind: "system" }); return; }
     const homeLeadNow = goals[0] - goals[1];
-    const effectiveHomeTactics: Tactics = homeLeadNow >= 3 ? { ...homeTactics, mentality: "Verdedigend", pressing: false, counter: true } : homeLeadNow <= -2 ? { ...homeTactics, mentality: "Aanvallend", pressing: true } : homeTactics;
-    const effectiveAwayTactics: Tactics = goals[1] - goals[0] >= 3 ? { ...awayTactics, mentality: "Verdedigend", pressing: false, counter: true } : goals[1] - goals[0] <= -2 ? { ...awayTactics, mentality: "Aanvallend", pressing: true } : awayTactics;
+    const userIsHome = !careerData?.save?.club_id || selectedHomeId === careerData.save.club_id;
+    const configuredHome = userIsHome ? homeTactics : awayTactics; const configuredAway = userIsHome ? awayTactics : homeTactics;
+    const effectiveHomeTactics: Tactics = homeLeadNow >= 3 ? { ...configuredHome, mentality: "Verdedigend", pressing: false, counter: true } : homeLeadNow <= -2 ? { ...configuredHome, mentality: "Aanvallend", pressing: true } : configuredHome;
+    const effectiveAwayTactics: Tactics = goals[1] - goals[0] >= 3 ? { ...configuredAway, mentality: "Verdedigend", pressing: false, counter: true } : goals[1] - goals[0] <= -2 ? { ...configuredAway, mentality: "Aanvallend", pressing: true } : configuredAway;
     const homeRating = teamStrength(homeTeam, effectiveHomeTactics);
     const awayRating = teamStrength(awayTeam, effectiveAwayTactics);
     const homeShare = Math.max(.24, Math.min(.82, .5 + (homeRating - awayRating) * .012));
@@ -235,8 +272,10 @@ export default function Home() {
       <div className="tactics-layout">
         <section className="pitch-panel"><div className="pitch-heading"><span>OPSTELLING</span><label>Formatie<select value={homeTactics.formation} onChange={e => saveCareerTactics({...homeTactics,formation:e.target.value})}><option>4-3-3</option><option>4-4-2</option><option>4-2-3-1</option><option>3-5-2</option><option>5-3-2</option></select></label></div>
           <div className="football-pitch"><div className="pitch-line halfway"/><div className="pitch-circle"/><div className="penalty-box top"/><div className="penalty-box bottom"/><div className="goal-box top"/><div className="goal-box bottom"/>
-            {([{x:50,y:91,p:"GK"},{x:18,y:73,p:"LB"},{x:39,y:76,p:"CB"},{x:61,y:76,p:"CB"},{x:82,y:73,p:"RB"},{x:30,y:51,p:"CM"},{x:50,y:56,p:"CM"},{x:70,y:51,p:"CM"},{x:18,y:26,p:"LW"},{x:50,y:19,p:"ST"},{x:82,y:26,p:"RW"}]).map((p,i)=><div key={i} className="player-dot" style={{left:p.x+"%",top:p.y+"%"}}><span>{i+1}</span><small>{p.p}</small></div>)}
-          </div><div className="pitch-legend">11 posities · Positieschema is de basis voor de volgende stap: spelers aan posities koppelen.</div>
+            {formationSlots(homeTactics.formation).map((slot,i)=>{const playerId=homeTactics.lineup?.[slot.key]||"";const player=careerData?.squad?.find((p:any)=>p.id===playerId);return <div key={slot.key} className="player-dot" style={{left:slot.x+"%",top:slot.y+"%"}} title={player?.full_name||slot.role}><span>{player?player.full_name.split(" ").slice(-1)[0].slice(0,3).toUpperCase():i+1}</span><small>{slot.role}</small></div>;})}
+          </div>
+          <div className="lineup-editor"><div className="eyebrow">SPELERS KOPPELEN AAN POSITIES</div>{!careerData?.squad?.length?<p className="muted">Start of laad een carrière om spelers uit de selectie te kiezen.</p>:formationSlots(homeTactics.formation).map(slot=>{const selected=homeTactics.lineup?.[slot.key]||"";const used=Object.entries(homeTactics.lineup||{}).filter(([key,id])=>key!==slot.key&&id).map(([,id])=>id);return <label className="lineup-row" key={slot.key}><span><strong>{slot.role}</strong><small>{slot.key}</small></span><select value={selected} onChange={e=>saveCareerTactics({...homeTactics,lineup:{...(homeTactics.lineup||{}),[slot.key]:e.target.value}})}><option value="">Kies speler…</option>{careerData.squad.filter((p:any)=>p.id===selected||!used.includes(p.id)).map((p:any)=><option key={p.id} value={p.id}>{p.full_name} · {p.position} · {p.overall_rating}</option>)}</select></label>;})}</div>
+          <div className="pitch-legend">{formationSlots(homeTactics.formation).length} posities in {homeTactics.formation} · Selecteer spelers onder het veld. Wijzigingen worden automatisch opgeslagen.</div>
         </section>
         <section className="tactics-controls"><div className="eyebrow">SPEELWIJZE</div><div className="tactic-setting"><label htmlFor="mentality">Mentaliteit</label><select id="mentality" value={homeTactics.mentality} onChange={e=>saveCareerTactics({...homeTactics,mentality:e.target.value})}><option>Verdedigend</option><option>Normaal</option><option>Aanvallend</option></select><p>Stelt in hoeveel risico het team neemt bij aanvallen.</p></div>
           <div className="tactic-setting"><label htmlFor="passing">Passing</label><select id="passing" value={homeTactics.passing} onChange={e=>saveCareerTactics({...homeTactics,passing:e.target.value})}><option>Kort</option><option>Direct</option><option>Lang</option></select><p>Bepaalt hoe het team de bal naar voren brengt.</p></div>
