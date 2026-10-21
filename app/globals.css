@@ -164,3 +164,20 @@ tbody tr:hover{background:rgba(131,201,244,.045)}
 .route-sidebar .nav-icon{display:inline-grid;place-items:center;min-width:17px;color:var(--gold);font-size:14px}
 @media(max-width:900px){.sidebar-nav,.route-sidebar{top:76px;left:0;width:180px}.topbar{margin-left:180px}.app-shell>.career-screen,.app-shell>.tactics-screen,.app-shell>.workspace,.app-shell>.match-layout,.app-shell>.page-content{margin-left:180px}.route-shell{padding-left:180px}.route-topbar{padding:0 16px}}
 @media(max-width:620px){.sidebar-nav,.route-sidebar{position:sticky;top:0;left:auto;width:100%;height:auto;max-height:none;flex-direction:row;flex-wrap:nowrap;overflow-x:auto;padding:8px;border-right:0;border-bottom:1px solid var(--line)}.sidebar-nav .nav-button,.route-sidebar a{width:auto;flex:0 0 auto;padding:10px}.game-clock{min-width:180px;margin:0;flex:0 0 180px}.topbar{margin-left:0;height:auto;min-height:76px;padding:12px}.app-shell>.career-screen,.app-shell>.tactics-screen,.app-shell>.workspace,.app-shell>.match-layout,.app-shell>.page-content{margin-left:0}.route-shell{padding-left:0}.route-topbar{height:auto;min-height:76px}.route-main{padding:14px}}
+
+
+.squad-drag-panel{margin-top:18px;padding:14px;border:1px solid var(--line);border-radius:10px;background:#0c1822}
+.squad-drag-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-top:10px}
+.squad-drag-player{display:flex;flex-direction:column;gap:5px;text-align:left;cursor:grab;padding:10px;border:1px solid #314757;border-radius:8px;background:#142735;color:var(--text)}
+.squad-drag-player:active{cursor:grabbing}.squad-drag-player span{font-size:11px;color:var(--muted)}
+.transfer-filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:9px;margin:14px 0}
+.transfer-filters input,.transfer-filters select,.transfer-offer-grid input,.transfer-offer-grid select{width:100%;min-width:0;padding:9px;background:#0b1721;color:var(--text);border:1px solid var(--line);border-radius:7px}
+.transfer-filters label,.transfer-offer-grid label{display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--muted)}
+.transfer-offer-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin:16px 0}
+.amount-stepper{display:flex;gap:5px}.amount-stepper input{flex:1;min-width:80px}.amount-stepper button{padding:5px 12px}
+.inline-check{flex-direction:row!important;align-items:center}.inline-check input{width:auto}
+.facility-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-top:16px}
+.facility-card h3{font-size:15px;margin:0}.facility-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.facility-stars{color:var(--gold);letter-spacing:2px;white-space:nowrap}
+.facility-level{font:11px 'DM Mono',monospace;color:var(--muted);margin:12px 0}
+.facility-card button{width:100%;text-align:center}
+@media(max-width:620px){.squad-drag-list{grid-template-columns:repeat(2,minmax(0,1fr))}.transfer-filters{grid-template-columns:repeat(2,minmax(0,1fr))}}
