@@ -59,7 +59,7 @@ export async function POST(request: Request) {
    const clubs=await sql.query("SELECT t.id,t.name,t.reputation,t.team_strength,t.division_id,d.country_code FROM teams t JOIN divisions d ON d.id=t.division_id WHERE t.id=$1 AND d.season_id=$2 LIMIT 1",[b.clubId,SEASON]);
    if(!clubs.length)return fail("Club niet gevonden.",404);
    const c:any=clubs[0], managerId="mgr-"+crypto.randomUUID(),saveId="save-"+crypto.randomUUID(),name=String(b.managerName||"Nieuwe manager").trim().slice(0,80)||"Nieuwe manager";
-   const budget=Math.max(100000,Math.round(Number(c.team_strength)*Number(c.reputation)*17000)), wages=Math.max(50000,Math.round(Number(c.team_strength)*1800)), balance=budget*4;
+   const budget=Math.max(250000,Math.round(Number(c.team_strength)*Number(c.reputation)*3000)), wages=Math.max(12000,Math.round(Number(c.team_strength)*Number(c.reputation)*10)), balance=Math.max(500000,Math.round(budget*1.35));
    await sql.query("INSERT INTO managers(id,full_name) VALUES($1,$2)",[managerId,name]);
    await sql.query("INSERT INTO career_saves(id,manager_id,club_id,role,game_date,season_id,cash_balance,transfer_budget,wage_budget_weekly) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)",[saveId,managerId,c.id,b.role||'manager',START,SEASON,balance,budget,wages]);
    await sql.query("INSERT INTO career_news(save_id,news_date,category,headline,body) VALUES($1,$2,'club',$3,$4)",[saveId,START,"Welkom bij "+c.name,"Het bestuur heeft je aangesteld als manager. Je bent verantwoordelijk voor resultaten, financiën en de selectie."]);
