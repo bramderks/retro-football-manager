@@ -46,8 +46,7 @@ SET current_rating = p.overall_rating,
     potential_rating = p.potential_rating,
     updated_at = NOW()
 FROM players p
-WHERE p.id = cps.player_id
-  AND cps.current_rating IS NULL;
+WHERE p.id = cps.player_id;
 
 CREATE INDEX IF NOT EXISTS idx_player_match_stats_season_rating
   ON career_player_match_stats(save_id, player_id, rating);
