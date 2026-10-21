@@ -259,7 +259,7 @@ export default function Home() {
     if(!matchLineup.includes(outId)||!matchBench.includes(inId)){setCareerError("Deze spelers staan niet op de juiste lijst voor een wissel.");return;}
     if(redCardIds.includes(outId)){setCareerError("Een speler met rood kan niet worden vervangen alsof het een blessure is; pas je formatie aan.");return;}
     const nextLineup=matchLineup.map(id=>id===outId?inId:id),nextBench=matchBench.filter(id=>id!==inId);const newWindow=minute!==lastSubMinute;
-    setMatchLineup(nextLineup);setMatchBench(nextBench);const tacticalLineup={...(homeTactics.lineup||{})};formationSlots(homeTactics.formation).forEach((slot,i)=>{tacticalLineup[slot.key]=nextLineup[i]||"";});setHomeTactics({...homeTactics,lineup:tacticalLineup});setSubstitutions(prev=>[...prev,{minute,outId,inId,team}]);if(newWindow){setSubWindows(v=>v+1);setLastSubMinute(minute);}
+    setMatchLineup(nextLineup);setMatchBench(nextBench);if(injuredIds.includes(outId))setInjuriesByTeam(prev=>userSide===0?[Math.max(0,prev[0]-1),prev[1]]:[prev[0],Math.max(0,prev[1]-1)]);const tacticalLineup={...(homeTactics.lineup||{})};formationSlots(homeTactics.formation).forEach((slot,i)=>{tacticalLineup[slot.key]=nextLineup[i]||"";});setHomeTactics({...homeTactics,lineup:tacticalLineup});setSubstitutions(prev=>[...prev,{minute,outId,inId,team}]);if(newWindow){setSubWindows(v=>v+1);setLastSubMinute(minute);}
     const outName=careerData?.squad?.find((p:any)=>p.id===outId)?.full_name||outId,inName=careerData?.squad?.find((p:any)=>p.id===inId)?.full_name||inId;
     addEvent({minute:minute+"'",text:"WISSEL "+(substitutions.length+1)+"/5: "+inName+" komt erin voor "+outName+". Wisselmoment "+(newWindow?subWindows+1:subWindows)+"/3.",kind:"system"});
     setCareerError("");
@@ -276,8 +276,8 @@ export default function Home() {
     if(!lineupConfirmed||!careerData?.squad?.length)return 0;
     const teamId=team.name===homeTeam.name?selectedHomeId:selectedAwayId;
     if(teamId!==careerData.save.club_id)return 0;
-    const accepted:Record<string,string[]>={K:["GK"],LV:["LB"],CV:["CV"],RV:["RB"],VM:["VM"],CM:["CM","LM","RM"],LM:["LM","LA","AML"],RM:["RM","RA","AMR"],AM:["AM","AML","AMR"],LA:["LA","AML"],RA:["RA","AMR"],SP:["SP"]};
-    let penalty=0;for(const slot of formationSlots(t.formation)){const id=t.lineup?.[slot.key];const p=careerData.squad.find((x:any)=>x.id===id);if(!p)continue;if(!(accepted[slot.role]||[]).includes(String(p.position||"")))penalty+=slot.role==="K"?12:2.2;}return penalty;
+    const accepted:Record<string,string[]>={K:["GK"],LV:["LB"],CV:["CV"],RV:["RB"],WB:["LB","RB"],VM:["VM"],CM:["CM","LM","RM"],LM:["LM","LA","AML"],RM:["RM","RA","AMR"],AM:["AM","AML","AMR"],LA:["LA","AML"],RA:["RA","AMR"],SP:["SP"]};
+    let penalty=0;for(const slot of formationSlots(t.formation)){const id=t.lineup?.[slot.key];const p=careerData.squad.find((x:any)=>x.id===id);if(!p||redCardIds.includes(id||"")||injuredIds.includes(id||""))continue;if(!(accepted[slot.role]||[]).includes(String(p.position||"")))penalty+=slot.role==="K"?12:2.2;}return penalty;
   }
   function teamStrength(team: Team, t: Tactics) {
     return team.rating + team.reputation * .12 - lineupPositionPenalty(team,t) + ({ Verdedigend: -7, Normaal: 0, Aanvallend: 7 }[t.mentality] ?? 0)
@@ -295,10 +295,10 @@ export default function Home() {
     const assignedPlayers = userIsTeam ? (careerData?.squad || []).filter((p:any) => assignedIds.includes(p.id)) : [];
     const squad: Player[] = assignedPlayers.length >= 11 ? assignedPlayers.map((p:any) => ({
       name: p.full_name,
-      position: p.position === "GK" ? "keeper" : ["ST","RW","LW","CF"].includes(p.position) ? "forward" : ["CB","LB","RB","LWB","RWB"].includes(p.position) ? "defender" : "midfielder",
+      position: p.position === "GK" ? "keeper" : ["SP","ST","RA","LA","AML","AMR","RW","LW","CF"].includes(p.position) ? "forward" : ["CV","CB","LB","RB","LWB","RWB"].includes(p.position) ? "defender" : "midfielder",
     })) : dbTeam?.players.length ? dbTeam.players.map(p => ({
       name: p.name,
-      position: p.position === "GK" ? "keeper" : p.position === "ST" || p.position === "RW" || p.position === "LW" ? "forward" : p.position === "CB" || p.position === "LB" || p.position === "RB" ? "defender" : "midfielder",
+      position: p.position === "GK" ? "keeper" : ["SP","ST","RA","LA","AML","AMR","RW","LW"].includes(p.position) ? "forward" : ["CV","CB","LB","RB","LWB","RWB"].includes(p.position) ? "defender" : "midfielder",
     })) : fallback;
     const pool = positions?.length ? squad.filter(p => positions.includes(p.position)) : squad.filter(p => p.position !== "keeper");
     return pool[Math.floor(Math.random() * pool.length)] ?? squad[0];
@@ -379,7 +379,9 @@ export default function Home() {
     if (r < tempoEventChance) {
       const passer = pickPlayer(ownIndex as 0 | 1, ["defender", "midfielder"]);
       const receiver = pickPlayer(ownIndex as 0 | 1, ["midfielder", "forward"]);
-      addEvent({ minute: stamp, text: t.passing === "Kort" ? passer.name + " combineert met " + receiver.name + " en zoekt een opening." : t.passing === "Lang" ? passer.name + " verstuurt een lange bal richting " + receiver.name + " achter de verdediging." : passer.name + " speelt direct vooruit op " + receiver.name + "." });
+      const turnoverRisk=t.passing==="Direct"?.18:t.passing==="Lang"?.10:.025;
+      if(Math.random()<turnoverRisk)addEvent({minute:stamp,text:passer.name+" probeert een risicovolle pass vooruit, maar "+other+" onderschept de bal en schakelt om."});
+      else addEvent({ minute: stamp, text: t.passing === "Kort" ? passer.name + " combineert met " + receiver.name + " en zoekt een opening." : t.passing === "Lang" ? passer.name + " verstuurt een lange bal richting " + receiver.name + " achter de verdediging." : passer.name + " speelt direct vooruit op " + receiver.name + "." });
     }
     else if (r < .38 && t.pressing) { const tackler = pickPlayer(ownIndex as 0 | 1, ["midfielder", "defender"]); addEvent({ minute: stamp, text: team + " voert de druk op: " + tackler.name + " jaagt door, verovert de bal en zet " + other + " vast op eigen helft." }); }
     else if (r < .60 || r < .76) {
