@@ -50,3 +50,13 @@ WHERE p.id = cps.player_id;
 
 CREATE INDEX IF NOT EXISTS idx_player_match_stats_season_rating
   ON career_player_match_stats(save_id, player_id, rating);
+
+-- Calibrate the European/world rosters against their own club strength too.
+UPDATE world_roster_players p
+SET overall_rating = GREATEST(1, LEAST(100, ROUND(p.overall_rating * 0.75 + COALESCE(c.team_strength, 50) * 0.25)::int)),
+    potential_rating = GREATEST(
+      GREATEST(1, LEAST(100, ROUND(p.overall_rating * 0.75 + COALESCE(c.team_strength, 50) * 0.25)::int)),
+      LEAST(100, ROUND(p.potential_rating * 0.75 + COALESCE(c.team_strength, 50) * 0.25)::int)
+    )
+FROM uefa_clubs c
+WHERE c.id = p.club_id;
