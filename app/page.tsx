@@ -64,6 +64,10 @@ export default function Home() {
   const [pendingCareerFixture, setPendingCareerFixture] = useState<any>(null);
   const [matchSaving, setMatchSaving] = useState(false);
   const [savedMatchFixture, setSavedMatchFixture] = useState("");
+  const [halfTime, setHalfTime] = useState(false);
+  const [extraTime, setExtraTime] = useState(false);
+  const [penaltiesFinished, setPenaltiesFinished] = useState(false);
+  const [draggedPlayerId, setDraggedPlayerId] = useState("");
   const [uefaData, setUefaData] = useState<any>(null);
   const [uefaCompetition, setUefaCompetition] = useState("UCL");
   const [selectedHomeId, setSelectedHomeId] = useState("ajax");
@@ -74,7 +78,8 @@ export default function Home() {
   const awayTeam: Team = databaseAway ? { name: databaseAway.name, city: databaseAway.city, rating: databaseAway.teamStrength, reputation: databaseAway.reputation, keeper: databaseAway.players.find(p => p.position === "GK")?.overallRating ?? 56 } : NEC;
   const [speed, setSpeed] = useState("Normaal");
   const [running, setRunning] = useState(false);
-  const finished = minute >= 90;
+  const isFinal = Boolean(pendingCareerFixture?.is_final || pendingCareerFixture?.competition_type === "final" || String(pendingCareerFixture?.round_name || "").toLowerCase().includes("final"));
+  const finished = isFinal ? (extraTime ? minute >= 120 && (goals[0] !== goals[1] || penaltiesFinished) : minute >= 90 && goals[0] !== goals[1]) : minute >= 90;
   const possession = useMemo(() => {
     const total = stats[0].shots + stats[1].shots;
     const home = total === 0 ? 50 : Math.max(25, Math.min(75, 50 + (stats[0].chances - stats[1].chances) * 2));
@@ -204,6 +209,9 @@ export default function Home() {
   }
   function playMinute() {
     const m = minute + 1; setMinute(m);
+    if (m === 45) { setRunning(false); setHalfTime(true); addEvent({minute:"RUST",text:"Rust! Pas je tactiek aan en kies daarna Begin tweede helft.",kind:"system"}); return; }
+    if (m === 90 && isFinal && goals[0] === goals[1] && !extraTime) { setRunning(false); addEvent({minute:"90",text:"Einde reguliere speeltijd. Gelijk in deze finale: er volgt verlenging.",kind:"system"}); return; }
+    if (m === 120 && isFinal && goals[0] === goals[1] && extraTime) { setRunning(false); addEvent({minute:"120",text:"Na verlenging is het nog gelijk. De finale wordt beslist met strafschoppen.",kind:"system"}); return; }
     if (m === 1) { const player = pickPlayer(0, ["midfielder"]); addEvent({ minute: "1'", text: "Aftrap! " + player.name + " tikt de bal terug en " + homeTeam.name + " begint rustig aan de opbouw.", kind: "system" }); return; }
     const homeLeadNow = goals[0] - goals[1];
     const userIsHome = !careerData?.save?.club_id || selectedHomeId === careerData.save.club_id;
@@ -220,14 +228,15 @@ export default function Home() {
     const opponentTactics = home ? effectiveAwayTactics : effectiveHomeTactics;
     const tacticalEdge = ({ Verdedigend: -.08, Normaal: 0, Aanvallend: .09 }[t.mentality] ?? 0)
       - ({ Verdedigend: -.08, Normaal: 0, Aanvallend: .09 }[opponentTactics.mentality] ?? 0);
-    const passingBonus = ({ Kort: .035, Direct: .02, Lang: -.005 }[t.passing] ?? 0);
+    const passingBonus = ({ Kort: -.012, Direct: .055, Lang: -.025 }[t.passing] ?? 0);
+    const tempoEventChance = ({ Kort: .38, Direct: .22, Lang: .14 }[t.passing] ?? .22);
     const counterBonus = t.counter && opponentTactics.mentality === "Aanvallend" ? .11 : t.counter ? .035 : 0;
     const pressingBonus = t.pressing ? .045 : 0;
     const scoreLead = home ? goals[0] - goals[1] : goals[1] - goals[0];
     const gameStateFactor = scoreLead >= 4 ? .38 : scoreLead >= 3 ? .52 : scoreLead >= 2 ? .76 : scoreLead <= -3 ? 1.22 : scoreLead <= -2 ? 1.12 : 1;
     const chanceQuality = Math.max(.025, Math.min(.42, (.16 + ((home ? homeRating : awayRating) - (home ? awayRating : homeRating)) * .0045 + tacticalEdge * .65 + passingBonus * .7 + counterBonus * .7 + pressingBonus * .65) * gameStateFactor));
     const stamp = m + "'"; const r = Math.random();
-    if (r < .22) {
+    if (r < tempoEventChance) {
       const passer = pickPlayer(ownIndex as 0 | 1, ["defender", "midfielder"]);
       const receiver = pickPlayer(ownIndex as 0 | 1, ["midfielder", "forward"]);
       addEvent({ minute: stamp, text: t.passing === "Kort" ? passer.name + " combineert met " + receiver.name + " en zoekt een opening." : t.passing === "Lang" ? passer.name + " verstuurt een lange bal richting " + receiver.name + " achter de verdediging." : passer.name + " speelt direct vooruit op " + receiver.name + "." });
@@ -241,7 +250,7 @@ export default function Home() {
         own.chances++; own.shots++;
         const shooter = pickPlayer(ownIndex as 0 | 1, ["forward", "midfielder"]);
         addEvent({ minute: "KANS", text: shooter.name + " krijgt ruimte in het strafschopgebied en haalt uit!" });
-        if (Math.random() < .66) {
+        if (Math.random() < ({Kort:.84,Direct:.56,Lang:.48}[t.passing] ?? .62)) {
           own.onTarget++;
           const keeper = home ? awayTeam.keeper : homeTeam.keeper;
           const scorerQuality = home ? homeTeam.rating : awayTeam.rating;
