@@ -201,7 +201,7 @@ export async function POST(request: Request) {
    const awayGoals=Math.max(0,Math.min(8,Math.floor(Number(b.awayGoals))));
    if(!fixtureId||!Number.isFinite(homeGoals)||!Number.isFinite(awayGoals))return fail("Wedstrijdgegevens ontbreken.");
    const nextDate=new Date(dateOnly(s.game_date)+"T12:00:00Z");nextDate.setUTCDate(nextDate.getUTCDate()+1);const day=dateOnly(nextDate);
-   const matches=await sql.query("SELECT f.*,h.name AS home_name,a.name AS away_name FROM fixtures f JOIN teams h ON h.id=f.home_team_id JOIN teams a ON a.id=f.away_team_id WHERE f.id=$1 AND f.division_id=$2 AND f.kickoff_date=$3 AND (f.home_team_id=$4 OR f.away_team_id=$4) LIMIT 1",[fixtureId,s.division_id,day,s.club_id]);
+    const matches=await sql.query("SELECT cfs.*,h.name AS home_name,a.name AS away_name FROM career_fixture_schedule cfs JOIN fixtures f ON f.id=cfs.fixture_id JOIN teams h ON h.id=cfs.home_team_id JOIN teams a ON a.id=cfs.away_team_id WHERE cfs.save_id=$1 AND cfs.fixture_id=$2 AND f.division_id=$3 AND cfs.kickoff_date=$4 AND (cfs.home_team_id=$5 OR cfs.away_team_id=$5) LIMIT 1",[b.saveId,fixtureId,s.division_id,day,s.club_id]);
    if(!matches.length)return fail("Deze wedstrijd hoort niet bij jouw volgende wedstrijddag.",409);
    const f:any=matches[0];
    const existing=await sql.query("SELECT id FROM career_fixture_results WHERE save_id=$1 AND fixture_id=$2 LIMIT 1",[b.saveId,fixtureId]);
