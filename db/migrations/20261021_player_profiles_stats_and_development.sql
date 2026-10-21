@@ -11,12 +11,10 @@ ALTER TABLE career_player_states
 ALTER TABLE career_player_contracts
   ADD COLUMN IF NOT EXISTS release_clause BIGINT;
 
-UPDATE career_player_states cps
-SET current_rating = COALESCE(cps.current_rating, p.overall_rating),
-    potential_rating = COALESCE(cps.potential_rating, p.potential_rating)
-FROM players p
-WHERE p.id = cps.player_id
-  AND (cps.current_rating IS NULL OR cps.potential_rating IS NULL);
+CREATE TABLE IF NOT EXISTS player_rating_calibrations (
+  id TEXT PRIMARY KEY,
+  applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
 
 -- Keep all player records in the same tactical position vocabulary.
 UPDATE players
@@ -42,7 +40,8 @@ SET overall_rating = GREATEST(1, LEAST(100, ROUND(p.overall_rating * 0.65 + COAL
       LEAST(100, ROUND(p.potential_rating * 0.70 + COALESCE(t.team_strength, 50) * 0.30 + CASE WHEN COALESCE(t.team_strength,50)>=88 THEN 12 WHEN COALESCE(t.team_strength,50)>=80 THEN 7 ELSE 3 END)::int)
     )
 FROM teams t
-WHERE t.id = p.team_id;
+WHERE t.id = p.team_id
+  AND NOT EXISTS (SELECT 1 FROM player_rating_calibrations WHERE id='domestic-2026-10-21');
 
 -- Give every player in every existing save a save-local state, including inactive and youth players.
 INSERT INTO career_player_states(save_id,player_id,club_id,current_rating,potential_rating)
@@ -55,7 +54,10 @@ SET current_rating = p.overall_rating,
     potential_rating = p.potential_rating,
     updated_at = NOW()
 FROM players p
-WHERE p.id = cps.player_id;
+WHERE p.id = cps.player_id
+  AND NOT EXISTS (SELECT 1 FROM player_rating_calibrations WHERE id='domestic-2026-10-21');
+
+INSERT INTO player_rating_calibrations(id) VALUES('domestic-2026-10-21') ON CONFLICT DO NOTHING;
 
 -- Backfill a persistent release clause on all existing contracts.
 UPDATE career_player_contracts pc
@@ -113,7 +115,10 @@ SET rating = ROUND(LEAST(10,GREATEST(4.5,
   - m.yellow_cards*0.35 - m.red_cards*1.25
 ))::numeric,2)
 FROM players p
-WHERE p.id=m.player_id;
+WHERE p.id=m.player_id
+  AND NOT EXISTS (SELECT 1 FROM player_rating_calibrations WHERE id='match-ratings-2026-10-21');
+
+INSERT INTO player_rating_calibrations(id) VALUES('match-ratings-2026-10-21') ON CONFLICT DO NOTHING;
 
 CREATE INDEX IF NOT EXISTS idx_player_match_stats_season_rating
   ON career_player_match_stats(save_id, player_id, rating);
@@ -126,4 +131,7 @@ SET overall_rating = GREATEST(1, LEAST(100, ROUND(p.overall_rating * 0.65 + COAL
       LEAST(100, ROUND(p.potential_rating * 0.70 + COALESCE(c.team_strength, 50) * 0.30 + CASE WHEN COALESCE(c.team_strength,50)>=88 THEN 12 WHEN COALESCE(c.team_strength,50)>=80 THEN 7 ELSE 3 END)::int)
     )
 FROM uefa_clubs c
-WHERE c.id = p.club_id;
+WHERE c.id = p.club_id
+  AND NOT EXISTS (SELECT 1 FROM player_rating_calibrations WHERE id='world-2026-10-21');
+
+INSERT INTO player_rating_calibrations(id) VALUES('world-2026-10-21') ON CONFLICT DO NOTHING;
