@@ -4,6 +4,8 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 const SEASON = "2026-2027";
 const START = "2026-08-01";
+const COUNTRY_LABELS: Record<string,string> = { NED:"Nederland",ENG:"Engeland",GER:"Duitsland",FRA:"Frankrijk",ITA:"Italië",ESP:"Spanje" };
+function makeSchedule(teams: any[], divisionId: string, season: string) { const list=[...teams].sort((a,b)=>String(a.id).localeCompare(String(b.id))); if(list.length%2)list.push({id:"BYE"}); const n=list.length, rounds=n-1, first:any[]=[]; let rotation=[...list]; for(let r=0;r<rounds;r++){for(let i=0;i<n/2;i++){let a=rotation[i],b=rotation[n-1-i];if(a.id==="BYE"||b.id==="BYE")continue;if((r+i)%2===0)[a,b]=[b,a];first.push({round:r+1,home:a.id,away:b.id});}rotation=[rotation[0],rotation[n-1],...rotation.slice(1,n-1)];}const fixtures:any[]=[];const base=new Date("2026-08-07T12:00:00Z");for(const m of first){const date=new Date(base);date.setUTCDate(date.getUTCDate()+Math.floor((m.round-1)/2)*7+(m.round%2===0?1:0));fixtures.push({id:divisionId+"-md"+m.round+"-"+m.home+"-"+m.away,season,divisionId,round:m.round,date:date.toISOString().slice(0,10),home:m.home,away:m.away});}for(const m of first){const round=m.round+rounds,date=new Date(base);date.setUTCDate(date.getUTCDate()+Math.floor((round-1)/2)*7+(round%2===0?1:0));fixtures.push({id:divisionId+"-md"+round+"-"+m.away+"-"+m.home,season,divisionId,round,date:date.toISOString().slice(0,10),home:m.away,away:m.home});}return fixtures;}
 const fail = (error: string, status = 400) => NextResponse.json({ error }, { status });
 const dateOnly = (d: Date | string) => new Date(d).toISOString().slice(0, 10);
 function matchScore(home: number, away: number, ht: any = {}, at: any = {}) {
@@ -28,7 +30,7 @@ export async function GET(request: Request) {
   const conn=process.env.DATABASE_URL;if(!conn)return fail("DATABASE_URL ontbreekt.",503);
   try{
     const sql=neon(conn), url=new URL(request.url), saveId=url.searchParams.get("saveId");
-    const clubs=await sql.query("SELECT t.id,t.name,t.city,t.reputation,t.team_strength,d.name AS division,d.tier FROM teams t JOIN divisions d ON d.id=t.division_id WHERE d.season_id=$1 ORDER BY d.tier,t.name",[SEASON]);
+    const clubs=await sql.query("SELECT t.id,t.name,t.city,t.reputation,t.team_strength,d.name AS division,d.tier,d.country_code FROM teams t JOIN divisions d ON d.id=t.division_id WHERE d.season_id=$1 ORDER BY d.country_code,d.tier,t.name",[SEASON]);
     if(!saveId)return NextResponse.json({season:SEASON,clubs});
     const got=await sql.query("SELECT s.*,m.full_name AS manager_name,t.name AS club_name,t.city,t.reputation,t.team_strength,d.name AS division,d.id AS division_id FROM career_saves s JOIN managers m ON m.id=s.manager_id JOIN teams t ON t.id=s.club_id JOIN divisions d ON d.id=t.division_id WHERE s.id=$1 LIMIT 1",[saveId]);
     if(!got.length)return fail("Carrière niet gevonden.",404);
@@ -51,16 +53,19 @@ export async function POST(request: Request) {
   const b=await request.json(),sql=neon(conn);
   if(b.action==="create"){
    if(!b.clubId)return fail("Kies een club.");
-   const clubs=await sql.query("SELECT t.id,t.name,t.reputation,t.team_strength,t.division_id FROM teams t JOIN divisions d ON d.id=t.division_id WHERE t.id=$1 AND d.season_id=$2 LIMIT 1",[b.clubId,SEASON]);
+   if(!["manager","sporting_director","chairperson"].includes(b.role||"manager"))return fail("Kies een geldige startfunctie.");
+   const clubs=await sql.query("SELECT t.id,t.name,t.reputation,t.team_strength,t.division_id,d.country_code FROM teams t JOIN divisions d ON d.id=t.division_id WHERE t.id=$1 AND d.season_id=$2 LIMIT 1",[b.clubId,SEASON]);
    if(!clubs.length)return fail("Club niet gevonden.",404);
    const c:any=clubs[0], managerId="mgr-"+crypto.randomUUID(),saveId="save-"+crypto.randomUUID(),name=String(b.managerName||"Nieuwe manager").trim().slice(0,80)||"Nieuwe manager";
    const budget=Math.max(100000,Math.round(Number(c.team_strength)*Number(c.reputation)*17000)), wages=Math.max(50000,Math.round(Number(c.team_strength)*1800)), balance=budget*4;
    await sql.query("INSERT INTO managers(id,full_name) VALUES($1,$2)",[managerId,name]);
-   await sql.query("INSERT INTO career_saves(id,manager_id,club_id,role,game_date,season_id,cash_balance,transfer_budget,wage_budget_weekly) VALUES($1,$2,$3,'manager',$4,$5,$6,$7,$8)",[saveId,managerId,c.id,START,SEASON,balance,budget,wages]);
+   await sql.query("INSERT INTO career_saves(id,manager_id,club_id,role,game_date,season_id,cash_balance,transfer_budget,wage_budget_weekly) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)",[saveId,managerId,c.id,b.role||'manager',START,SEASON,balance,budget,wages]);
    await sql.query("INSERT INTO career_news(save_id,news_date,category,headline,body) VALUES($1,$2,'club',$3,$4)",[saveId,START,"Welkom bij "+c.name,"Het bestuur heeft je aangesteld als manager. Je bent verantwoordelijk voor resultaten, financiën en de selectie."]);
       await sql.query("INSERT INTO board_objectives(id,save_id,season_id,objective_type,description,target_value) VALUES($1,$2,$3,$4,$5,$6)",["obj-"+saveId,saveId,SEASON,"league_position",Number(c.team_strength)>=78?"Eindig bij de eerste drie":Number(c.team_strength)>=68?"Eindig in de bovenste helft":"Handhaaf je in de divisie",Number(c.team_strength)>=78?3:Number(c.team_strength)>=68?9:15]);
    await sql.query("INSERT INTO club_finances(save_id,entry_date,category,description,amount,balance_after) VALUES($1,$2,'other','Beginsaldo clubkas',$3,$3)",[saveId,START,balance]);
    await sql.query("INSERT INTO career_player_states(save_id,player_id,club_id) SELECT $1,id,team_id FROM players WHERE is_active=TRUE ON CONFLICT(save_id,player_id) DO NOTHING",[saveId]);
+   const fixtureCount=await sql.query("SELECT COUNT(*)::int AS n FROM fixtures WHERE season_id=$1 AND division_id=$2",[SEASON,c.division_id]);
+   if(Number(fixtureCount[0]?.n||0)===0){const divisionTeams=await sql.query("SELECT id FROM teams WHERE division_id=$1 ORDER BY id",[c.division_id]);const schedule=makeSchedule(divisionTeams,c.division_id,SEASON);for(let i=0;i<schedule.length;i+=60){const batch=schedule.slice(i,i+60);const values:any[]=[];const tuples=batch.map((x:any,j:number)=>{const k=j*7;values.push(x.id,x.season,x.divisionId,x.round,x.date,x.home,x.away);return `(${k+1},${k+2},${k+3},${k+4},${k+5},${k+6},${k+7})`;});await sql.query("INSERT INTO fixtures(id,season_id,division_id,matchday,kickoff_date,home_team_id,away_team_id) VALUES "+tuples.join(",")+" ON CONFLICT(id) DO NOTHING",values);}}
    return NextResponse.json({saveId,clubId:c.id,club:c.name});
   }
   if(!b.saveId)return fail("saveId ontbreekt.");
