@@ -186,3 +186,40 @@ tbody tr:hover{background:rgba(131,201,244,.045)}
 
 .discipline-feed{display:flex;flex-wrap:wrap;gap:8px;padding:10px 15px;border-bottom:1px solid var(--line);background:#0b1721}.discipline-feed span{font-size:10px;padding:5px 8px;border:1px solid #344958;border-radius:6px;color:#d6e0e5}
 .match-sub-panel{margin-top:16px}.match-sub-panel .lineup-row{grid-template-columns:120px minmax(0,1fr)}
+
+
+/* Match-day polish: fixed tactics, visible injuries, compact event history and clear end actions. */
+.injury-alert-panel{grid-column:1/-1;margin:0 0 14px;border:1px solid #8b5d39;background:linear-gradient(135deg,rgba(92,49,31,.28),rgba(12,24,34,.96))}
+.injury-alert-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:8px;margin-top:10px}
+.injury-alert-row{display:flex;align-items:center;gap:10px;padding:11px 12px;border:1px solid rgba(221,139,93,.28);border-radius:9px;background:rgba(7,16,25,.58)}
+.injury-icon{display:grid;place-items:center;width:30px;height:30px;flex:0 0 30px;border-radius:8px;background:#4a2926;color:#ffb08f;font-weight:900}
+.injury-alert-row>span:nth-child(2){display:flex;flex-direction:column;gap:3px;min-width:0}
+.injury-alert-row strong{font-size:12px;color:#ffe0cf}
+.injury-alert-row small{font-size:10px;color:var(--muted)}
+.injury-status{margin-left:auto;color:#ffb08f;font:9px 'DM Mono',monospace;white-space:nowrap}
+.player-dot.has-runline:after{content:"";position:absolute;left:50%;bottom:85%;width:2px;height:25px;background:#f0ca70;transform:translateX(-50%);box-shadow:0 -3px 0 -0.3px #f0ca70}
+.player-dot.has-runline:before{content:"";position:absolute;left:50%;bottom:calc(85% + 22px);width:7px;height:7px;border-top:2px solid #f0ca70;border-right:2px solid #f0ca70;transform:translateX(-50%) rotate(-45deg)}
+.player-dot{position:absolute}
+.discipline-feed{align-items:flex-start;max-height:150px;overflow-y:auto;overscroll-behavior:contain}
+.discipline-feed .event-chip{flex:1 1 260px;line-height:1.5;color:#e4edf1;background:#12232f;border-color:#2b4352}
+.commentary{max-height:430px;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable;padding-right:8px}
+.event{display:grid;grid-template-columns:76px minmax(0,1fr);gap:12px;padding:11px 12px;border-bottom:1px solid rgba(51,72,86,.58)}
+.event-minute{font:10px 'DM Mono',monospace;letter-spacing:.04em;color:var(--gold)}
+.event-text{min-width:0;line-height:1.55;overflow-wrap:anywhere}
+.event.goal{background:rgba(64,125,86,.11)}
+.event.var{background:rgba(165,126,56,.07)}
+.event.system{background:rgba(55,87,109,.08)}
+.match-end-actions{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:10px;margin:20px 0 16px;padding:16px;border:1px solid var(--line);border-radius:14px;background:linear-gradient(135deg,#132431,#0b1721);box-shadow:0 12px 28px rgba(0,0,0,.18)}
+.match-end-actions:before{content:"WEDSTRIJD AFGELOPEN";margin-right:auto;color:var(--muted);font:10px 'DM Mono',monospace;letter-spacing:.12em}
+.match-end-actions button{min-height:42px;padding:10px 15px;border:1px solid #385064;background:#172a37;color:#dce7ec;font-weight:800}
+.match-end-actions button.primary-action{background:linear-gradient(135deg,#d9bc72,#b99647);border-color:#e5cb86;color:#101820}
+.tactics-controls select:disabled,.pitch-panel select:disabled{opacity:.7;cursor:not-allowed;background:#15232d;color:#a9bac5;border-color:#354754}
+.squad-drag-player:disabled{cursor:not-allowed;opacity:.55}
+@media(max-width:700px){
+ .match-end-actions{justify-content:stretch;padding:12px}
+ .match-end-actions:before{flex:1 0 100%;margin:0 0 4px}
+ .match-end-actions button{flex:1 1 180px}
+ .event{grid-template-columns:58px minmax(0,1fr);gap:8px;padding:10px}
+ .injury-alert-row{align-items:flex-start;flex-wrap:wrap}
+ .injury-status{margin-left:40px}
+}
