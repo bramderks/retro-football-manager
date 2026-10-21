@@ -354,7 +354,7 @@ export default function Home() {
         addEvent({minute:m+"'",text:"BLESSURE: "+victim.name+" loopt "+injury.name.toLowerCase()+" op. Verwachte hersteltijd: "+injury.recoveryDays+" dagen.",kind:"var"});
         persistMatchInjury(victim.id,injury);
         if(side===userSide){setRunning(false);setActiveScreen("Tactiek");return;}
-        if(aiSubstitutions[side]<5){setAiSubstitutions(prev=>side===0?[Math.min(5,prev[0]+1),prev[1]]:[prev[0],Math.min(5,prev[1]+1)]);setInjuriesByTeam(prev=>side===0?[Math.max(0,prev[0]-1),prev[1]]:[prev[0],Math.max(0,prev[1]-1)]);addEvent({minute:m+"'",text:"AI-wissel na blessure: de medische staf haalt "+victim.name+" eraf en de trainer brengt een vervanger in.",kind:"system"});}
+        if(aiSubstitutions[side]<5&&aiBenches[side]?.length){const incomingId=aiBenches[side][0],aiTeam=databaseTeams.find(t=>t.id===(side===0?selectedHomeId:selectedAwayId)),incoming=(aiTeam?.players||[]).find((p:any)=>p.id===incomingId);if(incoming){setAiLineups(prev=>({...prev,[side]:(prev[side]||[]).map(id=>id===victim.id?incomingId:id)}));setAiBenches(prev=>({...prev,[side]:(prev[side]||[]).slice(1)}));setAiSubstitutions(prev=>side===0?[Math.min(5,prev[0]+1),prev[1]]:[prev[0],Math.min(5,prev[1]+1)]);setInjuriesByTeam(prev=>side===0?[Math.max(0,prev[0]-1),prev[1]]:[prev[0],Math.max(0,prev[1]-1)]);addEvent({minute:m+"'",text:"AI-wissel na blessure: "+incoming.name+" vervangt "+victim.name+".",kind:"system"});}}
       }
     }
     if (m === 45) { setRunning(false); setHalfTime(true); setMatchPhase("half-time"); setActiveScreen("Tactiek"); addEvent({minute:"RUST",text:"Rust! Pas je tactiek aan en kies daarna Begin tweede helft.",kind:"system"}); return; }
