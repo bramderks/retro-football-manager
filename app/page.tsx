@@ -137,8 +137,21 @@ export default function Home() {
     try { const r=await fetch("/api/career",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"offer_transfer",saveId:careerSaveId,playerId:player.id,fee,wage:Math.max(500,Number(player.overall_rating)*Number(player.overall_rating))})}); const d=await r.json(); if(!r.ok)throw new Error(d.error||"Bod mislukt."); const fresh=await fetch("/api/career?saveId="+encodeURIComponent(careerSaveId),{cache:"no-store"}).then(x=>x.json());setCareerData(fresh); } catch(e) {setCareerError(e instanceof Error?e.message:"Bod mislukt.");} finally {setCareerBusy(false);}
   }
   async function saveCareerTactics(tactics: Tactics) {
-    setHomeTactics(tactics); if (!careerSaveId) return;
-    fetch("/api/career", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "tactics", saveId: careerSaveId, tactics }) }).catch(() => setCareerError("Tactiek kon niet worden opgeslagen."));
+    setHomeTactics(tactics);
+    if (!careerSaveId) return;
+    setCareerError("");
+    try {
+      const response = await fetch("/api/career", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "tactics", saveId: careerSaveId, tactics }),
+      });
+      const data = await response.json();
+      if (!response.ok || !data.ok) throw new Error(data.error || "Tactiek kon niet worden opgeslagen.");
+      setCareerData((current: any) => current ? { ...current, save: { ...current.save, tactical_setup: tactics } } : current);
+    } catch (error) {
+      setCareerError(error instanceof Error ? error.message : "Tactiek kon niet worden opgeslagen.");
+    }
   }
   useEffect(() => {
     if (!pendingCareerFixture || !finished || !careerSaveId || savedMatchFixture === pendingCareerFixture.id || matchSaving) return;
@@ -261,7 +274,7 @@ export default function Home() {
 
   return <main className="app-shell">
     <header className="topbar"><div className="brand"><span className="brand-mark">RFM</span><div><div className="brand-title">RETRO FOOTBALL MANAGER</div><div className="brand-sub">THE CLASSIC GAME, REBUILT</div></div></div><div className="live-pill"><span className="pulse" /> WEB EDITION · v0.1</div></header>
-    <nav className="nav">{["Overzicht", "Wedstrijd", "Selectie", "Tactiek", "Competitie", "Europees", "Kalender", "Transfers", "Loopbaan"].map(n => <button key={n} className={activeScreen === n ? "nav-button active" : "nav-button"} onClick={() => { if(n === "Europees") window.location.href="/uefa"; else if(n === "Kalender") window.location.href="/kalender"; else setActiveScreen(n); }}>{n}</button>)}</nav>
+    <nav className="nav">{["Overzicht", "Wedstrijd", "Selectie", "Tactiek", "Competitie", "Europees", "Kalender", "Transfers", "Loopbaan"].map(n => <button key={n} aria-current={activeScreen === n ? "page" : undefined} title={n} className={activeScreen === n ? "nav-button active" : "nav-button"} onClick={() => { if(n === "Europees") window.location.href="/uefa"; else if(n === "Kalender") window.location.href="/kalender"; else setActiveScreen(n); }}><span className="nav-icon" aria-hidden="true">{({"Overzicht":"▦","Wedstrijd":"⚽","Selectie":"♟","Tactiek":"⌘","Competitie":"🏆","Europees":"✦","Kalender":"▣","Transfers":"⇄","Loopbaan":"↗"} as Record<string,string>)[n]}</span><span>{n}</span></button>)}</nav>
     {activeScreen === "Overzicht" ? <section className="career-screen">
       <div className="career-header"><div><div className="eyebrow">CLUBMANAGEMENT / SEIZOEN 2026/27</div><h1>{careerData ? careerData.save.club_name : "Begin jouw voetbalcarrière"}</h1><p>{careerData ? careerData.save.manager_name + " · " + careerData.save.division + " · " + new Date(careerData.save.game_date).toLocaleDateString("nl-NL") : "Start een carrière of laad een eerder opgeslagen spel."}</p></div><div className="role-actions">{careerData ? <><button disabled={careerBusy} onClick={startNewCareer}>+ Nieuwe carrière</button><button className="primary-action" disabled={careerBusy} onClick={advanceCareerDay}>{careerBusy ? "Even wachten…" : "▶ Volgende dag"}</button></> : null}</div></div>
       {careerError ? <div className="career-error">{careerError}</div> : null}
