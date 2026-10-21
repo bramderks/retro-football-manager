@@ -115,7 +115,7 @@ export async function POST(request: Request) {
    await sql.query("INSERT INTO career_news(save_id,news_date,category,headline,body) VALUES($1,$2,'transfer',$3,$4)",[b.saveId,dateOnly(s.game_date),"Speler aangeboden: "+player[0].full_name,player[0].full_name+" is op de transfermarkt geplaatst ("+listingType+")."]);
    return NextResponse.json({ok:true});
   }
-  if(b.action==="terminate_player_contract"){if(s.role!=="chairperson")return fail("Contractbeëindiging is een financiële beslissing voor de voorzitter.");
+  if(b.action==="terminate_player_contract"){if(s.role!=="sporting_director")return fail("Alleen de technisch directeur kan spelerscontracten beëindigen.");
    const playerId=String(b.playerId||"");const contract=await sql.query("SELECT id,weekly_wage,end_date FROM career_player_contracts WHERE save_id=$1 AND player_id=$2 AND club_id=$3 AND end_date >= $4::date ORDER BY end_date DESC LIMIT 1",[b.saveId,playerId,s.club_id,dateOnly(s.game_date)]);
    if(!contract.length)return fail("Geen actief contract gevonden voor deze speler.");
    const weeks=Math.max(0,Math.ceil((new Date(String(contract[0].end_date)+"T12:00:00Z").getTime()-new Date(dateOnly(s.game_date)+"T12:00:00Z").getTime())/604800000));const penalty=Math.round(Number(contract[0].weekly_wage)*weeks*.75);
