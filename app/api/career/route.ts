@@ -38,9 +38,9 @@ export async function GET(request: Request) {
     const news=await sql.query("SELECT id,news_date,category,headline,body,is_read FROM career_news WHERE save_id=$1 ORDER BY id DESC LIMIT 25",[saveId]);
     const objectives=await sql.query("SELECT id,objective_type,description,target_value,progress_value,status FROM board_objectives WHERE save_id=$1 ORDER BY objective_type",[saveId]);
     const finances=await sql.query("SELECT entry_date,category,description,amount,balance_after FROM club_finances WHERE save_id=$1 ORDER BY id DESC LIMIT 20",[saveId]);
-    const squad=await sql.query("SELECT p.id,p.full_name,p.position,p.overall_rating,p.potential_rating,COALESCE(pc.fitness,100)::int AS fitness,COALESCE(pc.morale,60)::int AS morale,COALESCE(pc.sharpness,50)::int AS sharpness,pc.injury_type,pc.injury_until FROM players p LEFT JOIN player_conditions pc ON pc.player_id=p.id WHERE p.team_id=$1 AND p.is_active=TRUE ORDER BY p.overall_rating DESC,p.full_name LIMIT 40",[save.club_id]);
+    const squad=await sql.query("SELECT p.id,p.full_name,p.position,p.overall_rating,p.potential_rating,cps.fitness,cps.morale,cps.sharpness,cps.injury_type,cps.injury_until FROM career_player_states cps JOIN players p ON p.id=cps.player_id WHERE cps.save_id=$1 AND cps.club_id=$2 AND p.is_active=TRUE ORDER BY p.overall_rating DESC,p.full_name LIMIT 40",[saveId,save.club_id]);
     const windowRows=await sql.query("SELECT id,window_name,opens_on,closes_on FROM transfer_windows WHERE season_id=$1 AND opens_on <= $2 AND closes_on >= $2 ORDER BY opens_on LIMIT 1",[SEASON,dateOnly(save.game_date)]);
-    const market=await sql.query("SELECT p.id,p.full_name,p.position,p.overall_rating,p.potential_rating,p.date_of_birth,t.id AS club_id,t.name AS club_name,t.reputation AS club_reputation, GREATEST(50000,p.overall_rating*p.overall_rating*450) AS asking_price FROM players p JOIN teams t ON t.id=p.team_id WHERE p.is_active=TRUE AND t.id<>$1 AND p.overall_rating>=58 AND t.id NOT LIKE 'jong-%' ORDER BY p.potential_rating DESC,p.overall_rating DESC LIMIT 60",[save.club_id]);
+    const market=await sql.query("SELECT p.id,p.full_name,p.position,p.overall_rating,p.potential_rating,p.date_of_birth,t.id AS club_id,t.name AS club_name,t.reputation AS club_reputation,GREATEST(50000,p.overall_rating*p.overall_rating*450) AS asking_price FROM career_player_states cps JOIN players p ON p.id=cps.player_id JOIN teams t ON t.id=cps.club_id WHERE cps.save_id=$1 AND cps.club_id<>$2 AND p.is_active=TRUE AND p.overall_rating>=58 AND t.id NOT LIKE 'jong-%' ORDER BY p.potential_rating DESC,p.overall_rating DESC LIMIT 60",[saveId,save.club_id]);
     const offers=await sql.query("SELECT o.id,o.fee,o.wage_offer,o.status,o.submitted_on,o.expires_on,p.full_name,t.name AS buying_club FROM transfer_offers o JOIN players p ON p.id=o.player_id JOIN teams t ON t.id=o.buying_club_id WHERE o.save_id=$1 ORDER BY o.id DESC LIMIT 20",[saveId]);
     return NextResponse.json({season:SEASON,save,standings,fixtures,news,finances,squad,objectives,transferWindow:windowRows[0]||null,market,offers},{headers:{"Cache-Control":"no-store"}});
   }catch(e){console.error("career GET",e);return fail("Carrière kon niet worden geladen.",500);}
@@ -60,7 +60,7 @@ export async function POST(request: Request) {
    await sql.query("INSERT INTO career_news(save_id,news_date,category,headline,body) VALUES($1,$2,'club',$3,$4)",[saveId,START,"Welkom bij "+c.name,"Het bestuur heeft je aangesteld als manager. Je bent verantwoordelijk voor resultaten, financiën en de selectie."]);
       await sql.query("INSERT INTO board_objectives(id,save_id,season_id,objective_type,description,target_value) VALUES($1,$2,$3,$4,$5,$6)",["obj-"+saveId,saveId,SEASON,"league_position",Number(c.team_strength)>=78?"Eindig bij de eerste drie":Number(c.team_strength)>=68?"Eindig in de bovenste helft":"Handhaaf je in de divisie",Number(c.team_strength)>=78?3:Number(c.team_strength)>=68?9:15]);
    await sql.query("INSERT INTO club_finances(save_id,entry_date,category,description,amount,balance_after) VALUES($1,$2,'other','Beginsaldo clubkas',$3,$3)",[saveId,START,balance]);
-   await sql.query("INSERT INTO player_conditions(player_id) SELECT id FROM players WHERE team_id=$1 AND is_active=TRUE ON CONFLICT(player_id) DO NOTHING",[c.id]);
+   await sql.query("INSERT INTO career_player_states(save_id,player_id,club_id) SELECT $1,id,team_id FROM players WHERE is_active=TRUE ON CONFLICT(save_id,player_id) DO NOTHING",[saveId]);
    return NextResponse.json({saveId,clubId:c.id,club:c.name});
   }
   if(!b.saveId)return fail("saveId ontbreekt.");
@@ -71,7 +71,7 @@ export async function POST(request: Request) {
    const playerId=String(b.playerId||""),fee=Math.max(0,Math.round(Number(b.fee)||0)),wage=Math.max(0,Math.round(Number(b.wage)||0));
    const win=await sql.query("SELECT id FROM transfer_windows WHERE season_id=$1 AND opens_on <= $2 AND closes_on >= $2 LIMIT 1",[SEASON,dateOnly(s.game_date)]);
    if(!win.length)return fail("De transfermarkt is gesloten. Je kunt alleen binnen een transferwindow onderhandelen.");
-   const player=await sql.query("SELECT p.id,p.team_id,p.full_name,p.overall_rating,t.name AS club_name FROM players p JOIN teams t ON t.id=p.team_id WHERE p.id=$1 AND p.is_active=TRUE AND p.team_id<>$2 LIMIT 1",[playerId,s.club_id]);
+   const player=await sql.query("SELECT p.id,cps.club_id AS team_id,p.full_name,p.overall_rating,t.name AS club_name FROM players p JOIN career_player_states cps ON cps.player_id=p.id AND cps.save_id=$3 JOIN teams t ON t.id=cps.club_id WHERE p.id=$1 AND p.is_active=TRUE AND cps.club_id<>$2 LIMIT 1",[playerId,s.club_id,b.saveId]);
    if(!player.length)return fail("Deze speler is niet beschikbaar voor een bod.",404);
    if(fee>Number(s.transfer_budget))return fail("Dit bod ligt boven het beschikbare transferbudget.");
    const p:any=player[0],offerId="offer-"+crypto.randomUUID(),expires=new Date(String(s.game_date)+"T12:00:00Z");expires.setUTCDate(expires.getUTCDate()+7);
@@ -108,11 +108,11 @@ export async function POST(request: Request) {
    await sql.query("INSERT INTO club_finances(save_id,entry_date,category,description,amount,balance_after) VALUES($1,$2,'wages','Dagelijkse lonen en exploitatie',$3,$4)",[b.saveId,day,-dailyCost,balance]);
     if(userFixture && matchRevenue>0) await sql.query("INSERT INTO club_finances(save_id,entry_date,category,description,amount,balance_after) VALUES($1,$2,$3,$4,$5,$6)",[b.saveId,day,userFixture.homeTeamId===s.club_id?"ticketing":"broadcast",userFixture.homeTeamId===s.club_id?"Wedstrijddag: kaartverkoop en horeca":"Wedstrijddag: media-inkomsten",matchRevenue,balance]);
    await sql.query("UPDATE career_saves SET cash_balance=$1 WHERE id=$2",[balance,b.saveId]);
-   const players=await sql.query("SELECT p.id,COALESCE(pc.fitness,100)::int AS fitness FROM players p LEFT JOIN player_conditions pc ON pc.player_id=p.id WHERE p.team_id=$1 AND p.is_active=TRUE",[s.club_id]);
+   const players=await sql.query("SELECT cps.player_id AS id,cps.fitness,cps.injury_until FROM career_player_states cps JOIN players p ON p.id=cps.player_id WHERE cps.save_id=$1 AND cps.club_id=$2 AND p.is_active=TRUE",[b.saveId,s.club_id]);
    for(const p of players as any[]){
     const injury=Math.random()<(results.length>0?.003:.0002),fit=Math.max(40,Math.min(100,Number(p.fitness)+(results.length>0?-(8+Math.floor(Math.random()*10)):1+Math.floor(Math.random()*2)))),kind=injury?(Math.random()<.5?"Hamstringblessure":"Enkelblessure"):null;
     const until=injury?dateOnly(new Date(dayDate.getTime()+(7+Math.floor(Math.random()*35))*86400000)):null;
-    await sql.query("INSERT INTO player_conditions(player_id,fitness,injury_type,injury_until) VALUES($1,$2,$3,$4) ON CONFLICT(player_id) DO UPDATE SET fitness=$2,injury_type=CASE WHEN $3::text IS NOT NULL THEN $3 WHEN player_conditions.injury_until < $5::date THEN NULL ELSE player_conditions.injury_type END,injury_until=CASE WHEN $3::text IS NOT NULL THEN $4 WHEN player_conditions.injury_until < $5::date THEN NULL ELSE player_conditions.injury_until END,updated_at=NOW()",[p.id,fit,kind,until,day]);
+    await sql.query("UPDATE career_player_states SET fitness=$1,injury_type=CASE WHEN $2::text IS NOT NULL THEN $2 WHEN injury_until < $3::date THEN NULL ELSE injury_type END,injury_until=CASE WHEN $2::text IS NOT NULL THEN $4 WHEN injury_until < $3::date THEN NULL ELSE injury_until END,updated_at=NOW() WHERE save_id=$5 AND player_id=$6",[fit,kind,day,until,b.saveId,p.id]);
     if(injury)await sql.query("INSERT INTO career_news(save_id,news_date,category,headline,body) VALUES($1,$2,'injury','Blessure tijdens training','Een speler is geblesseerd geraakt; de medische staf beoordeelt de verwachte herstelduur.')",[b.saveId,day]);
    }
    const pending=await sql.query("SELECT o.*,p.full_name,p.overall_rating FROM transfer_offers o JOIN players p ON p.id=o.player_id WHERE o.save_id=$1 AND o.status='pending' AND o.submitted_on <= $2::date - INTERVAL '3 days'",[b.saveId,day]);
@@ -121,7 +121,7 @@ export async function POST(request: Request) {
     const accepted=Number(offer.fee)>=asking*.92?Math.random()<.78:Number(offer.fee)>=asking*.7?Math.random()<.32:Math.random()<.08;
     if(accepted&&Number(offer.fee)<=balance){
      await sql.query("UPDATE transfer_offers SET status='completed' WHERE id=$1",[offer.id]);
-     await sql.query("UPDATE players SET team_id=$1 WHERE id=$2",[s.club_id,offer.player_id]);
+     await sql.query("UPDATE career_player_states SET club_id=$1,updated_at=NOW() WHERE save_id=$2 AND player_id=$3",[s.club_id,b.saveId,offer.player_id]);
      await sql.query("INSERT INTO player_contracts(id,player_id,club_id,start_date,end_date,weekly_wage,squad_status) VALUES($1,$2,$3,$4,'2028-06-30',$5,'rotation')",["contract-"+crypto.randomUUID(),offer.player_id,s.club_id,day,offer.wage_offer]);
      await sql.query("UPDATE career_saves SET cash_balance=cash_balance-$1,transfer_budget=GREATEST(0,transfer_budget-$1) WHERE id=$2",[offer.fee,b.saveId]);
      await sql.query("INSERT INTO club_finances(save_id,entry_date,category,description,amount,balance_after) VALUES($1,$2,'transfer_out',$3,$4,$5)",[b.saveId,day,"Transfervergoeding "+offer.full_name,-Number(offer.fee),balance-Number(offer.fee)]);
