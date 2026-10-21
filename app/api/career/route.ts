@@ -107,7 +107,7 @@ export async function POST(request: Request) {
   if(!rows.length)return fail("Carrière niet gevonden.",404);const s:any=rows[0];
   if(b.action==="delete_save"){const managerId=s.manager_id;await sql.query("DELETE FROM career_saves WHERE id=$1",[b.saveId]);await sql.query("DELETE FROM managers WHERE id=$1 AND NOT EXISTS (SELECT 1 FROM career_saves WHERE manager_id=$1)",[managerId]);return NextResponse.json({ok:true});}
   if(b.action==="save_game"){await sql.query("UPDATE career_saves SET updated_at=NOW() WHERE id=$1",[b.saveId]);await sql.query("INSERT INTO career_actions(save_id,action_date,action_type,payload,result) VALUES($1,$2,'manual_save',$3::jsonb,$4::jsonb)",[b.saveId,dateOnly(s.game_date),JSON.stringify({gameDate:dateOnly(s.game_date)}),JSON.stringify({saved:true})]);return NextResponse.json({ok:true,savedAt:new Date().toISOString(),gameDate:dateOnly(s.game_date)});}
-  if(b.action==="list_player"){
+  if(b.action==="list_player"){if(s.role!=="sporting_director")return fail("Alleen de technisch directeur kan spelers op de transferlijst zetten.");
    const playerId=String(b.playerId||"");const listingType=["sale","loan","satellite"].includes(String(b.listingType))?String(b.listingType):"sale";const price=Math.max(0,Math.round(Number(b.askingPrice)||0));
    const player=await sql.query("SELECT p.id,p.full_name FROM career_player_states cps JOIN players p ON p.id=cps.player_id WHERE cps.save_id=$1 AND cps.club_id=$2 AND p.id=$3 AND p.is_active=TRUE LIMIT 1",[b.saveId,s.club_id,playerId]);if(!player.length)return fail("Speler hoort niet bij jouw selectie.",404);
    const payload={playerId,playerName:player[0].full_name,listingType,askingPrice:price,targetClubId:b.targetClubId||null,status:"listed"};
@@ -115,7 +115,7 @@ export async function POST(request: Request) {
    await sql.query("INSERT INTO career_news(save_id,news_date,category,headline,body) VALUES($1,$2,'transfer',$3,$4)",[b.saveId,dateOnly(s.game_date),"Speler aangeboden: "+player[0].full_name,player[0].full_name+" is op de transfermarkt geplaatst ("+listingType+")."]);
    return NextResponse.json({ok:true});
   }
-  if(b.action==="terminate_player_contract"){
+  if(b.action==="terminate_player_contract"){if(s.role!=="chairperson")return fail("Contractbeëindiging is een financiële beslissing voor de voorzitter.");
    const playerId=String(b.playerId||"");const contract=await sql.query("SELECT id,weekly_wage,end_date FROM career_player_contracts WHERE save_id=$1 AND player_id=$2 AND club_id=$3 AND end_date >= $4::date ORDER BY end_date DESC LIMIT 1",[b.saveId,playerId,s.club_id,dateOnly(s.game_date)]);
    if(!contract.length)return fail("Geen actief contract gevonden voor deze speler.");
    const weeks=Math.max(0,Math.ceil((new Date(String(contract[0].end_date)+"T12:00:00Z").getTime()-new Date(dateOnly(s.game_date)+"T12:00:00Z").getTime())/604800000));const penalty=Math.round(Number(contract[0].weekly_wage)*weeks*.75);
@@ -124,7 +124,7 @@ export async function POST(request: Request) {
    await sql.query("INSERT INTO club_finances(save_id,entry_date,category,description,amount,balance_after) VALUES($1,$2,'contract',$3,$4,$5)",[b.saveId,dateOnly(s.game_date),"Contract ontbonden (75% resterend loon)",-penalty,Number(s.cash_balance)-penalty]);
    return NextResponse.json({ok:true,penalty});
   }
-  if(b.action==="hire_staff"){
+  if(b.action==="hire_staff"){if(!["sporting_director","chairperson"].includes(s.role))return fail("Alleen de technisch directeur of voorzitter kan staf aanstellen.");
    const role=String(b.staffRole||"coach");const roles=["manager","assistant_manager","coach","scout","physio","sporting_director","chairperson"];
    if(!roles.includes(role))return fail("Ongeldige stafrol.");
    const current=await sql.query("SELECT COUNT(*)::int AS n FROM club_staff WHERE club_id=$1 AND role=$2 AND employed_until IS NULL",[s.club_id,role]);const cap=Math.max(1,Math.min(5,Math.ceil(Number(s.reputation||50)/20)));
@@ -138,14 +138,14 @@ export async function POST(request: Request) {
    await sql.query("INSERT INTO career_news(save_id,news_date,category,headline,body) VALUES($1,$2,'club',$3,$4)",[b.saveId,dateOnly(s.game_date),"Nieuwe aanstelling: "+name,name+" is aangesteld als "+role.replaceAll("_"," ")+"."]);
    return NextResponse.json({ok:true});
   }
-  if(b.action==="terminate_staff_contract"){
+  if(b.action==="terminate_staff_contract"){if(s.role!=="chairperson")return fail("Stafcontracten beëindigen is een financiële beslissing voor de voorzitter.");
    const staffId=String(b.staffId||"");const staff=await sql.query("SELECT id,full_name,role,wage_weekly FROM club_staff WHERE id=$1 AND club_id=$2 AND employed_until IS NULL LIMIT 1",[staffId,s.club_id]);if(!staff.length)return fail("Medewerker niet gevonden.");
    const penalty=Math.round(Number(staff[0].wage_weekly||0)*52*.75);if(penalty>Number(s.cash_balance||0))return fail("Onvoldoende clubkas voor de afkoopsom van €"+penalty.toLocaleString("nl-NL")+".");
    await sql.query("UPDATE club_staff SET employed_until=$1 WHERE id=$2",[dateOnly(s.game_date),staffId]);await sql.query("UPDATE career_saves SET cash_balance=cash_balance-$1,updated_at=NOW() WHERE id=$2",[penalty,b.saveId]);
    await sql.query("INSERT INTO club_finances(save_id,entry_date,category,description,amount,balance_after) VALUES($1,$2,'contract',$3,$4,$5)",[b.saveId,dateOnly(s.game_date),"Contract ontbonden: "+staff[0].full_name,-penalty,Number(s.cash_balance)-penalty]);
    return NextResponse.json({ok:true,penalty});
   }
-  if(b.action==="upgrade_facility"){
+  if(b.action==="upgrade_facility"){if(s.role!=="chairperson")return fail("Alleen de voorzitter kan investeringen in clubfaciliteiten goedkeuren.");
    const facility=String(b.facility||"");const valid=["stadium","lighting","catering","toilets","hospitality","training","youth","marketing","accessibility"];
    if(!valid.includes(facility))return fail("Onbekende faciliteit.");
    const history=await sql.query("SELECT payload FROM career_actions WHERE save_id=$1 AND action_type='facility_upgrade' ORDER BY id DESC LIMIT 100",[b.saveId]);
@@ -169,8 +169,8 @@ export async function POST(request: Request) {
     await sql.query("INSERT INTO career_news(save_id,news_date,category,headline,body) VALUES($1,$2,'injury',$3,$4)",[b.saveId,dateOnly(s.game_date),"Blessure tijdens wedstrijd: "+player[0].full_name,player[0].full_name+" is uitgevallen met "+injuryType+". Verwachte terugkeer: "+untilDate+"."]);
     return NextResponse.json({ok:true,injuryUntil:untilDate});
    }
-  if(b.action==="tactics"){await sql.query("UPDATE career_saves SET tactical_setup=$1::jsonb,updated_at=NOW() WHERE id=$2",[JSON.stringify(b.tactics||{}),b.saveId]);return NextResponse.json({ok:true});}
-  if(b.action==="offer_transfer"){
+  if(b.action==="tactics"){if(s.role!=="manager")return fail("Alleen de manager kan de tactiek en opstelling aanpassen.");await sql.query("UPDATE career_saves SET tactical_setup=$1::jsonb,updated_at=NOW() WHERE id=$2",[JSON.stringify(b.tactics||{}),b.saveId]);return NextResponse.json({ok:true});}
+  if(b.action==="offer_transfer"){if(s.role!=="sporting_director")return fail("Alleen de technisch directeur kan transferbiedingen uitbrengen.");
    const playerId=String(b.playerId||""),fee=Math.max(0,Math.round(Number(b.fee)||0)),wage=Math.max(0,Math.round(Number(b.wage)||0));
    const win=await sql.query("SELECT id FROM transfer_windows WHERE season_id=$1 AND opens_on <= $2 AND closes_on >= $2 LIMIT 1",[SEASON,dateOnly(s.game_date)]);
    if(!win.length)return fail("De transfermarkt is gesloten. Je kunt alleen binnen een transferwindow onderhandelen.");
