@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 type Team = { name: string; city?: string; rating: number; reputation: number; keeper: number };
-type Tactics = { mentality: string; passing: string; pressing: boolean; offside: boolean; counter: boolean; hardTackles: boolean; formation: string; lineup?: Record<string,string> };
+type Tactics = { mentality: string; passing: string; tempo?: string; pressing: boolean; offside: boolean; counter: boolean; hardTackles: boolean; formation: string; lineup?: Record<string,string>; runLines?: Record<string,number> };
 type EventLine = { minute: number | string; text: string; kind?: "goal" | "var" | "system" };
 type Scorer = { team: 0 | 1; minute: number; name: string; assist?: string; penalty?: boolean };
 type Player = { name: string; position: "keeper" | "defender" | "midfielder" | "forward" };
@@ -22,7 +22,7 @@ const NEC_PLAYERS: Player[] = [
 type Stats = { shots: number; onTarget: number; chances: number; corners: number };
 const AJAX: Team = { name: "Ajax", city: "Amsterdam", rating: 88, reputation: 92, keeper: 78 };
 const NEC: Team = { name: "NEC", city: "Nijmegen", rating: 70, reputation: 68, keeper: 74 };
-const initialTactics: Tactics = { mentality: "Normaal", passing: "Direct", pressing: false, offside: false, counter: false, hardTackles: false, formation: "4-3-3", lineup: {} };
+const initialTactics: Tactics = { mentality: "Normaal", passing: "Direct", tempo: "Normaal", pressing: false, offside: false, counter: false, hardTackles: false, formation: "4-3-3", lineup: {}, runLines: {} };
 type FormationSlot = { key: string; role: string; x: number; y: number };
 function formationSlots(formation: string): FormationSlot[] {
   const rows: Record<string, Array<[string,string,number,number]>> = {
@@ -69,6 +69,15 @@ export default function Home() {
   const [extraTime, setExtraTime] = useState(false);
   const [penaltiesFinished, setPenaltiesFinished] = useState(false);
   const [draggedPlayerId, setDraggedPlayerId] = useState("");
+  const [matchLineup, setMatchLineup] = useState<string[]>([]);
+  const [matchBench, setMatchBench] = useState<string[]>([]);
+  const [lineupConfirmed, setLineupConfirmed] = useState(false);
+  const [substitutions, setSubstitutions] = useState<{minute:number;outId:string;inId:string;team:0|1}[]>([]);
+  const [subWindows, setSubWindows] = useState(0);
+  const [yellowCards, setYellowCards] = useState<Record<string,number>>({});
+  const [redCardIds, setRedCardIds] = useState<string[]>([]);
+  const [injuredIds, setInjuredIds] = useState<string[]>([]);
+  const [runLineDraft, setRunLineDraft] = useState<Record<string,number>>({});
   const [marketFilters, setMarketFilters] = useState({position:"Alle",ageMax:"40",nationality:"Alle",minGoals:"0",minAssists:"0",maxValue:"1000000000",search:""});
   const [offerDraft, setOfferDraft] = useState<any>(null);
   const [offerTerms, setOfferTerms] = useState({fee:0,installments:"1",sellOn:"0",endOfSeason:false,appearanceBonus:"0",goalBonus:"0",internationalBonus:"0",wage:15000,loan:false});
@@ -82,6 +91,7 @@ export default function Home() {
   const awayTeam: Team = databaseAway ? { name: databaseAway.name, city: databaseAway.city, rating: databaseAway.teamStrength, reputation: databaseAway.reputation, keeper: databaseAway.players.find(p => p.position === "GK")?.overallRating ?? 56 } : NEC;
   const [speed, setSpeed] = useState("Normaal");
   const [running, setRunning] = useState(false);
+  const [matchPhase, setMatchPhase] = useState<"pre-match"|"first-half"|"half-time"|"second-half"|"extra-time"|"finished">("pre-match");
   const isFinal = Boolean(pendingCareerFixture?.is_final || pendingCareerFixture?.competition_type === "final" || String(pendingCareerFixture?.round_name || "").toLowerCase().includes("final"));
   const finished = isFinal ? (extraTime ? minute >= 120 && (goals[0] !== goals[1] || penaltiesFinished) : minute >= 90 && goals[0] !== goals[1]) : minute >= 90;
   const possession = useMemo(() => {
@@ -134,6 +144,15 @@ export default function Home() {
   async function refreshSavedCareers() {
     try { const response = await fetch("/api/career?listSaves=1", { cache: "no-store" }); const data = await response.json(); if (!response.ok) throw new Error(data.error || "Opgeslagen carrières konden niet worden geladen."); if (Array.isArray(data.clubs)) { setCareerClubs(data.clubs); if (data.clubs.length && !data.clubs.some((x:any) => x.id === careerClubId)) setCareerClubId(data.clubs[0].id); } setSavedCareers(Array.isArray(data.saves) ? data.saves : []); } catch { setCareerError("Opgeslagen carrières konden niet worden geladen."); }
   }
+  useEffect(() => {
+    if(!pendingCareerFixture)return;
+    setLineupConfirmed(false);setMatchPhase("pre-match");setSubstitutions([]);setSubWindows(0);setYellowCards({});setRedCardIds([]);setInjuredIds([]);
+    const squad=(careerData?.squad||[]).filter((p:any)=>!p.injury_type);
+    const starters: string[]=[];const slots=formationSlots(homeTactics.formation);
+    for(const slot of slots){const id=homeTactics.lineup?.[slot.key];if(id&&squad.some((p:any)=>p.id===id)&&!starters.includes(id))starters.push(id);}
+    for(const p of squad){if(starters.length>=11)break;if(!starters.includes(p.id))starters.push(p.id);}
+    setMatchLineup(starters.slice(0,11));setMatchBench(squad.map((p:any)=>p.id).filter((id:string)=>!starters.includes(id)).slice(0,9));
+  },[pendingCareerFixture?.id]);
   useEffect(() => {
     refreshSavedCareers();
     const saved = window.localStorage.getItem("rfm-career-save"); if (saved) setCareerSaveId(saved);
