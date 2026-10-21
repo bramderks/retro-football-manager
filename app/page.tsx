@@ -317,7 +317,7 @@ export default function Home() {
     return team?.players.find((p:any)=>p.name===name)?.id||"";
   }
   async function persistMatchInjury(playerId:string,injury:any){
-    if(!careerSaveId||!playerId||!careerData?.squad?.some((p:any)=>p.id===playerId))return;
+    if(!careerSaveId||!playerId)return;
     try{await fetch("/api/career",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"report_injury",saveId:careerSaveId,playerId,injuryType:injury.name,recoveryDays:injury.recoveryDays})});const fresh=await fetch("/api/career?saveId="+encodeURIComponent(careerSaveId),{cache:"no-store"}).then(r=>r.json());if(fresh.save)setCareerData(fresh);}catch{}
   }
   function playMinute() {
@@ -341,11 +341,12 @@ export default function Home() {
       if(Math.random()<(opponentTactics.hardTackles ? .15 : .08)){
         const injury=randomInjury();setInjuredIds(prev=>prev.includes(victim.id)?prev:[...prev,victim.id]);setInjuriesByTeam(prev=>side===0?[prev[0]+1,prev[1]]:[prev[0],prev[1]+1]);
         addEvent({minute:m+"'",text:"BLESSURE: "+victim.name+" loopt "+injury.name.toLowerCase()+" op. Verwachte hersteltijd: "+injury.recoveryDays+" dagen.",kind:"var"});
-        if(side===userSide){setRunning(false);setActiveScreen("Tactiek");persistMatchInjury(victim.id,injury);return;}
+        persistMatchInjury(victim.id,injury);
+        if(side===userSide){setRunning(false);setActiveScreen("Tactiek");return;}
         if(aiSubstitutions[side]<5){setAiSubstitutions(prev=>side===0?[Math.min(5,prev[0]+1),prev[1]]:[prev[0],Math.min(5,prev[1]+1)]);addEvent({minute:m+"'",text:"AI-wissel na blessure: de medische staf haalt "+victim.name+" eraf en de trainer brengt een vervanger in.",kind:"system"});}
       }
     }
-    if (m === 45) { setRunning(false); setHalfTime(true); setMatchPhase("half-time"); addEvent({minute:"RUST",text:"Rust! Pas je tactiek aan en kies daarna Begin tweede helft.",kind:"system"}); return; }
+    if (m === 45) { setRunning(false); setHalfTime(true); setMatchPhase("half-time"); setActiveScreen("Tactiek"); addEvent({minute:"RUST",text:"Rust! Pas je tactiek aan en kies daarna Begin tweede helft.",kind:"system"}); return; }
     if (m === 90 && isFinal && goals[0] === goals[1] && !extraTime) { setRunning(false); addEvent({minute:"90",text:"Einde reguliere speeltijd. Gelijk in deze finale: er volgt verlenging.",kind:"system"}); return; }
     if (m === 120 && isFinal && goals[0] === goals[1] && extraTime) { setRunning(false); addEvent({minute:"120",text:"Na verlenging is het nog gelijk. De finale wordt beslist met strafschoppen.",kind:"system"}); return; }
     if (m === 1) { const player = pickPlayer(0, ["midfielder"]); addEvent({ minute: "1'", text: "Aftrap! " + player.name + " tikt de bal terug en " + homeTeam.name + " begint rustig aan de opbouw.", kind: "system" }); return; }
