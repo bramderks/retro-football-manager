@@ -368,9 +368,9 @@ export default function Home() {
     const configuredHome = userIsHome ? homeTactics : awayTactics; const configuredAway = userIsHome ? awayTactics : homeTactics;
     const effectiveHomeTactics: Tactics = homeLeadNow >= 3 ? { ...configuredHome, mentality: "Verdedigend", pressing: false, counter: true } : homeLeadNow <= -2 ? { ...configuredHome, mentality: "Aanvallend", pressing: true } : configuredHome;
     const effectiveAwayTactics: Tactics = goals[1] - goals[0] >= 3 ? { ...configuredAway, mentality: "Verdedigend", pressing: false, counter: true } : goals[1] - goals[0] <= -2 ? { ...configuredAway, mentality: "Aanvallend", pressing: true } : configuredAway;
-    const homeFatigue=Object.entries(matchFitness).filter(([id])=>matchLineup.includes(id)).reduce((n,[,v])=>n+Math.max(0,65-v)*.09,0);
+    const playerFatigue=Object.entries(matchFitness).filter(([id])=>matchLineup.includes(id)).reduce((n,[,v])=>n+Math.max(0,65-v)*.09,0);\n     const homeFatigue=userSide===0?playerFatigue:m*((awayTactics.tempo==="Snel"?.035:.02)+(awayTactics.pressing?.01:0));
      const homeRating = teamStrength(homeTeam, effectiveHomeTactics)-redCardsByTeam[0]*13-injuriesByTeam[0]*7+aiSubstitutions[0]*.7-homeFatigue;
-    const awayFatigue=Object.entries(matchFitness).filter(([id])=>matchLineup.includes(id)).reduce((n,[,v])=>n+Math.max(0,65-v)*.09,0);
+    const awayFatigue=userSide===1?playerFatigue:m*((homeTactics.tempo==="Snel"?.035:.02)+(homeTactics.pressing?.01:0));
      const awayRating = teamStrength(awayTeam, effectiveAwayTactics)-redCardsByTeam[1]*13-injuriesByTeam[1]*7+aiSubstitutions[1]*.7-awayFatigue;
     const homeShare = Math.max(.24, Math.min(.82, .5 + (homeRating - awayRating) * .012));
     const home = Math.random() < homeShare;
