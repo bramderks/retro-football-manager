@@ -63,6 +63,33 @@ export async function POST(req:Request){
  const managerAges=await sql.query("UPDATE managers SET career_status=CASE WHEN EXTRACT(YEAR FROM age($1::date,date_of_birth))>=75 THEN 'retired' ELSE career_status END,retired_on=CASE WHEN EXTRACT(YEAR FROM age($1::date,date_of_birth))>=75 THEN $1::date ELSE retired_on END WHERE career_status='active' AND id NOT IN (SELECT manager_id FROM career_saves WHERE status='active') RETURNING id,full_name,career_status,date_of_birth",[start]);
  const staffAges=await sql.query("UPDATE club_staff SET career_status=CASE WHEN EXTRACT(YEAR FROM age($1::date,date_of_birth))>=72 THEN 'retired' ELSE career_status END,employed_until=CASE WHEN EXTRACT(YEAR FROM age($1::date,date_of_birth))>=72 THEN $1::date ELSE employed_until END WHERE career_status='active' RETURNING id,full_name,role,career_status,date_of_birth",[start]);
  for(const person of [...managerAges,...staffAges].filter((p:any)=>p.career_status==='retired'))await sql.query("INSERT INTO world_person_history(person_type,person_id,season_id,event_type,details) VALUES($1,$2,$3,'retirement',$4::jsonb)",[managerAges.some((m:any)=>m.id===person.id)?"manager":"staff",person.id,season,JSON.stringify({name:person.full_name,role:person.role||"manager"})]);
+ // Annual football-world AI: fill every club's leadership and backroom roles without duplicating active contracts.
+ const staffRoles=[{role:"manager",rep:1},{role:"assistant_manager",rep:1},{role:"coach",rep:1},{role:"scout",rep:1},{role:"physio",rep:1},{role:"sporting_director",rep:1},{role:"chairperson",rep:1}];
+ const staffFirst=["Martin","David","Marco","Thomas","André","Peter","Michael","Jürgen","Luis","Roberto","Erik","Stefan","Patrick","Daniel","Johan","Frank","Rafael","Simon","Nico","Alex"];
+ const staffLast=["Meyer","Schneider","Fischer","Weber","Wagner","Becker","Schulz","Hoffmann","Keller","Bauer","Ricci","Moreau","Silva","Costa","Svensson","Jensen","Kowalski","Novak","Müller","Bennett"];
+ for(const t of teams as any[]){
+  for(const r of staffRoles){
+   const active=await sql.query("SELECT id FROM club_staff WHERE club_id=$1 AND role=$2 AND career_status='active' AND (employed_until IS NULL OR employed_until >= $3::date) LIMIT 1",[t.id,r.role,start]);
+   if(active.length)continue;
+   const rep=Math.max(10,Math.min(100,Number(t.reputation||40)+(r.role==="manager"?5:r.role==="chairperson"?8:0)-Math.floor(seed(t.id+r.role)%18)));
+   const wage=Math.max(250,Math.round((Number(t.team_strength||45)*Number(t.team_strength||45))*({manager:7,chairperson:5,sporting_director:5,assistant_manager:3,coach:2,scout:2,physio:2} as any)[r.role]));
+   const id="staff-ai-"+slug(t.id)+"-"+r.role+"-"+season;
+   const full=staffFirst[seed(t.id+r.role+season)%staffFirst.length]+" "+staffLast[seed(r.role+t.id+season)%staffLast.length];
+   await sql.query("INSERT INTO club_staff(id,club_id,full_name,role,reputation,wage_weekly,employed_from,date_of_birth,career_status,career_path) VALUES($1,$2,$3,$4,$5,$6,$7,$8,'active','generated-ai') ON CONFLICT(id) DO NOTHING",[id,t.id,full,r.role,rep,wage,start,(Number(season.slice(0,4))-35-seed(id)%20)+"-01-01"]);
+  }
+ }
+ // FIFA-style international breaks and two transfer windows are regenerated with every season.
+ const internationalEvents=[
+  [season+"-intl-sep",season.slice(0,4)+"-09-07","international_break","Internationale periode — september"],
+  [season+"-intl-oct",season.slice(0,4)+"-10-05","international_break","Internationale periode — oktober"],
+  [season+"-intl-nov",season.slice(0,4)+"-11-09","international_break","Internationale periode — november"],
+  [season+"-intl-mar",String(Number(season.slice(0,4))+1)+"-03-22","international_break","Internationale periode — maart"]
+ ];
+ for(const e of internationalEvents)await sql.query("INSERT INTO season_calendar(id,season_id,event_date,event_type,title,description) VALUES($1,$2,$3,$4,$5,'Nationale teams kunnen spelers oproepen; competitieprogramma houdt waar mogelijk rekening met deze periode.') ON CONFLICT(id) DO NOTHING",[e[0],season,e[1],e[2],e[3]]);
+ for(const country of await sql.query("SELECT DISTINCT country_code FROM divisions WHERE season_id=$1",[season])){
+  await sql.query("INSERT INTO transfer_windows(id,season_id,country_code,window_name,opens_on,closes_on) VALUES($1,$2,$3,'Zomerwindow',$4,$5) ON CONFLICT(id) DO NOTHING",[season+"-"+country.country_code+"-summer",season,country.country_code,start,season.slice(0,4)+"-08-31"]);
+  await sql.query("INSERT INTO transfer_windows(id,season_id,country_code,window_name,opens_on,closes_on) VALUES($1,$2,$3,'Winterwindow',$4,$5) ON CONFLICT(id) DO NOTHING",[season+"-"+country.country_code+"-winter",season,country.country_code,String(Number(season.slice(0,4))+1)+"-01-01",String(Number(season.slice(0,4))+1)+"-01-31"]);
+ }
  // UEFA league-phase fixtures and per-match appearance/prize bonuses are scheduled in every new season.
  for(const c of await sql.query("SELECT id,code,matches_per_club FROM uefa_competitions WHERE season_id=$1",[season])){
   const participants=await sql.query("SELECT p.club_id,u.name FROM uefa_participants p JOIN uefa_clubs u ON u.id=p.club_id WHERE p.competition_id=$1 ORDER BY u.reputation DESC,u.team_strength DESC,p.club_id",[c.id]);
