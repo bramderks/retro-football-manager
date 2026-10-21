@@ -83,6 +83,8 @@ export default function Home() {
   const [redCardsByTeam,setRedCardsByTeam]=useState<[number,number]>([0,0]);
   const [injuriesByTeam,setInjuriesByTeam]=useState<[number,number]>([0,0]);
   const [aiSubstitutions,setAiSubstitutions]=useState<[number,number]>([0,0]);
+  const [aiLineups,setAiLineups]=useState<Record<number,string[]>>({});
+  const [aiBenches,setAiBenches]=useState<Record<number,string[]>>({});
   const [injuredIds, setInjuredIds] = useState<string[]>([]);
   const [matchFitness,setMatchFitness] = useState<Record<string,number>>({});
   const [runLineDraft, setRunLineDraft] = useState<Record<string,number>>({});
@@ -156,7 +158,7 @@ export default function Home() {
   }
   useEffect(() => {
     if(!pendingCareerFixture)return;
-    setLineupConfirmed(false);setMatchPhase("pre-match");setSubstitutions([]);setSubWindows(0);setLastSubMinute(-1);setYellowCards({});setRedCardIds([]);setRedCardsByTeam([0,0]);setInjuriesByTeam([0,0]);setAiSubstitutions([0,0]);setInjuredIds([]);
+    setLineupConfirmed(false);setMatchPhase("pre-match");setSubstitutions([]);setSubWindows(0);setLastSubMinute(-1);setYellowCards({});setRedCardIds([]);setRedCardsByTeam([0,0]);setInjuriesByTeam([0,0]);setAiSubstitutions([0,0]);setInjuredIds([]);const nextAi:any={},nextBench:any={};for(const side of [0,1] as const){if(side===userSide)continue;const team=databaseTeams.find(t=>t.id===(side===0?selectedHomeId:selectedAwayId));const roster=[...(team?.players||[])].sort((x:any,y:any)=>Number(y.overall_rating||y.rating||0)-Number(x.overall_rating||x.rating||0));nextAi[side]=roster.slice(0,11).map((p:any)=>p.id);nextBench[side]=roster.slice(11,20).map((p:any)=>p.id);}setAiLineups(nextAi);setAiBenches(nextBench);
     const squad=(careerData?.squad||[]).filter((p:any)=>!p.injury_type);
     const starters: string[]=[];const slots=formationSlots(homeTactics.formation);
     const accepted:Record<string,string[]>={K:["GK"],LV:["LB"],CV:["CV"],RV:["RB"],WB:["LB","RB"],VM:["VM"],CM:["CM","LM","RM"],LM:["LM","LA","AML"],RM:["RM","RA","AMR"],AM:["AM","AML","AMR"],LA:["LA","AML"],RA:["RA","AMR"],SP:["SP"]};
@@ -313,7 +315,7 @@ export default function Home() {
       const id=matchLineup.filter(x=>!redCardIds.includes(x)&&!injuredIds.includes(x))[Math.floor(Math.random()*Math.max(1,matchLineup.filter(x=>!redCardIds.includes(x)&&!injuredIds.includes(x)).length))];
       const p=careerData?.squad?.find((x:any)=>x.id===id);return {id:id||"",name:p?.full_name||"Speler"};
     }
-    const team=databaseTeams.find(t=>t.id===(side===0?selectedHomeId:selectedAwayId));const players=(team?.players||[]).filter((p:any)=>!redCardIds.includes(p.id)&&!injuredIds.includes(p.id));const p=players[Math.floor(Math.random()*Math.max(1,players.length))];return {id:p?.id||"",name:p?.name||"Speler"};
+    const team=databaseTeams.find(t=>t.id===(side===0?selectedHomeId:selectedAwayId));const ids=aiLineups[side]?.length?aiLineups[side]:(team?.players||[]).slice(0,11).map((p:any)=>p.id);const players=ids.filter((id:string)=>!redCardIds.includes(id)&&!injuredIds.includes(id)).map((id:string)=>(team?.players||[]).find((p:any)=>p.id===id)).filter(Boolean);const p=players[Math.floor(Math.random()*Math.max(1,players.length))] as any;return {id:p?.id||"",name:p?.name||"Speler"};
   }
   function resolvePlayerId(side:0|1,name:string){
     if(side===userSide){return careerData?.squad?.find((p:any)=>p.full_name===name)?.id||"";}
@@ -360,10 +362,9 @@ export default function Home() {
     if (m === 120 && isFinal && goals[0] === goals[1] && extraTime) { setRunning(false); addEvent({minute:"120",text:"Na verlenging is het nog gelijk. De finale wordt beslist met strafschoppen.",kind:"system"}); return; }
     if (m === 1) { const player = pickPlayer(0, ["midfielder"]); addEvent({ minute: "1'", text: "Aftrap! " + player.name + " tikt de bal terug en " + homeTeam.name + " begint rustig aan de opbouw.", kind: "system" }); return; }
     const aiSide=(1-userSide) as 0|1;
-    if(m>=55&&m<86&&aiSubstitutions[aiSide]<5&&Math.random()<.035){
-      const out=matchPlayer(aiSide),incoming=matchPlayer(aiSide);
-      setAiSubstitutions(prev=>aiSide===0?[Math.min(5,prev[0]+1),prev[1]]:[prev[0],Math.min(5,prev[1]+1)]);
-      addEvent({minute:m+"'",text:"AI-WISSEL: "+incoming.name+" komt erin voor "+out.name+". De trainer past de energie en veldbezetting aan.",kind:"system"});
+    if(m>=55&&m<86&&aiSubstitutions[aiSide]<5&&Math.random()<.035&&aiBenches[aiSide]?.length){
+      const out=matchPlayer(aiSide),incomingId=aiBenches[aiSide][0],aiTeam=databaseTeams.find(t=>t.id===(aiSide===0?selectedHomeId:selectedAwayId)),incoming=(aiTeam?.players||[]).find((p:any)=>p.id===incomingId);
+      if(out.id&&incoming){setAiLineups(prev=>({...prev,[aiSide]:(prev[aiSide]||[]).map(id=>id===out.id?incomingId:id)}));setAiBenches(prev=>({...prev,[aiSide]:(prev[aiSide]||[]).slice(1)}));setAiSubstitutions(prev=>aiSide===0?[Math.min(5,prev[0]+1),prev[1]]:[prev[0],Math.min(5,prev[1]+1)]);addEvent({minute:m+"'",text:"AI-WISSEL: "+incoming.name+" komt erin voor "+out.name+". De trainer past de energie en veldbezetting aan.",kind:"system"});}
     }
     const homeLeadNow = goals[0] - goals[1];
     const userIsHome = !careerData?.save?.club_id || selectedHomeId === careerData.save.club_id;
