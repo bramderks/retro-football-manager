@@ -342,11 +342,11 @@ export default function Home() {
       if(Math.random()<(opponentTactics.hardTackles ? .015 : .004)){
         setRedCardIds(prev=>prev.includes(tackler.id)?prev:[...prev,tackler.id]);setRedCardsByTeam(prev=>tacklerSide===0?[prev[0]+1,prev[1]]:[prev[0],prev[1]+1]);
         addEvent({minute:m+"'",text:"RODE KAART! "+tackler.name+" maakt een zware overtreding op "+victim.name+" en moet van het veld.",kind:"var"});
-        if(tacklerSide===userSide){setRunning(false);setActiveScreen("Tactiek");setMatchPhase(m<=45?"first-half":m<=90?"second-half":"extra-time");return;}
+        setRunning(false);setActiveScreen("Tactiek");setMatchPhase(m<=45?"first-half":m<=90?"second-half":"extra-time");return;
       }
       if(Math.random()<(opponentTactics.hardTackles ? .24 : .08)){
         setYellowCards(prev=>({...prev,[tackler.id]:previousYellow+1}));
-        if(previousYellow>=1){setRedCardIds(prev=>prev.includes(tackler.id)?prev:[...prev,tackler.id]);setRedCardsByTeam(prev=>tacklerSide===0?[prev[0]+1,prev[1]]:[prev[0],prev[1]+1]);addEvent({minute:m+"'",text:"TWEEDE GELE KAART! "+tackler.name+" krijgt rood na opnieuw een overtreding.",kind:"var"});if(tacklerSide===userSide){setRunning(false);setActiveScreen("Tactiek");return;}}
+        if(previousYellow>=1){setRedCardIds(prev=>prev.includes(tackler.id)?prev:[...prev,tackler.id]);setRedCardsByTeam(prev=>tacklerSide===0?[prev[0]+1,prev[1]]:[prev[0],prev[1]+1]);addEvent({minute:m+"'",text:"TWEEDE GELE KAART! "+tackler.name+" krijgt rood na opnieuw een overtreding.",kind:"var"});setRunning(false);setActiveScreen("Tactiek");setMatchPhase(m<=45?"first-half":m<=90?"second-half":"extra-time");return;}
         else addEvent({minute:m+"'",text:"GELE KAART voor "+tackler.name+" na de tackle op "+victim.name+".",kind:"var"});
       }
       const victimFitness=Number(matchFitness[victim.id]??careerData?.squad?.find((p:any)=>p.id===victim.id)?.fitness??100);const injuryRisk=(opponentTactics.hardTackles?.15:.08)*(victimFitness<35?2.1:victimFitness<55?1.6:victimFitness<70?1.25:1)*(homeTactics.tempo==="Snel"||awayTactics.tempo==="Snel"?1.12:1);if(Math.random()<Math.min(.55,injuryRisk)){
