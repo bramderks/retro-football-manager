@@ -4,7 +4,7 @@ ALTER TABLE players ADD COLUMN IF NOT EXISTS retired_on date;
 ALTER TABLE players ADD COLUMN IF NOT EXISTS development_bias smallint NOT NULL DEFAULT 0;
 ALTER TABLE managers ADD COLUMN IF NOT EXISTS date_of_birth date;
 ALTER TABLE managers ADD COLUMN IF NOT EXISTS career_status text NOT NULL DEFAULT 'active';
-ALTER TABLE managers ADD COLUMN IF NOT EXISTS current_role text NOT NULL DEFAULT 'manager';
+ALTER TABLE managers ADD COLUMN IF NOT EXISTS career_role text NOT NULL DEFAULT 'manager';
 ALTER TABLE managers ADD COLUMN IF NOT EXISTS retired_on date;
 ALTER TABLE club_staff ADD COLUMN IF NOT EXISTS date_of_birth date;
 ALTER TABLE club_staff ADD COLUMN IF NOT EXISTS career_status text NOT NULL DEFAULT 'active';
