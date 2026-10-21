@@ -205,7 +205,7 @@ export default function Home() {
     setCareerBusy(true); setCareerError("");
     try { const r=await fetch("/api/career",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"offer_transfer",saveId:careerSaveId,playerId:player.id,fee,wage:Number(offerTerms.wage||15000),installments:Number(offerTerms.installments),sellOn:Number(offerTerms.sellOn),endOfSeason:offerTerms.endOfSeason,appearanceBonus:Number(offerTerms.appearanceBonus),goalBonus:Number(offerTerms.goalBonus),internationalBonus:Number(offerTerms.internationalBonus),loan:offerTerms.loan})}); const d=await r.json(); if(!r.ok)throw new Error(d.error||"Bod mislukt."); const fresh=await fetch("/api/career?saveId="+encodeURIComponent(careerSaveId),{cache:"no-store"}).then(x=>x.json());setCareerData(fresh); } catch(e) {setCareerError(e instanceof Error?e.message:"Bod mislukt.");} finally {setCareerBusy(false);}
   }
-  async function saveCareerTactics(tactics: Tactics) {
+  async function saveCareerTactics(tactics: Tactics): Promise<boolean> {
     setHomeTactics(tactics);
     if (!careerSaveId) return;
     setCareerError("");
@@ -217,7 +217,7 @@ export default function Home() {
       });
       const data = await response.json();
       if (!response.ok || !data.ok) throw new Error(data.error || "Tactiek kon niet worden opgeslagen.");
-      setCareerData((current: any) => current ? { ...current, save: { ...current.save, tactical_setup: tactics } } : current);
+      setCareerData((current: any) => current ? { ...current, save: { ...current.save, tactical_setup: tactics } } : current); return true;
     } catch (error) {
       setCareerError(error instanceof Error ? error.message : "Tactiek kon niet worden opgeslagen.");
     }
@@ -240,15 +240,14 @@ export default function Home() {
     return () => window.clearTimeout(timer);
   }, [running, minute, speed, finished]);
 
-  function confirmMatchLineup(){
+  async function confirmMatchLineup(){
     const available=(careerData?.squad||[]).filter((p:any)=>!p.injury_type);
     const starters=matchLineup.filter(Boolean),bench=matchBench.filter(Boolean);
     if(starters.length!==11||new Set(starters).size!==11){setCareerError("Kies precies 11 verschillende basisspelers.");return;}
     if(bench.length!==9||new Set(bench).size!==9||bench.some(id=>starters.includes(id))){setCareerError("Kies 9 verschillende wisselspelers die niet in de basis staan.");return;}
     if([...starters,...bench].some(id=>!available.some((p:any)=>p.id===id))){setCareerError("Geblesseerde of niet-beschikbare spelers kunnen niet worden opgesteld.");return;}
-    setLineupConfirmed(true);setMatchPhase("first-half");setCareerError("");
     const lineup={...(homeTactics.lineup||{})};formationSlots(homeTactics.formation).forEach((slot,i)=>{lineup[slot.key]=starters[i]||"";});
-    saveCareerTactics({...homeTactics,lineup});setActiveScreen("Wedstrijd");
+    const saved=await saveCareerTactics({...homeTactics,lineup});if(saved===false)return;setLineupConfirmed(true);setMatchPhase("first-half");setCareerError("");setActiveScreen("Wedstrijd");
     setFeed([{minute:"OPSTELLING",text:"Opstelling bevestigd. 11 basisspelers en 9 wissels zijn vastgelegd voor deze wedstrijd.",kind:"system"},{minute:"INFO",text:(pendingCareerFixture?.home_name||homeTeam.name)+" – "+(pendingCareerFixture?.away_name||awayTeam.name)+". Klaar voor de aftrap.",kind:"system"}]);
   }
   function makeSubstitution(outId:string,inId:string,team:0|1=0){
@@ -260,7 +259,7 @@ export default function Home() {
     if(!matchLineup.includes(outId)||!matchBench.includes(inId)){setCareerError("Deze spelers staan niet op de juiste lijst voor een wissel.");return;}
     if(redCardIds.includes(outId)){setCareerError("Een speler met rood kan niet worden vervangen alsof het een blessure is; pas je formatie aan.");return;}
     const nextLineup=matchLineup.map(id=>id===outId?inId:id),nextBench=matchBench.filter(id=>id!==inId);const newWindow=minute!==lastSubMinute;
-    setMatchLineup(nextLineup);setMatchBench(nextBench);setSubstitutions(prev=>[...prev,{minute,outId,inId,team}]);if(newWindow){setSubWindows(v=>v+1);setLastSubMinute(minute);}
+    setMatchLineup(nextLineup);setMatchBench(nextBench);const tacticalLineup={...(homeTactics.lineup||{})};formationSlots(homeTactics.formation).forEach((slot,i)=>{tacticalLineup[slot.key]=nextLineup[i]||"";});setHomeTactics({...homeTactics,lineup:tacticalLineup});setSubstitutions(prev=>[...prev,{minute,outId,inId,team}]);if(newWindow){setSubWindows(v=>v+1);setLastSubMinute(minute);}
     const outName=careerData?.squad?.find((p:any)=>p.id===outId)?.full_name||outId,inName=careerData?.squad?.find((p:any)=>p.id===inId)?.full_name||inId;
     addEvent({minute:minute+"'",text:"WISSEL "+(substitutions.length+1)+"/5: "+inName+" komt erin voor "+outName+". Wisselmoment "+(newWindow?subWindows+1:subWindows)+"/3.",kind:"system"});
     setCareerError("");
@@ -341,7 +340,7 @@ export default function Home() {
         if(Math.random()<.72)addEvent({minute:m+"'",text:"De AI bereidt een vervanging voor en past de formatie aan.",kind:"system"});
       }
     }
-    if (m === 45) { setRunning(false); setHalfTime(true); addEvent({minute:"RUST",text:"Rust! Pas je tactiek aan en kies daarna Begin tweede helft.",kind:"system"}); return; }
+    if (m === 45) { setRunning(false); setHalfTime(true); setMatchPhase("half-time"); addEvent({minute:"RUST",text:"Rust! Pas je tactiek aan en kies daarna Begin tweede helft.",kind:"system"}); return; }
     if (m === 90 && isFinal && goals[0] === goals[1] && !extraTime) { setRunning(false); addEvent({minute:"90",text:"Einde reguliere speeltijd. Gelijk in deze finale: er volgt verlenging.",kind:"system"}); return; }
     if (m === 120 && isFinal && goals[0] === goals[1] && extraTime) { setRunning(false); addEvent({minute:"120",text:"Na verlenging is het nog gelijk. De finale wordt beslist met strafschoppen.",kind:"system"}); return; }
     if (m === 1) { const player = pickPlayer(0, ["midfielder"]); addEvent({ minute: "1'", text: "Aftrap! " + player.name + " tikt de bal terug en " + homeTeam.name + " begint rustig aan de opbouw.", kind: "system" }); return; }
