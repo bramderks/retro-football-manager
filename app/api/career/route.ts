@@ -91,6 +91,7 @@ export async function POST(request: Request) {
   if(!b.saveId)return fail("saveId ontbreekt.");
   const rows=await sql.query("SELECT s.*,t.name AS club_name,t.division_id,m.full_name AS manager_name FROM career_saves s JOIN teams t ON t.id=s.club_id JOIN managers m ON m.id=s.manager_id WHERE s.id=$1 LIMIT 1",[b.saveId]);
   if(!rows.length)return fail("Carrière niet gevonden.",404);const s:any=rows[0];
+  if(b.action==="delete_save"){const managerId=s.manager_id;await sql.query("DELETE FROM career_saves WHERE id=$1",[b.saveId]);await sql.query("DELETE FROM managers WHERE id=$1 AND NOT EXISTS (SELECT 1 FROM career_saves WHERE manager_id=$1)",[managerId]);return NextResponse.json({ok:true});}
   if(b.action==="save_game"){await sql.query("UPDATE career_saves SET updated_at=NOW() WHERE id=$1",[b.saveId]);await sql.query("INSERT INTO career_actions(save_id,action_date,action_type,payload,result) VALUES($1,$2,'manual_save',$3::jsonb,$4::jsonb)",[b.saveId,dateOnly(s.game_date),JSON.stringify({gameDate:dateOnly(s.game_date)}),JSON.stringify({saved:true})]);return NextResponse.json({ok:true,savedAt:new Date().toISOString(),gameDate:dateOnly(s.game_date)});}
   if(b.action==="list_player"){
    const playerId=String(b.playerId||"");const listingType=["sale","loan","satellite"].includes(String(b.listingType))?String(b.listingType):"sale";const price=Math.max(0,Math.round(Number(b.askingPrice)||0));
