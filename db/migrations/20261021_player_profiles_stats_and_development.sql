@@ -16,6 +16,24 @@ CREATE TABLE IF NOT EXISTS player_rating_calibrations (
   applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- Staff profiles and moods are persistent data, and role names match the permissions UI.
+ALTER TABLE club_staff
+  ADD COLUMN IF NOT EXISTS date_of_birth DATE,
+  ADD COLUMN IF NOT EXISTS career_status TEXT NOT NULL DEFAULT 'employed',
+  ADD COLUMN IF NOT EXISTS career_path TEXT NOT NULL DEFAULT 'coach',
+  ADD COLUMN IF NOT EXISTS personality TEXT NOT NULL DEFAULT 'Professioneel',
+  ADD COLUMN IF NOT EXISTS mood TEXT NOT NULL DEFAULT 'Neutraal';
+
+ALTER TABLE club_staff DROP CONSTRAINT IF EXISTS club_staff_role_check;
+UPDATE club_staff SET role=CASE role WHEN 'fitness_coach' THEN 'coach' WHEN 'doctor' THEN 'physio' ELSE role END;
+ALTER TABLE club_staff ADD CONSTRAINT club_staff_role_check
+  CHECK (role IN ('manager','assistant_manager','coach','scout','physio','sporting_director','chairperson'));
+
+UPDATE club_staff
+SET date_of_birth=COALESCE(date_of_birth,'1980-01-01'::date),
+    personality=COALESCE(NULLIF(personality,''),'Professioneel'),
+    mood=COALESCE(NULLIF(mood,''),'Neutraal');
+
 -- Keep all player records in the same tactical position vocabulary.
 UPDATE players
 SET position = CASE UPPER(position)
