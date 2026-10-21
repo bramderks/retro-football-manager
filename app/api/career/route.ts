@@ -108,7 +108,7 @@ export async function POST(request: Request) {
    await sql.query("INSERT INTO club_finances(save_id,entry_date,category,description,amount,balance_after) VALUES($1,$2,'wages','Dagelijkse lonen en exploitatie',$3,$4)",[b.saveId,day,-dailyCost,balance]);
     if(userFixture && matchRevenue>0) await sql.query("INSERT INTO club_finances(save_id,entry_date,category,description,amount,balance_after) VALUES($1,$2,$3,$4,$5,$6)",[b.saveId,day,userFixture.homeTeamId===s.club_id?"ticketing":"broadcast",userFixture.homeTeamId===s.club_id?"Wedstrijddag: kaartverkoop en horeca":"Wedstrijddag: media-inkomsten",matchRevenue,balance]);
    await sql.query("UPDATE career_saves SET cash_balance=$1 WHERE id=$2",[balance,b.saveId]);
-   const userFixture=results.find((x:any)=>x.homeTeamId===s.club_id||x.awayTeamId===s.club_id);
+   
    const players=await sql.query("SELECT cps.player_id AS id,cps.fitness,cps.injury_until FROM career_player_states cps JOIN players p ON p.id=cps.player_id WHERE cps.save_id=$1 AND cps.club_id=$2 AND p.is_active=TRUE",[b.saveId,s.club_id]);
    for(const p of players as any[]){
     const injury=userFixture && !p.injury_until && Math.random()<.003,fit=Math.max(40,Math.min(100,Number(p.fitness)+(userFixture?-(8+Math.floor(Math.random()*10)):1+Math.floor(Math.random()*2)))),kind=injury?(Math.random()<.5?"Hamstringblessure":"Enkelblessure"):null;
