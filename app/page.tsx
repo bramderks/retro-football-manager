@@ -6,7 +6,7 @@ import { randomInjury } from "./injury-catalog";
 type Team = { name: string; city?: string; rating: number; reputation: number; keeper: number };
 type Tactics = { mentality: string; passing: string; tempo?: string; pressing: boolean; offside: boolean; counter: boolean; hardTackles: boolean; formation: string; lineup?: Record<string,string>; runLines?: Record<string,number> };
 type EventLine = { minute: number | string; text: string; kind?: "goal" | "var" | "system" };
-type Scorer = { team: 0 | 1; minute: number; name: string; assist?: string; penalty?: boolean };
+type Scorer = { team: 0 | 1; minute: number; name: string; playerId?: string; assist?: string; assistId?: string; penalty?: boolean };
 type Player = { name: string; position: "keeper" | "defender" | "midfielder" | "forward" };
 type DatabasePlayer = { id: string; name: string; position: string; overallRating: number; potentialRating: number; sourceUrl: string | null };
 type DatabaseTeam = { id: string; name: string; city: string; division: string; tier: number; reputation: number; teamStrength: number; players: DatabasePlayer[] };
@@ -226,7 +226,7 @@ export default function Home() {
     if (!pendingCareerFixture || !finished || !careerSaveId || savedMatchFixture === pendingCareerFixture.id || matchSaving) return;
     let cancelled = false;
     setMatchSaving(true);
-    fetch("/api/career", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "finish_match", saveId: careerSaveId, fixtureId: pendingCareerFixture.id, homeGoals: goals[0], awayGoals: goals[1] }) })
+    fetch("/api/career", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "finish_match", saveId: careerSaveId, fixtureId: pendingCareerFixture.id, homeGoals: goals[0], awayGoals: goals[1], lineup: matchLineup, scorers }) })
       .then(async response => { const data = await response.json(); if (!response.ok) throw new Error(data.error || "Wedstrijd kon niet worden opgeslagen."); return data; })
       .then(async () => { if (cancelled) return; setSavedMatchFixture(pendingCareerFixture.id); setMatchSaving(false); const fresh = await fetch("/api/career?saveId=" + encodeURIComponent(careerSaveId), { cache: "no-store" }).then(x => x.json()); setCareerData(fresh); setPendingCareerFixture(null); await refreshSavedCareers(); })
       .catch(error => { if (!cancelled) setCareerError(error instanceof Error ? error.message : "Wedstrijd kon niet worden opgeslagen."); })
@@ -310,6 +310,11 @@ export default function Home() {
       const p=careerData?.squad?.find((x:any)=>x.id===id);return {id:id||"",name:p?.full_name||"Speler"};
     }
     const team=databaseTeams.find(t=>t.id===(side===0?selectedHomeId:selectedAwayId));const players=(team?.players||[]).filter((p:any)=>!redCardIds.includes(p.id)&&!injuredIds.includes(p.id));const p=players[Math.floor(Math.random()*Math.max(1,players.length))];return {id:p?.id||"",name:p?.name||"Speler"};
+  }
+  function resolvePlayerId(side:0|1,name:string){
+    if(side===userSide){return careerData?.squad?.find((p:any)=>p.full_name===name)?.id||"";}
+    const team=databaseTeams.find(t=>t.id===(side===0?selectedHomeId:selectedAwayId));
+    return team?.players.find((p:any)=>p.name===name)?.id||"";
   }
   async function persistMatchInjury(playerId:string,injury:any){
     if(!careerSaveId||!playerId||!careerData?.squad?.some((p:any)=>p.id===playerId))return;
@@ -399,7 +404,7 @@ export default function Home() {
           if (Math.random() < Math.max(.025, Math.min(.42, (.17 + (scorerQuality - keeper) * .0055) * gameStateFactor))) {
             addEvent({ minute: "VAR", text: "VAR controleert het doelpunt op buitenspel of een overtreding.", kind: "var" });
             if (Math.random() < .10) addEvent({ minute: "VAR", text: "Doelpunt afgekeurd na VAR-check: buitenspel in de aanloop.", kind: "var" });
-            else { const scorer = pickPlayer(ownIndex as 0 | 1, ["forward", "midfielder"]); const assist = Math.random() < .72 ? pickPlayer(ownIndex as 0 | 1, ["midfielder", "forward", "defender"]).name : undefined; setGoals(prev => home ? [prev[0] + 1, prev[1]] : [prev[0], prev[1] + 1]); setScorers(prev => [...prev, { team: ownIndex as 0 | 1, minute: m, name: scorer.name, assist }]); addEvent({ minute: "GOAL", text: scorer.name + " scoort een prachtige goal voor " + team + (assist ? ", op aangeven van " + assist : "") + "! De bal vliegt onhoudbaar in het doel.", kind: "goal" }); }
+            else { const scorer = pickPlayer(ownIndex as 0 | 1, ["forward", "midfielder"]); const assist = Math.random() < .72 ? pickPlayer(ownIndex as 0 | 1, ["midfielder", "forward", "defender"]).name : undefined; setGoals(prev => home ? [prev[0] + 1, prev[1]] : [prev[0], prev[1] + 1]); setScorers(prev => [...prev, { team: ownIndex as 0 | 1, minute: m, name: scorer.name, playerId:resolvePlayerId(ownIndex as 0|1,scorer.name), assist, assistId:assist?resolvePlayerId(ownIndex as 0|1,assist):undefined }]); addEvent({ minute: "GOAL", text: scorer.name + " scoort een prachtige goal voor " + team + (assist ? ", op aangeven van " + assist : "") + "! De bal vliegt onhoudbaar in het doel.", kind: "goal" }); }
           } else { const keeper = pickPlayer((home ? 1 : 0) as 0 | 1, ["keeper"]); addEvent({ minute: "SAVE", text: keeper.name + " redt knap op de inzet van " + shooter.name + " en houdt " + other + " op de been." }); }
         } else addEvent({ minute: "SCHOT", text: shooter.name + " haalt uit, maar de bal vliegt net over of naast." });
       } else if (Math.random() < .35) { own.corners++; const defender = pickPlayer((home ? 1 : 0) as 0 | 1, ["defender"]); addEvent({ minute: "COR", text: defender.name + " werkt de voorzet weg. Corner voor " + team + "." }); }
@@ -415,7 +420,7 @@ export default function Home() {
         if (Math.random() < .45) {
           addEvent({ minute: "VAR", text: "De VAR grijpt in: de scheidsrechter kent alsnog een strafschop toe!", kind: "var" });
           own.chances++;
-          if (Math.random() < (home ? .76 : .68)) { const scorer = pickPlayer(ownIndex as 0 | 1, ["forward", "midfielder"]); setGoals(prev => home ? [prev[0] + 1, prev[1]] : [prev[0], prev[1] + 1]); setScorers(prev => [...prev, { team: ownIndex as 0 | 1, minute: m, name: scorer.name, penalty: true }]); addEvent({ minute: "PEN", text: scorer.name + " blijft koel vanaf elf meter en schiet de penalty binnen voor " + team + "!", kind: "goal" }); }
+          if (Math.random() < (home ? .76 : .68)) { const scorer = pickPlayer(ownIndex as 0 | 1, ["forward", "midfielder"]); setGoals(prev => home ? [prev[0] + 1, prev[1]] : [prev[0], prev[1] + 1]); setScorers(prev => [...prev, { team: ownIndex as 0 | 1, minute: m, name: scorer.name, playerId:resolvePlayerId(ownIndex as 0|1,scorer.name), penalty: true }]); addEvent({ minute: "PEN", text: scorer.name + " blijft koel vanaf elf meter en schiet de penalty binnen voor " + team + "!", kind: "goal" }); }
           else { const keeper = pickPlayer((home ? 1 : 0) as 0 | 1, ["keeper"]); const taker = pickPlayer(ownIndex as 0 | 1, ["forward", "midfielder"]); addEvent({ minute: "PEN", text: "GEMISTE STRAFSCHOP! " + taker.name + " ziet zijn penalty gekeerd door " + keeper.name + " van " + other + ".", kind: "var" }); }
         } else addEvent({ minute: "VAR", text: "De scheidsrechter draait zijn beslissing terug na de VAR-check: geen penalty.", kind: "var" });
       }
