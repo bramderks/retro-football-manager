@@ -74,3 +74,4 @@ export async function POST(req:Request){
  return NextResponse.json({ok:true,season,teamsProcessed:teams.length,playersAdded:added,peopleAged:aged.length,playersRetired:aged.filter((x:any)=>x.career_status==="retired").length,convertedToManagers:converted,promotionRelegation:{promoted,relegated},financialProfiles:teams.length,stadiums:teams.length,minimumSquadRule:"23 actieve spelers per nationale en Europese club"});
  }catch(e){console.error("world rollover",e);return NextResponse.json({error:"Seizoensopbouw mislukt",detail:String(e)},{status:500})}
 }
+}
