@@ -10,8 +10,8 @@ function makeSchedule(teams:any[],divisionId:string,season:string){
  const n=list.length,rounds=n-1;let rotation=[...list],first:any[]=[];const homeCount=new Map<string,number>();
  for(let r=0;r<rounds;r++){for(let i=0;i<n/2;i++){let a=rotation[i],b=rotation[n-1-i];if(a.id==="BYE"||b.id==="BYE")continue;const ah=homeCount.get(a.id)||0,bh=homeCount.get(b.id)||0;let home=a,away=b;if(ah>bh||(ah===bh&&(r+i)%2===0)){home=b;away=a;}first.push({round:r+1,home:home.id,away:away.id});homeCount.set(home.id,(homeCount.get(home.id)||0)+1);}rotation=[rotation[0],rotation[n-1],...rotation.slice(1,n-1)];}
  const fixtures:any[]=[],base=new Date("2026-08-07T12:00:00Z");
- for(const m of first){const d=new Date(base);d.setUTCDate(d.getUTCDate()+(m.round-1)*7);fixtures.push({id:divisionId+"-md"+m.round+"-"+m.home+"-"+m.away,season,divisionId,round:m.round,date:d.toISOString().slice(0,10),home:m.home,away:m.away});}
- for(const m of first){const round=m.round+rounds,d=new Date(base);d.setUTCDate(d.getUTCDate()+(round-1)*7);fixtures.push({id:divisionId+"-md"+round+"-"+m.away+"-"+m.home,season,divisionId,round,date:d.toISOString().slice(0,10),home:m.away,away:m.home});}return fixtures;
+ for(const m of first){const round=2*m.round-1,d=new Date(base);d.setUTCDate(d.getUTCDate()+(round-1)*7);fixtures.push({id:divisionId+"-md"+round+"-"+m.home+"-"+m.away,season,divisionId,round,date:d.toISOString().slice(0,10),home:m.home,away:m.away});}
+ const offset=Math.floor(rounds/2);for(const m of first){const shifted=((m.round-1+offset)%rounds)+1,round=2*shifted,d=new Date(base);d.setUTCDate(d.getUTCDate()+(round-1)*7);fixtures.push({id:divisionId+"-md"+round+"-"+m.away+"-"+m.home,season,divisionId,round,date:d.toISOString().slice(0,10),home:m.away,away:m.home});}return fixtures;
 }
 const fail = (error: string, status = 400) => NextResponse.json({ error }, { status });
 const dateOnly = (d: Date | string) => new Date(d).toISOString().slice(0, 10);
