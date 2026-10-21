@@ -76,12 +76,12 @@ export default function Home() {
   useEffect(() => {
     if (!careerSaveId) return;
     let cancelled = false;
-    fetch("/api/career?saveId=" + encodeURIComponent(careerSaveId), { cache: "no-store" }).then(r => r.json()).then(d => { if (!cancelled && d.save) { setCareerData(d); setSelectedHomeId(d.save.club_id); setHomeTactics({ ...initialTactics, ...(d.save.tactical_setup || {}) }); } }).catch(() => { if (!cancelled) setCareerError("Carrière kon niet worden geladen."); });
+    fetch("/api/career?saveId=" + encodeURIComponent(careerSaveId), { cache: "no-store" }).then(async r => { const d = await r.json(); if (!r.ok) throw new Error(d.error || "Carrière kon niet worden geladen."); return d; }).then(d => { if (!cancelled && d.save) { setCareerData(d); setSelectedHomeId(d.save.club_id); setHomeTactics({ ...initialTactics, ...(d.save.tactical_setup || {}) }); } else if (!cancelled) setCareerError("Carrière kon niet worden geladen."); }).catch((e) => { if (!cancelled) setCareerError(e instanceof Error ? e.message : "Carrière kon niet worden geladen."); });
     return () => { cancelled = true; };
   }, [careerSaveId]);
   async function createCareer() {
     setCareerBusy(true); setCareerError("");
-    try { const r = await fetch("/api/career", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "create", clubId: careerClubId, managerName }) }); const d = await r.json(); if (!r.ok) throw new Error(d.error || "Carrière starten mislukt."); window.localStorage.setItem("rfm-career-save", d.saveId); setCareerSaveId(d.saveId); setSelectedHomeId(d.clubId); setActiveScreen("Overzicht"); } catch (e) { setCareerError(e instanceof Error ? e.message : "Carrière starten mislukt."); } finally { setCareerBusy(false); }
+    try { const r = await fetch("/api/career", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "create", clubId: careerClubId, managerName }) }); const d = await r.json(); if (!r.ok) throw new Error(d.error || "Carrière starten mislukt."); if (!d.saveId) throw new Error("De server heeft geen carrière-ID teruggegeven."); window.localStorage.setItem("rfm-career-save", d.saveId); setCareerSaveId(d.saveId); setSelectedHomeId(d.clubId); const freshResponse = await fetch("/api/career?saveId=" + encodeURIComponent(d.saveId), { cache: "no-store" }); const fresh = await freshResponse.json(); if (!freshResponse.ok || !fresh.save) throw new Error(fresh.error || "Carrière is aangemaakt, maar kon niet worden geladen."); setCareerData(fresh); setHomeTactics({ ...initialTactics, ...(fresh.save.tactical_setup || {}) }); setActiveScreen("Overzicht"); } catch (e) { setCareerError(e instanceof Error ? e.message : "Carrière starten mislukt."); } finally { setCareerBusy(false); }
   }
   async function advanceCareerDay() {
     if (!careerSaveId || careerBusy) return; setCareerBusy(true); setCareerError("");
