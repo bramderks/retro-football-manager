@@ -53,7 +53,9 @@ export async function GET(request: Request) {
     const offers=await sql.query("SELECT o.id,o.fee,o.wage_offer,o.status,o.submitted_on,o.expires_on,p.full_name,t.name AS buying_club FROM transfer_offers o JOIN players p ON p.id=o.player_id JOIN teams t ON t.id=o.buying_club_id WHERE o.save_id=$1 ORDER BY o.id DESC LIMIT 20",[saveId]);
     const applications=await sql.query("SELECT a.id,a.target_role,a.applied_on,a.response_on,a.status,t.name AS target_club,t.city FROM career_applications a JOIN teams t ON t.id=a.target_club_id WHERE a.save_id=$1 ORDER BY a.id DESC LIMIT 20",[saveId]);
     const opportunities=await sql.query("SELECT t.id AS club_id,t.name AS club_name,t.city,d.name AS division,d.country_code,t.reputation FROM teams t JOIN divisions d ON d.id=t.division_id WHERE d.season_id=$1 AND t.id<>$2 ORDER BY t.reputation DESC,t.name LIMIT 80",[SEASON,save.club_id]);
-    return NextResponse.json({season:SEASON,save,standings,fixtures,news,finances,squad,objectives,transferWindow:windowRows[0]||null,market,offers,applications,opportunities},{headers:{"Cache-Control":"no-store"}});
+    const facilities=await sql.query("SELECT t.id,t.name,t.reputation,t.stadium_name,t.stadium_capacity,t.ticket_price,t.season_budget,t.annual_revenue,t.annual_wage_bill,st.name AS venue_name,st.capacity AS venue_capacity,st.annual_maintenance FROM teams t LEFT JOIN stadiums st ON st.team_id=t.id WHERE t.id=$1 LIMIT 1",[save.club_id]);
+    const facilityUpgrades=await sql.query("SELECT payload,result,action_date FROM career_actions WHERE save_id=$1 AND action_type='facility_upgrade' ORDER BY id DESC LIMIT 50",[saveId]);
+    return NextResponse.json({season:SEASON,save,standings,fixtures,news,finances,squad,objectives,transferWindow:windowRows[0]||null,market,offers,applications,opportunities,facilities:facilities[0]||null,facilityUpgrades},{headers:{"Cache-Control":"no-store"}});
   }catch(e){console.error("career GET",e);return fail("Carrière kon niet worden geladen.",500);}
 }
 export async function POST(request: Request) {
@@ -82,6 +84,22 @@ export async function POST(request: Request) {
   const rows=await sql.query("SELECT s.*,t.name AS club_name,t.division_id,m.full_name AS manager_name FROM career_saves s JOIN teams t ON t.id=s.club_id JOIN managers m ON m.id=s.manager_id WHERE s.id=$1 LIMIT 1",[b.saveId]);
   if(!rows.length)return fail("Carrière niet gevonden.",404);const s:any=rows[0];
   if(b.action==="save_game"){await sql.query("UPDATE career_saves SET updated_at=NOW() WHERE id=$1",[b.saveId]);await sql.query("INSERT INTO career_actions(save_id,action_date,action_type,payload,result) VALUES($1,$2,'manual_save',$3::jsonb,$4::jsonb)",[b.saveId,dateOnly(s.game_date),JSON.stringify({gameDate:dateOnly(s.game_date)}),JSON.stringify({saved:true})]);return NextResponse.json({ok:true,savedAt:new Date().toISOString(),gameDate:dateOnly(s.game_date)});}
+  if(b.action==="upgrade_facility"){
+   const facility=String(b.facility||"");const valid=["stadium","lighting","catering","toilets","hospitality","training","youth","marketing","accessibility"];
+   if(!valid.includes(facility))return fail("Onbekende faciliteit.");
+   const history=await sql.query("SELECT payload FROM career_actions WHERE save_id=$1 AND action_type='facility_upgrade' ORDER BY id DESC LIMIT 100",[b.saveId]);
+   const prior=history.find((x:any)=>x.payload?.facility===facility);const level=Math.max(1,Number(prior?.payload?.level||1));const next=level+1;
+   if(facility==="stadium"&&next>Math.max(1,Math.min(5,Math.ceil(Number(s.reputation||50)/20))))return fail("De clubreputatie is nog niet hoog genoeg voor deze stadionklasse.");
+   if(next>5)return fail("Deze faciliteit heeft al het maximale niveau van 5 sterren.");
+   const base:Record<string,number>={stadium:800000,lighting:180000,catering:120000,toilets:90000,hospitality:450000,training:350000,youth:220000,marketing:160000,accessibility:140000};
+   const cost=Math.round(base[facility]*Math.pow(next,1.65));if(cost>Number(s.cash_balance||0))return fail("Onvoldoende clubkas voor deze investering.");
+   const balance=Number(s.cash_balance)-cost;const payload={facility,level:next,cost};
+   await sql.query("INSERT INTO career_actions(save_id,action_date,action_type,payload,result) VALUES($1,$2,'facility_upgrade',$3::jsonb,$4::jsonb)",[b.saveId,dateOnly(s.game_date),JSON.stringify(payload),JSON.stringify({ok:true})]);
+   await sql.query("UPDATE career_saves SET cash_balance=$1,updated_at=NOW() WHERE id=$2",[balance,b.saveId]);
+   await sql.query("INSERT INTO club_finances(save_id,entry_date,category,description,amount,balance_after) VALUES($1,$2,'facility',$3,$4,$5)",[b.saveId,dateOnly(s.game_date),"Investering faciliteit: "+facility,-cost,balance]);
+   await sql.query("INSERT INTO career_news(save_id,news_date,category,headline,body) VALUES($1,$2,'club',$3,$4)",[b.saveId,dateOnly(s.game_date),"Clubfaciliteit verbeterd","De club investeert €"+cost.toLocaleString("nl-NL")+" in "+facility+". Het niveau is nu "+next+"/5."]);
+   return NextResponse.json({ok:true,facility,level:next,cost,balance});
+  }
   if(b.action==="tactics"){await sql.query("UPDATE career_saves SET tactical_setup=$1::jsonb,updated_at=NOW() WHERE id=$2",[JSON.stringify(b.tactics||{}),b.saveId]);return NextResponse.json({ok:true});}
   if(b.action==="offer_transfer"){
    const playerId=String(b.playerId||""),fee=Math.max(0,Math.round(Number(b.fee)||0)),wage=Math.max(0,Math.round(Number(b.wage)||0));
