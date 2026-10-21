@@ -13,6 +13,20 @@ function makeSchedule(teams:any[],divisionId:string,season:string){
  for(const m of first){const round=2*m.round-1,d=new Date(base);d.setUTCDate(d.getUTCDate()+(round-1)*7);fixtures.push({id:divisionId+"-md"+round+"-"+m.home+"-"+m.away,season,divisionId,round,date:d.toISOString().slice(0,10),home:m.home,away:m.away});}
  const offset=Math.floor(rounds/2);for(const m of first){const shifted=((m.round-1+offset)%rounds)+1,round=2*shifted,d=new Date(base);d.setUTCDate(d.getUTCDate()+(round-1)*7);fixtures.push({id:divisionId+"-md"+round+"-"+m.away+"-"+m.home,season,divisionId,round,date:d.toISOString().slice(0,10),home:m.away,away:m.home});}return fixtures;
 }
+async function ensureSaveSchedule(sql:any,saveId:string,divisionId:string,seasonId:string){
+ const count=await sql.query("SELECT COUNT(*)::int AS n FROM career_fixture_schedule WHERE save_id=$1",[saveId]);
+ const fixtureCount=await sql.query("SELECT COUNT(*)::int AS n FROM fixtures WHERE division_id=$1 AND season_id=$2",[divisionId,seasonId]);
+ if(Number(count[0]?.n||0)>=Number(fixtureCount[0]?.n||0))return;
+ const teams=(await sql.query("SELECT id FROM teams WHERE division_id=$1 ORDER BY id",[divisionId])).map((x:any)=>String(x.id));
+ const fixtures=await sql.query("SELECT f.id,f.matchday,f.kickoff_date,f.home_team_id,f.away_team_id,(cr.fixture_id IS NOT NULL) AS played FROM fixtures f LEFT JOIN career_fixture_results cr ON cr.fixture_id=f.id AND cr.save_id=$1 WHERE f.division_id=$2 AND f.season_id=$3 ORDER BY f.matchday",[saveId,divisionId,seasonId]);
+ if(teams.length<2||!fixtures.length)return;
+ const list=[...teams].sort((x,y)=>x.localeCompare(y));if(list.length%2)list.push("__BYE__");const n=list.length;let rotation=[...list],homeCount=new Map<string,number>();const first:any[]=[];
+ for(let r=0;r<n-1;r++){for(let i=0;i<n/2;i++){const x=rotation[i],y=rotation[n-1-i];if(x==="__BYE__"||y==="__BYE__")continue;const hx=homeCount.get(x)||0,hy=homeCount.get(y)||0;let home=x,away=y;if(hx>hy||(hx===hy&&(r+i)%2===0)){home=y;away=x;}first.push({home,away});homeCount.set(home,(homeCount.get(home)||0)+1);}rotation=[rotation[0],rotation[n-1],...rotation.slice(1,n-1)];}
+ const orientation=new Map<string,{home:string;away:string}>();for(const pair of first)orientation.set([pair.home,pair.away].sort().join("|"),pair);
+ const pairs=new Map<string,any[]>();for(const f of fixtures){const key=[String(f.home_team_id),String(f.away_team_id)].sort().join("|");if(!pairs.has(key))pairs.set(key,[]);pairs.get(key)!.push(f);}
+ const rows:any[]=[];for(const [key,group] of pairs){const ordered=[...group].sort((x,y)=>Number(x.matchday)-Number(y.matchday));const pair=orientation.get(key);const preserve=group.some(x=>x.played);for(let i=0;i<ordered.length;i++){const f=ordered[i];let home=String(f.home_team_id),away=String(f.away_team_id);if(!preserve&&pair){home=i===0?pair.home:pair.away;away=i===0?pair.away:pair.home;}rows.push({id:f.id,matchday:Number(f.matchday),date:dateOnly(f.kickoff_date),home,away});}}
+ for(let i=0;i<rows.length;i+=100){const chunk=rows.slice(i,i+100);const values=chunk.map(x=>"("+[saveId,x.id,x.matchday,x.date,x.home,x.away].map((v:any)=>"'"+String(v).replace(/'/g,"''")+"'").join(",")+")").join(",");await sql.query("INSERT INTO career_fixture_schedule(save_id,fixture_id,matchday,kickoff_date,home_team_id,away_team_id) VALUES "+values+" ON CONFLICT(save_id,fixture_id) DO NOTHING");}
+}
 const fail = (error: string, status = 400) => NextResponse.json({ error }, { status });
 const dateOnly = (d: Date | string) => new Date(d).toISOString().slice(0, 10);
 function matchScore(home: number, away: number, ht: any = {}, at: any = {}) {
