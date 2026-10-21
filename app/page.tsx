@@ -7,7 +7,7 @@ type Team = { name: string; city?: string; rating: number; reputation: number; k
 type Tactics = { mentality: string; passing: string; tempo?: string; pressing: boolean; offside: boolean; counter: boolean; hardTackles: boolean; formation: string; lineup?: Record<string,string>; runLines?: Record<string,number> };
 type EventLine = { minute: number | string; text: string; kind?: "goal" | "var" | "system" };
 type Scorer = { team: 0 | 1; minute: number; name: string; playerId?: string; assist?: string; assistId?: string; penalty?: boolean };
-type Player = { name: string; position: "keeper" | "defender" | "midfielder" | "forward" };
+type Player = { name: string; position: "keeper" | "defender" | "midfielder" | "forward"; rating?: number; id?: string };
 type DatabasePlayer = { id: string; name: string; position: string; overallRating: number; potentialRating: number; sourceUrl: string | null };
 type DatabaseTeam = { id: string; name: string; city: string; division: string; tier: number; reputation: number; teamStrength: number; players: DatabasePlayer[] };
 const AJAX_PLAYERS: Player[] = [
@@ -321,7 +321,7 @@ export default function Home() {
       position: p.position === "GK" ? "keeper" : ["ST","RW","LW"].includes(p.position) ? "forward" : ["CB","LB","RB","LWB","RWB"].includes(p.position) ? "defender" : "midfielder",
     })) : fallback;
     const pool = positions?.length ? squad.filter(p => positions.includes(p.position)) : squad.filter(p => p.position !== "keeper");
-    return pool[Math.floor(Math.random() * pool.length)] ?? squad[0];
+    const weighted=pool.map(p=>({player:p,weight:Math.max(1,Number(p.rating||50))}));const total=weighted.reduce((sum,x)=>sum+x.weight,0);let roll=Math.random()*total;for(const item of weighted){roll-=item.weight;if(roll<=0)return item.player;}return weighted[weighted.length-1]?.player??squad[0];
   }
   const userSide:0|1 = careerData?.save?.club_id && selectedAwayId===careerData.save.club_id ? 1 : 0;
   function matchPlayer(side:0|1){
