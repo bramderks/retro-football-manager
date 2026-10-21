@@ -210,7 +210,7 @@ export async function POST(request: Request) {
    await sql.query("INSERT INTO career_fixture_results(save_id,fixture_id,home_goals,away_goals,status,played_at) VALUES($1,$2,$3,$4,'played',NOW())",[b.saveId,fixtureId,homeGoals,awayGoals]);
     // Persist in-match fatigue so low fitness carries into the next fixture and increases future injury risk.
     const suppliedFitness = b.matchFitness && typeof b.matchFitness === "object" && !Array.isArray(b.matchFitness) ? b.matchFitness : {};
-    const safeFitness = Object.fromEntries(Object.entries(suppliedFitness).filter(([playerId,value]) => typeof playerId === "string" && playerId.length > 0 && Number.isFinite(Number(value))).map(([playerId,value]) => [playerId, Math.max(5,Math.min(100,Math.round(Number(value)))]));
+    const safeFitness = Object.fromEntries(Object.entries(suppliedFitness).filter(([playerId,value]) => typeof playerId === "string" && playerId.length > 0 && Number.isFinite(Number(value))).map(([playerId,value]) => [playerId, Math.max(5,Math.min(100,Math.round(Number(value))))]));
     if (Object.keys(safeFitness).length) {
       await sql.query("UPDATE career_player_states AS cps SET fitness = GREATEST(5,LEAST(100,(entry.value)::numeric)) FROM jsonb_each_text($2::jsonb) AS entry(key,value) WHERE cps.save_id=$1 AND cps.club_id=$3 AND cps.player_id=entry.key",[b.saveId,JSON.stringify(safeFitness),s.club_id]);
     }
