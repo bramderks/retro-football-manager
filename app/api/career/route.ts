@@ -38,7 +38,7 @@ export async function GET(request: Request) {
   try{
     const sql=neon(conn), url=new URL(request.url), saveId=url.searchParams.get("saveId");
     const clubs=await sql.query("SELECT t.id,t.name,t.city,t.reputation,t.team_strength,d.name AS division,d.tier,d.country_code FROM teams t JOIN divisions d ON d.id=t.division_id WHERE d.season_id=$1 ORDER BY d.country_code,d.tier,t.name",[SEASON]);
-    if(!saveId)return NextResponse.json({season:SEASON,clubs});
+    if(!saveId){const saves=url.searchParams.get("listSaves")==="1"?await sql.query("SELECT s.id,s.game_date,s.role,s.updated_at,m.full_name AS manager_name,t.name AS club_name,d.name AS division FROM career_saves s JOIN managers m ON m.id=s.manager_id JOIN teams t ON t.id=s.club_id JOIN divisions d ON d.id=t.division_id ORDER BY s.updated_at DESC NULLS LAST,s.created_at DESC LIMIT 5"):[];return NextResponse.json({season:SEASON,clubs,saves},{headers:{"Cache-Control":"no-store"}});}
     const got=await sql.query("SELECT s.*,m.full_name AS manager_name,t.name AS club_name,t.city,t.reputation,t.team_strength,d.name AS division,d.id AS division_id,d.country_code FROM career_saves s JOIN managers m ON m.id=s.manager_id JOIN teams t ON t.id=s.club_id JOIN divisions d ON d.id=t.division_id WHERE s.id=$1 LIMIT 1",[saveId]);
     if(!got.length)return fail("Carrière niet gevonden.",404);
     const save:any=got[0];
@@ -61,6 +61,7 @@ export async function POST(request: Request) {
  try{
   const b=await request.json(),sql=neon(conn);
   if(b.action==="create"){
+   const activeSaves=await sql.query("SELECT COUNT(*)::int AS n FROM career_saves");if(Number(activeSaves[0]?.n||0)>=5)return fail("Je kunt maximaal 5 opgeslagen carrières hebben. Verwijder eerst een save om een nieuwe te starten.");
    if(!b.clubId)return fail("Kies een club.");
    if(!["manager","sporting_director","chairperson"].includes(b.role||"manager"))return fail("Kies een geldige startfunctie.");
    const clubs=await sql.query("SELECT t.id,t.name,t.reputation,t.team_strength,t.division_id,d.country_code FROM teams t JOIN divisions d ON d.id=t.division_id WHERE t.id=$1 AND d.season_id=$2 LIMIT 1",[b.clubId,SEASON]);
@@ -80,6 +81,7 @@ export async function POST(request: Request) {
   if(!b.saveId)return fail("saveId ontbreekt.");
   const rows=await sql.query("SELECT s.*,t.name AS club_name,t.division_id,m.full_name AS manager_name FROM career_saves s JOIN teams t ON t.id=s.club_id JOIN managers m ON m.id=s.manager_id WHERE s.id=$1 LIMIT 1",[b.saveId]);
   if(!rows.length)return fail("Carrière niet gevonden.",404);const s:any=rows[0];
+  if(b.action==="save_game"){await sql.query("UPDATE career_saves SET updated_at=NOW() WHERE id=$1",[b.saveId]);await sql.query("INSERT INTO career_actions(save_id,action_date,action_type,payload,result) VALUES($1,$2,'manual_save',$3::jsonb,$4::jsonb)",[b.saveId,dateOnly(s.game_date),JSON.stringify({gameDate:dateOnly(s.game_date)}),JSON.stringify({saved:true})]);return NextResponse.json({ok:true,savedAt:new Date().toISOString(),gameDate:dateOnly(s.game_date)});}
   if(b.action==="tactics"){await sql.query("UPDATE career_saves SET tactical_setup=$1::jsonb,updated_at=NOW() WHERE id=$2",[JSON.stringify(b.tactics||{}),b.saveId]);return NextResponse.json({ok:true});}
   if(b.action==="offer_transfer"){
    const playerId=String(b.playerId||""),fee=Math.max(0,Math.round(Number(b.fee)||0)),wage=Math.max(0,Math.round(Number(b.wage)||0));
