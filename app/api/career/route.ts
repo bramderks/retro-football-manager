@@ -47,7 +47,7 @@ export async function GET(request: Request) {
     const news=await sql.query("SELECT id,news_date,category,headline,body,is_read FROM career_news WHERE save_id=$1 ORDER BY id DESC LIMIT 25",[saveId]);
     const objectives=await sql.query("SELECT id,objective_type,description,target_value,progress_value,status FROM board_objectives WHERE save_id=$1 ORDER BY objective_type",[saveId]);
     const finances=await sql.query("SELECT entry_date,category,description,amount,balance_after FROM club_finances WHERE save_id=$1 ORDER BY id DESC LIMIT 20",[saveId]);
-    const squad=await sql.query("SELECT p.id,p.full_name,p.position,p.overall_rating,p.potential_rating,cps.fitness,cps.morale,cps.sharpness,cps.injury_type,cps.injury_until FROM career_player_states cps JOIN players p ON p.id=cps.player_id WHERE cps.save_id=$1 AND cps.club_id=$2 AND p.is_active=TRUE ORDER BY p.overall_rating DESC,p.full_name LIMIT 40",[saveId,save.club_id]);
+    const squad=await sql.query("SELECT p.id,p.full_name,p.position,p.overall_rating,p.potential_rating,p.date_of_birth,p.nationality,cps.fitness,cps.morale,cps.sharpness,cps.injury_type,cps.injury_until,pc.weekly_wage,pc.end_date AS contract_end,pc.release_clause FROM career_player_states cps JOIN players p ON p.id=cps.player_id LEFT JOIN player_contracts pc ON pc.player_id=p.id AND pc.club_id=cps.club_id WHERE cps.save_id=$1 AND cps.club_id=$2 AND p.is_active=TRUE ORDER BY p.overall_rating DESC,p.full_name LIMIT 40",[saveId,save.club_id]);
     const windowRows=await sql.query("SELECT id,window_name,opens_on,closes_on FROM transfer_windows WHERE season_id=$1 AND opens_on <= $2 AND closes_on >= $2 ORDER BY opens_on LIMIT 1",[SEASON,dateOnly(save.game_date)]);
     const market=await sql.query("SELECT p.id,p.full_name,p.position,p.overall_rating,p.potential_rating,p.date_of_birth,p.nationality,cps.club_id AS club_id,t.name AS club_name,t.reputation AS club_reputation,COALESCE(ph.appearances,0)::int AS appearances,COALESCE(ph.goals,0)::int AS goals,COALESCE(ph.assists,0)::int AS assists,COALESCE(ph.average_rating,0)::numeric AS average_rating,GREATEST(50000,p.overall_rating*p.overall_rating*450) AS asking_price FROM career_player_states cps JOIN players p ON p.id=cps.player_id JOIN teams t ON t.id=cps.club_id LEFT JOIN player_history ph ON ph.player_id=p.id AND ph.season_id=$2 AND ph.club_id=cps.club_id WHERE cps.save_id=$1 AND cps.club_id<>$3 AND p.is_active=TRUE AND p.overall_rating>=45 AND t.id NOT LIKE 'jong-%' ORDER BY p.overall_rating DESC LIMIT 500",[saveId,SEASON,save.club_id]);
     const offers=await sql.query("SELECT o.id,o.fee,o.wage_offer,o.status,o.submitted_on,o.expires_on,p.full_name,t.name AS buying_club FROM transfer_offers o JOIN players p ON p.id=o.player_id JOIN teams t ON t.id=o.buying_club_id WHERE o.save_id=$1 ORDER BY o.id DESC LIMIT 20",[saveId]);
@@ -58,9 +58,11 @@ export async function GET(request: Request) {
     if(Math.random()<0.045){const managerRumour=await sql.query("SELECT cs.full_name,cs.role,t.name AS club_name FROM club_staff cs JOIN teams t ON t.id=cs.club_id WHERE cs.role IN ('manager','head_coach') AND cs.employed_until IS NULL ORDER BY random() LIMIT 1");if(managerRumour.length){const m:any=managerRumour[0];await sql.query("INSERT INTO career_news(save_id,news_date,category,headline,body) VALUES($1,$2,'manager',$3,$4)",[b.saveId,day,"Druk neemt toe bij "+m.club_name,m.full_name+" ligt onder druk na tegenvallende resultaten. Het bestuur overweegt de positie van de "+m.role+"."]);}}
     const applications=await sql.query("SELECT a.id,a.target_role,a.applied_on,a.response_on,a.status,t.name AS target_club,t.city FROM career_applications a JOIN teams t ON t.id=a.target_club_id WHERE a.save_id=$1 ORDER BY a.id DESC LIMIT 20",[saveId]);
     const opportunities=await sql.query("SELECT t.id AS club_id,t.name AS club_name,t.city,d.name AS division,d.country_code,t.reputation FROM teams t JOIN divisions d ON d.id=t.division_id WHERE d.season_id=$1 AND t.id<>$2 ORDER BY t.reputation DESC,t.name LIMIT 80",[SEASON,save.club_id]);
+    const clubStaff=await sql.query("SELECT id,full_name,role,reputation,wage_weekly,employed_from,employed_until FROM club_staff WHERE club_id=$1 AND employed_until IS NULL ORDER BY role,full_name",[save.club_id]);
+    const playerListings=await sql.query("SELECT payload,action_date FROM career_actions WHERE save_id=$1 AND action_type='player_listing' ORDER BY id DESC LIMIT 50",[saveId]);
     const facilities=await sql.query("SELECT t.id,t.name,t.reputation,t.stadium_name,t.stadium_capacity,t.ticket_price,t.season_budget,t.annual_revenue,t.annual_wage_bill,st.name AS venue_name,st.capacity AS venue_capacity,st.annual_maintenance FROM teams t LEFT JOIN stadiums st ON st.team_id=t.id WHERE t.id=$1 LIMIT 1",[save.club_id]);
     const facilityUpgrades=await sql.query("SELECT payload,result,action_date FROM career_actions WHERE save_id=$1 AND action_type='facility_upgrade' ORDER BY id DESC LIMIT 50",[saveId]);
-    return NextResponse.json({season:SEASON,save,standings,fixtures,news,finances,squad,objectives,transferWindow:windowRows[0]||null,market,offers,applications,opportunities,facilities:facilities[0]||null,facilityUpgrades},{headers:{"Cache-Control":"no-store"}});
+    return NextResponse.json({season:SEASON,save,standings,fixtures,news,finances,squad,objectives,transferWindow:windowRows[0]||null,market,offers,applications,opportunities,facilities:facilities[0]||null,facilityUpgrades,clubStaff,playerListings},{headers:{"Cache-Control":"no-store"}});
   }catch(e){console.error("career GET",e);return fail("Carrière kon niet worden geladen.",500);}
 }
 export async function POST(request: Request) {
@@ -89,6 +91,30 @@ export async function POST(request: Request) {
   const rows=await sql.query("SELECT s.*,t.name AS club_name,t.division_id,m.full_name AS manager_name FROM career_saves s JOIN teams t ON t.id=s.club_id JOIN managers m ON m.id=s.manager_id WHERE s.id=$1 LIMIT 1",[b.saveId]);
   if(!rows.length)return fail("Carrière niet gevonden.",404);const s:any=rows[0];
   if(b.action==="save_game"){await sql.query("UPDATE career_saves SET updated_at=NOW() WHERE id=$1",[b.saveId]);await sql.query("INSERT INTO career_actions(save_id,action_date,action_type,payload,result) VALUES($1,$2,'manual_save',$3::jsonb,$4::jsonb)",[b.saveId,dateOnly(s.game_date),JSON.stringify({gameDate:dateOnly(s.game_date)}),JSON.stringify({saved:true})]);return NextResponse.json({ok:true,savedAt:new Date().toISOString(),gameDate:dateOnly(s.game_date)});}
+  if(b.action==="list_player"){
+   const playerId=String(b.playerId||"");const listingType=["sale","loan","satellite"].includes(String(b.listingType))?String(b.listingType):"sale";const price=Math.max(0,Math.round(Number(b.askingPrice)||0));
+   const player=await sql.query("SELECT p.id,p.full_name FROM career_player_states cps JOIN players p ON p.id=cps.player_id WHERE cps.save_id=$1 AND cps.club_id=$2 AND p.id=$3 AND p.is_active=TRUE LIMIT 1",[b.saveId,s.club_id,playerId]);if(!player.length)return fail("Speler hoort niet bij jouw selectie.",404);
+   const payload={playerId,playerName:player[0].full_name,listingType,askingPrice:price,targetClubId:b.targetClubId||null,status:"listed"};
+   await sql.query("INSERT INTO career_actions(save_id,action_date,action_type,payload,result) VALUES($1,$2,'player_listing',$3::jsonb,$4::jsonb)",[b.saveId,dateOnly(s.game_date),JSON.stringify(payload),JSON.stringify({ok:true})]);
+   await sql.query("INSERT INTO career_news(save_id,news_date,category,headline,body) VALUES($1,$2,'transfer',$3,$4)",[b.saveId,dateOnly(s.game_date),"Speler aangeboden: "+player[0].full_name,player[0].full_name+" is op de transfermarkt geplaatst ("+listingType+")."]);
+   return NextResponse.json({ok:true});
+  }
+  if(b.action==="terminate_player_contract"){
+   const playerId=String(b.playerId||"");const contract=await sql.query("SELECT id,weekly_wage,end_date FROM career_player_contracts WHERE save_id=$1 AND player_id=$2 AND club_id=$3 AND end_date >= $4::date ORDER BY end_date DESC LIMIT 1",[b.saveId,playerId,s.club_id,dateOnly(s.game_date)]);
+   if(!contract.length)return fail("Geen actief contract gevonden voor deze speler.");
+   const weeks=Math.max(0,Math.ceil((new Date(String(contract[0].end_date)+"T12:00:00Z").getTime()-new Date(dateOnly(s.game_date)+"T12:00:00Z").getTime())/604800000));const penalty=Math.round(Number(contract[0].weekly_wage)*weeks*.75);
+   if(penalty>Number(s.cash_balance||0))return fail("Onvoldoende clubkas voor de afkoopsom van €"+penalty.toLocaleString("nl-NL")+".");
+   await sql.query("UPDATE career_player_contracts SET end_date=$1 WHERE id=$2",[dateOnly(s.game_date),contract[0].id]);await sql.query("UPDATE career_saves SET cash_balance=cash_balance-$1,updated_at=NOW() WHERE id=$2",[penalty,b.saveId]);
+   await sql.query("INSERT INTO club_finances(save_id,entry_date,category,description,amount,balance_after) VALUES($1,$2,'contract',$3,$4,$5)",[b.saveId,dateOnly(s.game_date),"Contract ontbonden (75% resterend loon)",-penalty,Number(s.cash_balance)-penalty]);
+   return NextResponse.json({ok:true,penalty});
+  }
+  if(b.action==="terminate_staff_contract"){
+   const staffId=String(b.staffId||"");const staff=await sql.query("SELECT id,full_name,role,wage_weekly FROM club_staff WHERE id=$1 AND club_id=$2 AND employed_until IS NULL LIMIT 1",[staffId,s.club_id]);if(!staff.length)return fail("Medewerker niet gevonden.");
+   const penalty=Math.round(Number(staff[0].wage_weekly||0)*52*.75);if(penalty>Number(s.cash_balance||0))return fail("Onvoldoende clubkas voor de afkoopsom van €"+penalty.toLocaleString("nl-NL")+".");
+   await sql.query("UPDATE club_staff SET employed_until=$1 WHERE id=$2",[dateOnly(s.game_date),staffId]);await sql.query("UPDATE career_saves SET cash_balance=cash_balance-$1,updated_at=NOW() WHERE id=$2",[penalty,b.saveId]);
+   await sql.query("INSERT INTO club_finances(save_id,entry_date,category,description,amount,balance_after) VALUES($1,$2,'contract',$3,$4,$5)",[b.saveId,dateOnly(s.game_date),"Contract ontbonden: "+staff[0].full_name,-penalty,Number(s.cash_balance)-penalty]);
+   return NextResponse.json({ok:true,penalty});
+  }
   if(b.action==="upgrade_facility"){
    const facility=String(b.facility||"");const valid=["stadium","lighting","catering","toilets","hospitality","training","youth","marketing","accessibility"];
    if(!valid.includes(facility))return fail("Onbekende faciliteit.");
