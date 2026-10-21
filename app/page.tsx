@@ -45,7 +45,7 @@ export default function Home() {
     { minute: "INFO", text: "Ajax – NEC · Eredivisie. Druk op Start om af te trappen.", kind: "system" },
   ]);
   const [activeScreen, setActiveScreen] = useState("Overzicht");
-  const screenOrder = ["Overzicht", "Wedstrijd", "Selectie", "Tactiek", "Competitie", "Europees", "Kalender", "Transfers", "Loopbaan"];
+  const screenOrder = ["Overzicht", "Wedstrijd", "Selectie", "Tactiek", "Competitie", "Europees", "Kalender", "Transfers", "Faciliteiten", "Loopbaan"];
   function moveScreen(direction: number) { const current = screenOrder.indexOf(activeScreen); const next = screenOrder[(Math.max(0,current) + direction + screenOrder.length) % screenOrder.length]; if (next === "Europees") window.location.href = "/uefa"; else if (next === "Kalender") window.location.href = "/kalender"; else setActiveScreen(next); }
   const [homeTactics, setHomeTactics] = useState<Tactics>({ ...initialTactics });
   const [awayTactics, setAwayTactics] = useState<Tactics>({ mentality: "Verdedigend", passing: "Direct", pressing: false, offside: false, counter: true, hardTackles: false, formation: "4-4-2" });
@@ -68,6 +68,9 @@ export default function Home() {
   const [extraTime, setExtraTime] = useState(false);
   const [penaltiesFinished, setPenaltiesFinished] = useState(false);
   const [draggedPlayerId, setDraggedPlayerId] = useState("");
+  const [marketFilters, setMarketFilters] = useState({position:"Alle",ageMax:"40",nationality:"Alle",minGoals:"0",minAssists:"0",maxValue:"1000000000",search:""});
+  const [offerDraft, setOfferDraft] = useState<any>(null);
+  const [offerTerms, setOfferTerms] = useState({fee:0,installments:"1",sellOn:"0",endOfSeason:false,appearanceBonus:"0",goalBonus:"0",internationalBonus:"0",wage:15000,loan:false});
   const [uefaData, setUefaData] = useState<any>(null);
   const [uefaCompetition, setUefaCompetition] = useState("UCL");
   const [selectedHomeId, setSelectedHomeId] = useState("ajax");
@@ -95,6 +98,11 @@ export default function Home() {
     return () => { cancelled = true; };
   }, []);
 
+  async function upgradeFacility(facility:string){
+    if(!careerSaveId||careerBusy)return;setCareerBusy(true);setCareerError("");
+    try{const r=await fetch("/api/career",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"upgrade_facility",saveId:careerSaveId,facility})});const d=await r.json();if(!r.ok||!d.ok)throw new Error(d.error||"Investering mislukt.");const fresh=await fetch("/api/career?saveId="+encodeURIComponent(careerSaveId),{cache:"no-store"}).then(x=>x.json());setCareerData(fresh);}
+    catch(e){setCareerError(e instanceof Error?e.message:"Investering mislukt.");}finally{setCareerBusy(false);}
+  }
   async function saveCurrentGame() {
     if (!careerSaveId || careerBusy) return;
     setCareerBusy(true); setCareerError("");
@@ -302,7 +310,7 @@ export default function Home() {
 
   return <main className="app-shell">
     <header className="topbar"><div className="brand"><span className="brand-mark">RFM</span><div><div className="brand-title">RETRO FOOTBALL MANAGER</div><div className="brand-sub">THE CLASSIC GAME, REBUILT</div></div></div><div className="live-pill"><span className="pulse" /> WEB EDITION · v0.1</div></header>
-    <nav className="nav sidebar-nav"><div className="game-clock"><span className="eyebrow">SPELDATUM</span><strong>{careerData?.save?.game_date ? new Date(careerData.save.game_date + "T12:00:00").toLocaleDateString("nl-NL",{weekday:"short",day:"2-digit",month:"short",year:"numeric"}) : "Geen carrière geladen"}</strong><div className="page-arrows"><button aria-label="Vorige pagina" title="Vorige pagina" onClick={() => moveScreen(-1)}>←</button><span>SCHERM</span><button aria-label="Volgende pagina" title="Volgende pagina" onClick={() => moveScreen(1)}>→</button></div></div>{["Overzicht", "Wedstrijd", "Selectie", "Tactiek", "Competitie", "Europees", "Kalender", "Transfers", "Loopbaan"].map(n => <button key={n} aria-current={activeScreen === n ? "page" : undefined} title={n} className={activeScreen === n ? "nav-button active" : "nav-button"} onClick={() => { if(n === "Europees") window.location.href="/uefa"; else if(n === "Kalender") window.location.href="/kalender"; else setActiveScreen(n); }}><span className="nav-icon" aria-hidden="true">{({"Overzicht":"▦","Wedstrijd":"⚽","Selectie":"♟","Tactiek":"⌘","Competitie":"🏆","Europees":"✦","Kalender":"▣","Transfers":"⇄","Loopbaan":"↗"} as Record<string,string>)[n]}</span><span>{n}</span></button>)}</nav>
+    <nav className="nav sidebar-nav"><div className="game-clock"><span className="eyebrow">SPELDATUM</span><strong>{careerData?.save?.game_date ? new Date(careerData.save.game_date + "T12:00:00").toLocaleDateString("nl-NL",{weekday:"short",day:"2-digit",month:"short",year:"numeric"}) : "Geen carrière geladen"}</strong><div className="page-arrows"><button aria-label="Vorige pagina" title="Vorige pagina" onClick={() => moveScreen(-1)}>←</button><span>SCHERM</span><button aria-label="Volgende pagina" title="Volgende pagina" onClick={() => moveScreen(1)}>→</button></div></div>{["Overzicht", "Wedstrijd", "Selectie", "Tactiek", "Competitie", "Europees", "Kalender", "Transfers", "Faciliteiten", "Loopbaan"].map(n => <button key={n} aria-current={activeScreen === n ? "page" : undefined} title={n} className={activeScreen === n ? "nav-button active" : "nav-button"} onClick={() => { if(n === "Europees") window.location.href="/uefa"; else if(n === "Kalender") window.location.href="/kalender"; else setActiveScreen(n); }}><span className="nav-icon" aria-hidden="true">{({"Overzicht":"▦","Wedstrijd":"⚽","Selectie":"♟","Tactiek":"⌘","Competitie":"🏆","Europees":"✦","Kalender":"▣","Transfers":"⇄","Faciliteiten":"⌂","Loopbaan":"↗"} as Record<string,string>)[n]}</span><span>{n}</span></button>)}</nav>
     {activeScreen === "Overzicht" ? <section className="career-screen">
       <div className="career-header"><div><div className="eyebrow">CLUBMANAGEMENT / SEIZOEN 2026/27</div><h1>{careerData ? careerData.save.club_name : "Begin jouw voetbalcarrière"}</h1><p>{careerData ? careerData.save.manager_name + " · " + careerData.save.division + " · " + new Date(careerData.save.game_date).toLocaleDateString("nl-NL") : "Start een carrière of laad een eerder opgeslagen spel."}</p></div><div className="role-actions">{careerData ? <><button disabled={careerBusy} onClick={startNewCareer}>+ Nieuwe carrière</button><button disabled={careerBusy} onClick={saveCurrentGame}>💾 Opslaan</button><button className="primary-action" disabled={careerBusy} onClick={advanceCareerDay}>{careerBusy ? "Even wachten…" : "▶ Volgende dag"}</button><button disabled={careerBusy} onClick={advanceToNextMatch}>⏭ Volgende wedstrijd</button></> : null}</div></div>
       {careerError ? <div className="career-error">{careerError}</div> : null}
