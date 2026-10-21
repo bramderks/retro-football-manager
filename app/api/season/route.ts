@@ -39,7 +39,7 @@ export async function POST(request:Request){
   clubCount=rosterTeams.length;
   for(const team of rosterTeams as any[]){
    const count=await sql.query("SELECT COUNT(*)::int AS n FROM players WHERE team_id=$1 AND is_active=TRUE",[team.id]);
-   let missing=Math.max(0,20-Number(count[0]?.n||0));
+   let missing=Math.max(0,23-Number(count[0]?.n||0));
    for(let i=0;i<missing;i++){
     const idx=(Number(String(team.id).split("").reduce((a:number,c:string)=>a+c.charCodeAt(0),0))+i*17)%firstNames.length;
     const pos=positions[(i+Number(team.team_strength||60))%positions.length];
