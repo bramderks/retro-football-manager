@@ -227,3 +227,11 @@ tbody tr:hover{background:rgba(131,201,244,.045)}
 /* Always show attacking direction on the tactical pitch; custom runs are highlighted longer. */
 .player-dot:after{content:"";position:absolute;left:50%;bottom:85%;width:1px;height:13px;background:rgba(240,202,112,.68);transform:translateX(-50%);pointer-events:none}
 .player-dot:before{content:"";position:absolute;left:50%;bottom:calc(85% + 10px);width:5px;height:5px;border-top:1px solid rgba(240,202,112,.78);border-right:1px solid rgba(240,202,112,.78);transform:translateX(-50%) rotate(-45deg);pointer-events:none}
+
+/* Live fatigue indicator in the squad panel */
+.squad-drag-player span em{font-style:normal;font-size:10px;font-weight:800;white-space:nowrap}
+.squad-drag-player span em.fitness-high{color:#5ed5a1}
+.squad-drag-player span em.fitness-mid{color:#e8c66f}
+.squad-drag-player span em.fitness-low{color:#ff907d}
+.squad-drag-player{min-width:0}
+.squad-drag-player strong,.squad-drag-player span{overflow-wrap:anywhere}
