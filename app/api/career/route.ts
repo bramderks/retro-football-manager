@@ -109,7 +109,7 @@ export async function POST(request: Request) {
    if(!player.length)return fail("Deze speler is niet beschikbaar voor een bod.",404);
    if(fee>Number(s.transfer_budget))return fail("Dit bod ligt boven het beschikbare transferbudget.");
    const p:any=player[0],offerId="offer-"+crypto.randomUUID(),expires=new Date(String(s.game_date)+"T12:00:00Z");expires.setUTCDate(expires.getUTCDate()+7);
-   await sql.query("INSERT INTO transfer_offers(id,save_id,player_id,buying_club_id,selling_club_id,fee,wage_offer,status,submitted_on,expires_on,notes) VALUES($1,$2,$3,$4,$5,$6,$7,'pending',$8,$9,$10)",[offerId,b.saveId,p.id,s.club_id,p.team_id,fee,wage,dateOnly(s.game_date),dateOnly(expires),"Bod uitgebracht op "+p.full_name]);
+   await sql.query("INSERT INTO transfer_offers(id,save_id,player_id,buying_club_id,selling_club_id,fee,wage_offer,status,submitted_on,expires_on,notes) VALUES($1,$2,$3,$4,$5,$6,$7,'pending',$8,$9,$10)",[offerId,b.saveId,p.id,s.club_id,p.team_id,fee,wage,dateOnly(s.game_date),dateOnly(expires),JSON.stringify({summary:"Bod uitgebracht op "+p.full_name,installments:Number(b.installments||1),sellOn:Number(b.sellOn||0),endOfSeason:Boolean(b.endOfSeason),appearanceBonus:Number(b.appearanceBonus||0),goalBonus:Number(b.goalBonus||0),internationalBonus:Number(b.internationalBonus||0),loan:Boolean(b.loan)})]);
    await sql.query("INSERT INTO career_news(save_id,news_date,category,headline,body) VALUES($1,$2,'transfer',$3,$4)",[b.saveId,dateOnly(s.game_date),"Transferbod uitgebracht","Een bod van €"+fee.toLocaleString("nl-NL")+" is uitgebracht op "+p.full_name+" ("+p.club_name+"). De club reageert na onderhandelingen."]);
    return NextResponse.json({ok:true,offerId});
   }
