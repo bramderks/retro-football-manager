@@ -230,7 +230,7 @@ export default function Home() {
     if (!pendingCareerFixture || !finished || !careerSaveId || savedMatchFixture === pendingCareerFixture.id || matchSaving) return;
     let cancelled = false;
     setMatchSaving(true);
-    fetch("/api/career", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "finish_match", saveId: careerSaveId, fixtureId: pendingCareerFixture.id, homeGoals: goals[0], awayGoals: goals[1], lineup: matchLineup, scorers }) })
+    fetch("/api/career", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "finish_match", saveId: careerSaveId, fixtureId: pendingCareerFixture.id, homeGoals: goals[0], awayGoals: goals[1], lineup: Array.from(new Set([...matchLineup,...substitutions.map(s=>s.outId)])), scorers }) })
       .then(async response => { const data = await response.json(); if (!response.ok) throw new Error(data.error || "Wedstrijd kon niet worden opgeslagen."); return data; })
       .then(async () => { if (cancelled) return; setSavedMatchFixture(pendingCareerFixture.id); setMatchSaving(false); const fresh = await fetch("/api/career?saveId=" + encodeURIComponent(careerSaveId), { cache: "no-store" }).then(x => x.json()); setCareerData(fresh); setPendingCareerFixture(null); await refreshSavedCareers(); })
       .catch(error => { if (!cancelled) setCareerError(error instanceof Error ? error.message : "Wedstrijd kon niet worden opgeslagen."); })
