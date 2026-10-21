@@ -156,7 +156,8 @@ export default function Home() {
     setLineupConfirmed(false);setMatchPhase("pre-match");setSubstitutions([]);setSubWindows(0);setLastSubMinute(-1);setYellowCards({});setRedCardIds([]);setRedCardsByTeam([0,0]);setInjuriesByTeam([0,0]);setAiSubstitutions([0,0]);setInjuredIds([]);
     const squad=(careerData?.squad||[]).filter((p:any)=>!p.injury_type);
     const starters: string[]=[];const slots=formationSlots(homeTactics.formation);
-    for(const slot of slots){const id=homeTactics.lineup?.[slot.key];if(id&&squad.some((p:any)=>p.id===id)&&!starters.includes(id))starters.push(id);}
+    const accepted:Record<string,string[]>={K:["GK"],LV:["LB"],CV:["CV"],RV:["RB"],WB:["LB","RB"],VM:["VM"],CM:["CM","LM","RM"],LM:["LM","LA","AML"],RM:["RM","RA","AMR"],AM:["AM","AML","AMR"],LA:["LA","AML"],RA:["RA","AMR"],SP:["SP"]};
+    for(const slot of slots){const existing=homeTactics.lineup?.[slot.key];const assigned=squad.find((p:any)=>p.id===existing&&!starters.includes(p.id));const fit=assigned&&((accepted[slot.role]||[]).includes(assigned.position));const chosen=fit?assigned:squad.find((p:any)=>(accepted[slot.role]||[]).includes(p.position)&&!starters.includes(p.id));const fallback=squad.find((p:any)=>!starters.includes(p.id));const player=chosen||fallback;if(player)starters.push(player.id);}
     for(const p of squad){if(starters.length>=11)break;if(!starters.includes(p.id))starters.push(p.id);}
     setMatchLineup(starters.slice(0,11));setMatchBench(squad.map((p:any)=>p.id).filter((id:string)=>!starters.includes(id)).slice(0,9));
   },[pendingCareerFixture?.id]);
