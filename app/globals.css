@@ -137,3 +137,7 @@ tbody tr:hover{background:rgba(131,201,244,.045)}
 @media(prefers-reduced-motion:reduce){
  *,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}
 }
+
+.nav-button{display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.nav-icon{display:inline-grid;place-items:center;min-width:17px;font-size:14px;line-height:1;color:var(--gold);opacity:.9}
+.nav-button.active .nav-icon{opacity:1}
