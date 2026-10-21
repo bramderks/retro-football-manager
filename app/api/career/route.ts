@@ -100,8 +100,31 @@ export async function POST(request: Request) {
    return NextResponse.json({ok:true,applicationId:id});
   }
   if(b.action==="change_role") return fail("Je kunt niet rechtstreeks van functie wisselen. Solliciteer via Loopbaan.");
+  if(b.action==="finish_match"){
+   const fixtureId=String(b.fixtureId||"");
+   const homeGoals=Math.max(0,Math.min(8,Math.floor(Number(b.homeGoals))));
+   const awayGoals=Math.max(0,Math.min(8,Math.floor(Number(b.awayGoals))));
+   if(!fixtureId||!Number.isFinite(homeGoals)||!Number.isFinite(awayGoals))return fail("Wedstrijdgegevens ontbreken.");
+   const nextDate=new Date(dateOnly(s.game_date)+"T12:00:00Z");nextDate.setUTCDate(nextDate.getUTCDate()+1);const day=dateOnly(nextDate);
+   const matches=await sql.query("SELECT f.*,h.name AS home_name,a.name AS away_name FROM fixtures f JOIN teams h ON h.id=f.home_team_id JOIN teams a ON a.id=f.away_team_id WHERE f.id=$1 AND f.division_id=$2 AND f.kickoff_date=$3 AND (f.home_team_id=$4 OR f.away_team_id=$4) LIMIT 1",[fixtureId,s.division_id,day,s.club_id]);
+   if(!matches.length)return fail("Deze wedstrijd hoort niet bij jouw volgende wedstrijddag.",409);
+   const f:any=matches[0];
+   const existing=await sql.query("SELECT id FROM career_fixture_results WHERE save_id=$1 AND fixture_id=$2 LIMIT 1",[b.saveId,fixtureId]);
+   if(existing.length)return fail("Deze wedstrijd is al opgeslagen.",409);
+   await sql.query("INSERT INTO career_fixture_results(save_id,fixture_id,home_goals,away_goals,status,played_at) VALUES($1,$2,$3,$4,'played',NOW())",[b.saveId,fixtureId,homeGoals,awayGoals]);
+   const otherMatches=await sql.query("SELECT f.*,h.team_strength AS hs,h.reputation AS hr,a.team_strength AS aws,a.reputation AS ar FROM fixtures f JOIN teams h ON h.id=f.home_team_id JOIN teams a ON a.id=f.away_team_id WHERE f.kickoff_date=$1 AND f.status='scheduled' AND f.division_id=$2 AND f.id<>$3 AND NOT EXISTS (SELECT 1 FROM career_fixture_results cr WHERE cr.fixture_id=f.id AND cr.save_id=$4)",[day,s.division_id,fixtureId,b.saveId]);
+   for(const other of otherMatches as any[]){const score=matchScore(Number(other.hs)+Number(other.hr)*.08,Number(other.aws)+Number(other.ar)*.08);await sql.query("INSERT INTO career_fixture_results(save_id,fixture_id,home_goals,away_goals,status,played_at) VALUES($1,$2,$3,$4,'played',NOW()) ON CONFLICT(save_id,fixture_id) DO NOTHING",[b.saveId,other.id,score.homeGoals,score.awayGoals]);}
+   const gf=f.home_team_id===s.club_id?homeGoals:awayGoals,ga=f.home_team_id===s.club_id?awayGoals:homeGoals,opponent=f.home_team_id===s.club_id?f.away_name:f.home_name;
+   const title=gf>ga?"Overwinning voor "+s.club_name:gf<ga?"Nederlaag voor "+s.club_name:"Gelijkspel voor "+s.club_name;
+   await sql.query("INSERT INTO career_news(save_id,news_date,category,headline,body) VALUES($1,$2,'match',$3,$4)",[b.saveId,day,title,s.club_name+" "+gf+"-"+ga+" "+opponent]);
+   const conf=Math.max(0,Math.min(100,Number(s.board_confidence)+(gf>ga?2:gf<ga?-3:0))),morale=Math.max(0,Math.min(100,Number(s.club_morale)+(gf>ga?3:gf<ga?-4:0)));
+   await sql.query("UPDATE career_saves SET game_date=$1,board_confidence=$2,club_morale=$3,updated_at=NOW() WHERE id=$4",[day,conf,morale,b.saveId]);
+   return NextResponse.json({ok:true,gameDate:day,fixtureId,homeGoals,awayGoals});
+  }
   if(b.action==="advance_day"){
    const dayDate=new Date(dateOnly(s.game_date)+"T12:00:00Z");dayDate.setUTCDate(dayDate.getUTCDate()+1);const day=dateOnly(dayDate);
+   const userFixture=await sql.query("SELECT f.id,f.home_team_id,f.away_team_id,f.kickoff_date,h.name AS home_name,a.name AS away_name FROM fixtures f JOIN teams h ON h.id=f.home_team_id JOIN teams a ON a.id=f.away_team_id WHERE f.kickoff_date=$1 AND f.status='scheduled' AND f.division_id=$2 AND (f.home_team_id=$3 OR f.away_team_id=$3) AND NOT EXISTS (SELECT 1 FROM career_fixture_results cr WHERE cr.fixture_id=f.id AND cr.save_id=$4) LIMIT 1",[day,s.division_id,s.club_id,b.saveId]);
+   if(userFixture.length)return NextResponse.json({ok:true,needsMatch:true,fixture:userFixture[0],gameDate:day});
    await sql.query("UPDATE career_saves SET game_date=$1,updated_at=NOW() WHERE id=$2",[day,b.saveId]);
    const scheduled=await sql.query("SELECT f.*,h.team_strength AS hs,h.reputation AS hr,a.team_strength AS aws,a.reputation AS ar FROM fixtures f JOIN teams h ON h.id=f.home_team_id JOIN teams a ON a.id=f.away_team_id WHERE f.kickoff_date=$1 AND f.status='scheduled' AND f.division_id=$2 AND NOT EXISTS (SELECT 1 FROM career_fixture_results cr WHERE cr.fixture_id=f.id AND cr.save_id=$3)",[day,s.division_id,b.saveId]);
    const results=[];
