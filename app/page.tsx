@@ -208,7 +208,7 @@ export default function Home() {
 
   return <main className="app-shell">
     <header className="topbar"><div className="brand"><span className="brand-mark">RFM</span><div><div className="brand-title">RETRO FOOTBALL MANAGER</div><div className="brand-sub">THE CLASSIC GAME, REBUILT</div></div></div><div className="live-pill"><span className="pulse" /> WEB EDITION · v0.1</div></header>
-    <nav className="nav">{["Overzicht", "Wedstrijd", "Selectie", "Tactiek", "Competitie", "Europees", "Transfers", "Loopbaan"].map(n => <button key={n} className={activeScreen === n ? "nav-button active" : "nav-button"} onClick={() => setActiveScreen(n)}>{n}</button>)}</nav>
+    <nav className="nav">{["Overzicht", "Wedstrijd", "Selectie", "Tactiek", "Competitie", "Transfers", "Loopbaan"].map(n => <button key={n} className={activeScreen === n ? "nav-button active" : "nav-button"} onClick={() => setActiveScreen(n)}>{n}</button>)}</nav>
     {activeScreen === "Overzicht" ? <section className="career-screen">
       <div className="career-header"><div><div className="eyebrow">CLUBMANAGEMENT / SEIZOEN 2026/27</div><h1>{careerData ? careerData.save.club_name : "Begin jouw voetbalcarrière"}</h1><p>{careerData ? careerData.save.manager_name + " · " + careerData.save.division + " · " + new Date(careerData.save.game_date).toLocaleDateString("nl-NL") : "Kies een club, word manager en bouw aan jouw eigen voetbalgeschiedenis."}</p></div>{careerData ? <button className="primary-action" disabled={careerBusy} onClick={advanceCareerDay}>{careerBusy ? "Even wachten…" : "▶ Volgende dag"}</button> : null}</div>
       {careerError ? <div className="career-error">{careerError}</div> : null}
