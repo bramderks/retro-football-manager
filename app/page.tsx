@@ -92,6 +92,7 @@ export default function Home() {
     if (!careerSaveId || careerBusy) return; setCareerBusy(true); setCareerError("");
     try { const r=await fetch("/api/career",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"change_role",saveId:careerSaveId,role})}); const d=await r.json(); if(!r.ok)throw new Error(d.error||"Functie wijzigen mislukt."); const fresh=await fetch("/api/career?saveId="+encodeURIComponent(careerSaveId),{cache:"no-store"}).then(x=>x.json());setCareerData(fresh); } catch(e) {setCareerError(e instanceof Error?e.message:"Functie wijzigen mislukt.");} finally {setCareerBusy(false);}
   }
+  async function applyForJob(job: any, targetRole: string) { if(!careerSaveId||careerBusy)return;setCareerBusy(true);setCareerError("");try{const r=await fetch("/api/career",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"apply_job",saveId:careerSaveId,targetClubId:job.club_id,targetRole})});const d=await r.json();if(!r.ok)throw new Error(d.error||"Sollicitatie mislukt.");const freshResponse=await fetch("/api/career?saveId="+encodeURIComponent(careerSaveId),{cache:"no-store"});const fresh=await freshResponse.json();if(!freshResponse.ok)throw new Error(fresh.error||"Carrière kon niet worden bijgewerkt.");setCareerData(fresh);}catch(e){setCareerError(e instanceof Error?e.message:"Sollicitatie mislukt.");}finally{setCareerBusy(false);}}
   async function submitTransferOffer(player: any) {
     if (!careerSaveId || careerBusy) return;
     const fee = Number(player.asking_price || 0);
@@ -205,7 +206,7 @@ export default function Home() {
 
   return <main className="app-shell">
     <header className="topbar"><div className="brand"><span className="brand-mark">RFM</span><div><div className="brand-title">RETRO FOOTBALL MANAGER</div><div className="brand-sub">THE CLASSIC GAME, REBUILT</div></div></div><div className="live-pill"><span className="pulse" /> WEB EDITION · v0.1</div></header>
-    <nav className="nav">{["Overzicht", "Wedstrijd", "Selectie", "Tactiek", "Competitie", "Transfers"].map(n => <button key={n} className={activeScreen === n ? "nav-button active" : "nav-button"} onClick={() => setActiveScreen(n)}>{n}</button>)}</nav>
+    <nav className="nav">{["Overzicht", "Wedstrijd", "Selectie", "Tactiek", "Competitie", "Transfers", "Loopbaan"].map(n => <button key={n} className={activeScreen === n ? "nav-button active" : "nav-button"} onClick={() => setActiveScreen(n)}>{n}</button>)}</nav>
     {activeScreen === "Overzicht" ? <section className="career-screen">
       <div className="career-header"><div><div className="eyebrow">CLUBMANAGEMENT / SEIZOEN 2026/27</div><h1>{careerData ? careerData.save.club_name : "Begin jouw voetbalcarrière"}</h1><p>{careerData ? careerData.save.manager_name + " · " + careerData.save.division + " · " + new Date(careerData.save.game_date).toLocaleDateString("nl-NL") : "Kies een club, word manager en bouw aan jouw eigen voetbalgeschiedenis."}</p></div>{careerData ? <button className="primary-action" disabled={careerBusy} onClick={advanceCareerDay}>{careerBusy ? "Even wachten…" : "▶ Volgende dag"}</button> : null}</div>
       {careerError ? <div className="career-error">{careerError}</div> : null}
