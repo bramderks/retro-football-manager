@@ -33,10 +33,10 @@ WHERE UPPER(position) IN ('K','KEEPER','GOALKEEPER','CV','CB1','CB2','CB3','LV',
 -- Recalibrate ratings consistently against the strength of the player's current club,
 -- preserving most of the original player rating while making the full database coherent.
 UPDATE players p
-SET overall_rating = GREATEST(1, LEAST(100, ROUND(p.overall_rating * 0.75 + COALESCE(t.team_strength, 50) * 0.25)::int)),
+SET overall_rating = GREATEST(1, LEAST(100, ROUND(p.overall_rating * 0.65 + COALESCE(t.team_strength, 50) * 0.35 + CASE WHEN COALESCE(t.team_strength,50)>=88 THEN 10 WHEN COALESCE(t.team_strength,50)>=80 THEN 5 ELSE 0 END)::int)),
     potential_rating = GREATEST(
-      GREATEST(1, LEAST(100, ROUND(p.overall_rating * 0.75 + COALESCE(t.team_strength, 50) * 0.25)::int)),
-      LEAST(100, ROUND(p.potential_rating * 0.75 + COALESCE(t.team_strength, 50) * 0.25)::int)
+      GREATEST(1, LEAST(100, ROUND(p.overall_rating * 0.65 + COALESCE(t.team_strength, 50) * 0.35 + CASE WHEN COALESCE(t.team_strength,50)>=88 THEN 10 WHEN COALESCE(t.team_strength,50)>=80 THEN 5 ELSE 0 END)::int)),
+      LEAST(100, ROUND(p.potential_rating * 0.70 + COALESCE(t.team_strength, 50) * 0.30 + CASE WHEN COALESCE(t.team_strength,50)>=88 THEN 12 WHEN COALESCE(t.team_strength,50)>=80 THEN 7 ELSE 3 END)::int)
     )
 FROM teams t
 WHERE t.id = p.team_id;
@@ -53,10 +53,10 @@ CREATE INDEX IF NOT EXISTS idx_player_match_stats_season_rating
 
 -- Calibrate the European/world rosters against their own club strength too.
 UPDATE world_roster_players p
-SET overall_rating = GREATEST(1, LEAST(100, ROUND(p.overall_rating * 0.75 + COALESCE(c.team_strength, 50) * 0.25)::int)),
+SET overall_rating = GREATEST(1, LEAST(100, ROUND(p.overall_rating * 0.65 + COALESCE(c.team_strength, 50) * 0.35 + CASE WHEN COALESCE(c.team_strength,50)>=88 THEN 10 WHEN COALESCE(c.team_strength,50)>=80 THEN 5 ELSE 0 END)::int)),
     potential_rating = GREATEST(
-      GREATEST(1, LEAST(100, ROUND(p.overall_rating * 0.75 + COALESCE(c.team_strength, 50) * 0.25)::int)),
-      LEAST(100, ROUND(p.potential_rating * 0.75 + COALESCE(c.team_strength, 50) * 0.25)::int)
+      GREATEST(1, LEAST(100, ROUND(p.overall_rating * 0.65 + COALESCE(c.team_strength, 50) * 0.35 + CASE WHEN COALESCE(c.team_strength,50)>=88 THEN 10 WHEN COALESCE(c.team_strength,50)>=80 THEN 5 ELSE 0 END)::int)),
+      LEAST(100, ROUND(p.potential_rating * 0.70 + COALESCE(c.team_strength, 50) * 0.30 + CASE WHEN COALESCE(c.team_strength,50)>=88 THEN 12 WHEN COALESCE(c.team_strength,50)>=80 THEN 7 ELSE 3 END)::int)
     )
 FROM uefa_clubs c
 WHERE c.id = p.club_id;
