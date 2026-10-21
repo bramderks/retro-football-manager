@@ -94,3 +94,46 @@
 .squad-table td{padding:10px 7px}.fitness-high{color:#8be0b2}.fitness-mid{color:#e5c46e}.fitness-low{color:#f39b9b}.squad-table td:last-child{white-space:normal;min-width:110px}
 
 .objectives-panel{margin-bottom:14px}.objective-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid #203340}.objective-row span:first-child{display:flex;flex-direction:column;gap:4px}.objective-row strong{font-size:11px}.objective-row small{font-size:9px;color:var(--muted);text-transform:uppercase}.objective-status{font:9px 'DM Mono',monospace;color:var(--gold);border:1px solid #6e5b31;padding:5px 7px}.objective-status.completed{color:#8be0b2;border-color:#39765a}.objective-status.failed{color:#f39b9b;border-color:#8b4545}
+
+
+/* Product polish: accessible focus states, consistent controls and responsive panels. */
+:root{--radius-sm:8px;--radius-md:13px;--radius-lg:18px;--shadow-panel:0 12px 32px rgba(0,0,0,.18)}
+html{scroll-behavior:smooth;scrollbar-gutter:stable}
+body{line-height:1.55;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer;transition:background .18s ease,border-color .18s ease,color .18s ease,transform .18s ease,box-shadow .18s ease}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,[role=button]:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+button:disabled{cursor:not-allowed;opacity:.48;transform:none!important}
+a{color:inherit;text-underline-offset:3px}
+::selection{background:rgba(213,180,92,.3);color:var(--text)}
+*{scrollbar-color:#385064 #0b1721;scrollbar-width:thin}
+.topbar{position:sticky;top:0;z-index:30;backdrop-filter:blur(16px);background:rgba(7,16,25,.94)}
+.brand-mark{border-radius:10px;background:linear-gradient(145deg,#1b2b35,#0b141d);box-shadow:inset 0 1px rgba(255,255,255,.06),0 5px 18px rgba(0,0,0,.22)}
+.panel,.card,.stat-card,.metric-card,.section-card{border-radius:var(--radius-md);box-shadow:var(--shadow-panel)}
+button:not(.nav-button):not(.tab-button):not(.icon-button){border-radius:9px}
+button:not(:disabled):hover{filter:brightness(1.08)}
+button:not(:disabled):active{transform:translateY(1px)}
+input,select,textarea{border-radius:8px;min-height:38px}
+table{border-collapse:separate;border-spacing:0}
+th{font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+td,th{padding:11px 12px}
+tbody tr{transition:background .15s ease}
+tbody tr:hover{background:rgba(131,201,244,.045)}
+.live-pill{border-radius:999px;background:rgba(94,213,161,.045)}
+.pulse{box-shadow:0 0 0 4px rgba(94,213,161,.1)}
+@media(max-width:900px){
+ .topbar{height:auto;min-height:66px;padding:12px 16px;gap:12px;flex-wrap:wrap}
+ .brand-title{font-size:14px;letter-spacing:1.2px}
+ .brand-sub{font-size:9px;letter-spacing:1.2px}
+ .app-shell{width:100%;overflow-x:clip}
+ table{display:block;max-width:100%;overflow-x:auto;white-space:nowrap}
+}
+@media(max-width:560px){
+ body{font-size:13px}
+ .topbar{align-items:flex-start}
+ .brand-mark{width:37px;height:37px}
+ button{min-height:36px}
+}
+@media(prefers-reduced-motion:reduce){
+ *,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}
+}
