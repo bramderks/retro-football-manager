@@ -8,6 +8,9 @@ ALTER TABLE career_player_states
   ADD COLUMN IF NOT EXISTS current_rating SMALLINT,
   ADD COLUMN IF NOT EXISTS potential_rating SMALLINT;
 
+ALTER TABLE career_player_contracts
+  ADD COLUMN IF NOT EXISTS release_clause BIGINT;
+
 UPDATE career_player_states cps
 SET current_rating = COALESCE(cps.current_rating, p.overall_rating),
     potential_rating = COALESCE(cps.potential_rating, p.potential_rating)
@@ -48,10 +51,21 @@ SET current_rating = p.overall_rating,
 FROM players p
 WHERE p.id = cps.player_id;
 
+-- Backfill a persistent release clause on all existing contracts.
+UPDATE career_player_contracts pc
+SET release_clause=GREATEST(100000,
+  COALESCE((SELECT cps.current_rating FROM career_player_states cps WHERE cps.save_id=pc.save_id AND cps.player_id=pc.player_id),
+           (SELECT p.overall_rating FROM players p WHERE p.id=pc.player_id))
+  * COALESCE((SELECT cps.current_rating FROM career_player_states cps WHERE cps.save_id=pc.save_id AND cps.player_id=pc.player_id),
+             (SELECT p.overall_rating FROM players p WHERE p.id=pc.player_id)) * 900
+)
+WHERE pc.release_clause IS NULL;
+
 -- Ensure every player in every existing career has a contract record and full default terms.
-INSERT INTO career_player_contracts(id,save_id,player_id,club_id,start_date,end_date,weekly_wage,squad_status)
+INSERT INTO career_player_contracts(id,save_id,player_id,club_id,start_date,end_date,weekly_wage,squad_status,release_clause)
 SELECT 'contract-'||cps.save_id||'-'||p.id,cps.save_id,p.id,cps.club_id,COALESCE(s.game_date,CURRENT_DATE),'2028-06-30'::date,
-       GREATEST(500,COALESCE(cps.current_rating,p.overall_rating)*COALESCE(cps.current_rating,p.overall_rating)*2),'rotation'
+       GREATEST(500,COALESCE(cps.current_rating,p.overall_rating)*COALESCE(cps.current_rating,p.overall_rating)*2),'rotation',
+       GREATEST(100000,COALESCE(cps.current_rating,p.overall_rating)*COALESCE(cps.current_rating,p.overall_rating)*900)
 FROM career_player_states cps
 JOIN career_saves s ON s.id=cps.save_id
 JOIN players p ON p.id=cps.player_id
