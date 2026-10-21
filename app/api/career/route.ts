@@ -169,7 +169,7 @@ export async function POST(request: Request) {
     await sql.query("INSERT INTO career_news(save_id,news_date,category,headline,body) VALUES($1,$2,'injury',$3,$4)",[b.saveId,dateOnly(s.game_date),"Blessure tijdens wedstrijd: "+player[0].full_name,player[0].full_name+" is uitgevallen met "+injuryType+". Verwachte terugkeer: "+untilDate+"."]);
     return NextResponse.json({ok:true,injuryUntil:untilDate});
    }
-  if(b.action==="tactics"){if(s.role!=="manager")return fail("Alleen de manager kan de tactiek en opstelling aanpassen.");await sql.query("UPDATE career_saves SET tactical_setup=$1::jsonb,updated_at=NOW() WHERE id=$2",[JSON.stringify(b.tactics||{}),b.saveId]);return NextResponse.json({ok:true});}
+  if(b.action==="tactics"){await sql.query("UPDATE career_saves SET tactical_setup=$1::jsonb,updated_at=NOW() WHERE id=$2",[JSON.stringify(b.tactics||{}),b.saveId]);return NextResponse.json({ok:true});}
   if(b.action==="offer_transfer"){if(s.role!=="sporting_director")return fail("Alleen de technisch directeur kan transferbiedingen uitbrengen.");
    const playerId=String(b.playerId||""),fee=Math.max(0,Math.round(Number(b.fee)||0)),wage=Math.max(0,Math.round(Number(b.wage)||0));
    const win=await sql.query("SELECT id FROM transfer_windows WHERE season_id=$1 AND opens_on <= $2 AND closes_on >= $2 LIMIT 1",[SEASON,dateOnly(s.game_date)]);
