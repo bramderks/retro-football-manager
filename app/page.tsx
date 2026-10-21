@@ -46,6 +46,8 @@ export default function Home() {
   const [careerClubId, setCareerClubId] = useState("ajax");
   const [careerBusy, setCareerBusy] = useState(false);
   const [careerError, setCareerError] = useState("");
+  const [uefaData, setUefaData] = useState<any>(null);
+  const [uefaCompetition, setUefaCompetition] = useState("UCL");
   const [selectedHomeId, setSelectedHomeId] = useState("ajax");
   const [selectedAwayId, setSelectedAwayId] = useState("nec");
   const databaseHome = databaseTeams.find(t => t.id === selectedHomeId);
