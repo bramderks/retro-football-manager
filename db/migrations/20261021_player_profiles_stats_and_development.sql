@@ -44,6 +44,12 @@ SET overall_rating = GREATEST(1, LEAST(100, ROUND(p.overall_rating * 0.65 + COAL
 FROM teams t
 WHERE t.id = p.team_id;
 
+-- Give every player in every existing save a save-local state, including inactive and youth players.
+INSERT INTO career_player_states(save_id,player_id,club_id,current_rating,potential_rating)
+SELECT s.id,p.id,p.team_id,p.overall_rating,p.potential_rating
+FROM career_saves s CROSS JOIN players p
+ON CONFLICT(save_id,player_id) DO NOTHING;
+
 UPDATE career_player_states cps
 SET current_rating = p.overall_rating,
     potential_rating = p.potential_rating,
