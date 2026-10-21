@@ -177,7 +177,7 @@ export default function Home() {
     const userIsTeam = Boolean(careerData?.save?.club_id && selectedId === careerData.save.club_id);
     const assignedIds = userIsTeam ? Object.values(homeTactics.lineup || {}).filter(Boolean) : [];
     const assignedPlayers = userIsTeam ? (careerData?.squad || []).filter((p:any) => assignedIds.includes(p.id)) : [];
-    const squad: Player[] = assignedPlayers.length ? assignedPlayers.map((p:any) => ({
+    const squad: Player[] = assignedPlayers.length >= 11 ? assignedPlayers.map((p:any) => ({
       name: p.full_name,
       position: p.position === "GK" ? "keeper" : ["ST","RW","LW","CF"].includes(p.position) ? "forward" : ["CB","LB","RB","LWB","RWB"].includes(p.position) ? "defender" : "midfielder",
     })) : dbTeam?.players.length ? dbTeam.players.map(p => ({
