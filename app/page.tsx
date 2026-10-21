@@ -207,7 +207,7 @@ export default function Home() {
   }
   async function saveCareerTactics(tactics: Tactics): Promise<boolean> {
     setHomeTactics(tactics);
-    if (!careerSaveId) return;
+    if (!careerSaveId) return true;
     setCareerError("");
     try {
       const response = await fetch("/api/career", {
@@ -219,7 +219,7 @@ export default function Home() {
       if (!response.ok || !data.ok) throw new Error(data.error || "Tactiek kon niet worden opgeslagen.");
       setCareerData((current: any) => current ? { ...current, save: { ...current.save, tactical_setup: tactics } } : current); return true;
     } catch (error) {
-      setCareerError(error instanceof Error ? error.message : "Tactiek kon niet worden opgeslagen.");
+      setCareerError(error instanceof Error ? error.message : "Tactiek kon niet worden opgeslagen."); return false;
     }
   }
   useEffect(() => {
