@@ -223,3 +223,7 @@ tbody tr:hover{background:rgba(131,201,244,.045)}
  .injury-alert-row{align-items:flex-start;flex-wrap:wrap}
  .injury-status{margin-left:40px}
 }
+
+/* Always show attacking direction on the tactical pitch; custom runs are highlighted longer. */
+.player-dot:after{content:"";position:absolute;left:50%;bottom:85%;width:1px;height:13px;background:rgba(240,202,112,.68);transform:translateX(-50%);pointer-events:none}
+.player-dot:before{content:"";position:absolute;left:50%;bottom:calc(85% + 10px);width:5px;height:5px;border-top:1px solid rgba(240,202,112,.78);border-right:1px solid rgba(240,202,112,.78);transform:translateX(-50%) rotate(-45deg);pointer-events:none}
