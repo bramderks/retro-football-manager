@@ -82,6 +82,7 @@ export default function Home() {
   const [injuriesByTeam,setInjuriesByTeam]=useState<[number,number]>([0,0]);
   const [aiSubstitutions,setAiSubstitutions]=useState<[number,number]>([0,0]);
   const [injuredIds, setInjuredIds] = useState<string[]>([]);
+  const [matchFitness,setMatchFitness] = useState<Record<string,number>>({});
   const [runLineDraft, setRunLineDraft] = useState<Record<string,number>>({});
   const [selectedSubOut,setSelectedSubOut]=useState("");
   const [selectedSubIn,setSelectedSubIn]=useState("");
@@ -242,7 +243,7 @@ export default function Home() {
   }, [running, minute, speed, finished]);
 
   async function confirmMatchLineup(){
-    const available=(careerData?.squad||[]).filter((p:any)=>!p.injury_type);
+    const available=(careerData?.squad||[]).filter((p:any)=>!p.injury_type&&Number(p.fitness??100)>0);
     const starters=matchLineup.filter(Boolean),bench=matchBench.filter(Boolean);
     if(starters.length!==11||new Set(starters).size!==11){setCareerError("Kies precies 11 verschillende basisspelers.");return;}
     if(bench.length!==9||new Set(bench).size!==9||bench.some(id=>starters.includes(id))){setCareerError("Kies 9 verschillende wisselspelers die niet in de basis staan.");return;}
@@ -270,7 +271,7 @@ export default function Home() {
   }
   function addEvent(item: EventLine) { setFeed(prev => [...prev, item].slice(-300)); }
   function newMatch() {
-    setRunning(false); setMinute(0); setGoals([0, 0]); setScorers([]); setStats([zeroStats(), zeroStats()]);setMatchPhase("pre-match");setLineupConfirmed(false);setSubstitutions([]);setSubWindows(0);setRedCardIds([]);setRedCardsByTeam([0,0]);setYellowCards({});setInjuredIds([]);
+    setRunning(false); setMinute(0); setGoals([0, 0]); setScorers([]); setStats([zeroStats(), zeroStats()]);setMatchPhase("pre-match");setLineupConfirmed(false);setSubstitutions([]);setSubWindows(0);setRedCardIds([]);setRedCardsByTeam([0,0]);setYellowCards({});setInjuredIds([]);setMatchFitness({});
     setFeed([{ minute: "INFO", text: homeTeam.name + " – " + awayTeam.name + " · " + (databaseHome?.division ?? "Eredivisie") + ". Druk op Start om af te trappen.", kind: "system" }]);
   }
   function lineupPositionPenalty(team:Team,t:Tactics){
@@ -323,12 +324,16 @@ export default function Home() {
   }
   function playMinute() {
     const m = minute + 1; setMinute(m);
+     const fatigueStep=(homeTactics.tempo==="Snel"?.34:homeTactics.tempo==="Geduldig"?.12:.22)+(homeTactics.pressing?.12:0)+(homeTactics.hardTackles?.08:0);
+     const nextFitness={...matchFitness};
+     for(const p of careerData?.squad||[]){if(matchLineup.includes(p.id)&&!redCardIds.includes(p.id)&&!injuredIds.includes(p.id)){nextFitness[p.id]=Math.max(5,(nextFitness[p.id]??Number(p.fitness??100))-fatigueStep);}}
+     setMatchFitness(nextFitness);
     if(m>45&&matchPhase==="first-half")setMatchPhase("second-half");
     if(m>90&&extraTime)setMatchPhase("extra-time");
     const tackleRisk=(homeTactics.hardTackles||awayTactics.hardTackles)?0.15:0.10;
     if(m>1&&Math.random()<tackleRisk){
       const side=(Math.random()<.5?0:1) as 0|1, victim=matchPlayer(side), tackler=matchPlayer((side===0?1:0) as 0|1), opponentTactics=side===0?awayTactics:homeTactics;
-      const previousYellow=Number(yellowCards[victim.id]||0);
+      const previousYellow=Number(yellowCards[tackler.id]||0);
       if(Math.random()<(opponentTactics.hardTackles ? .015 : .004)){
         setRedCardIds(prev=>prev.includes(victim.id)?prev:[...prev,victim.id]);setRedCardsByTeam(prev=>side===0?[prev[0]+1,prev[1]]:[prev[0],prev[1]+1]);
         addEvent({minute:m+"'",text:"RODE KAART! "+tackler.name+" maakt een zware overtreding op "+victim.name+". De scheidsrechter stuurt "+victim.name+" van het veld. "+(side===userSide?"Je moet je formatie aanpassen.":"De AI moet verder met tien man."),kind:"var"});
@@ -362,8 +367,10 @@ export default function Home() {
     const configuredHome = userIsHome ? homeTactics : awayTactics; const configuredAway = userIsHome ? awayTactics : homeTactics;
     const effectiveHomeTactics: Tactics = homeLeadNow >= 3 ? { ...configuredHome, mentality: "Verdedigend", pressing: false, counter: true } : homeLeadNow <= -2 ? { ...configuredHome, mentality: "Aanvallend", pressing: true } : configuredHome;
     const effectiveAwayTactics: Tactics = goals[1] - goals[0] >= 3 ? { ...configuredAway, mentality: "Verdedigend", pressing: false, counter: true } : goals[1] - goals[0] <= -2 ? { ...configuredAway, mentality: "Aanvallend", pressing: true } : configuredAway;
-    const homeRating = teamStrength(homeTeam, effectiveHomeTactics)-redCardsByTeam[0]*13-injuriesByTeam[0]*7+aiSubstitutions[0]*.7;
-    const awayRating = teamStrength(awayTeam, effectiveAwayTactics)-redCardsByTeam[1]*13-injuriesByTeam[1]*7+aiSubstitutions[1]*.7;
+    const homeFatigue=Object.entries(matchFitness).filter(([id])=>matchLineup.includes(id)).reduce((n,[,v])=>n+Math.max(0,65-v)*.09,0);
+     const homeRating = teamStrength(homeTeam, effectiveHomeTactics)-redCardsByTeam[0]*13-injuriesByTeam[0]*7+aiSubstitutions[0]*.7-homeFatigue;
+    const awayFatigue=Object.entries(matchFitness).filter(([id])=>matchLineup.includes(id)).reduce((n,[,v])=>n+Math.max(0,65-v)*.09,0);
+     const awayRating = teamStrength(awayTeam, effectiveAwayTactics)-redCardsByTeam[1]*13-injuriesByTeam[1]*7+aiSubstitutions[1]*.7-awayFatigue;
     const homeShare = Math.max(.24, Math.min(.82, .5 + (homeRating - awayRating) * .012));
     const home = Math.random() < homeShare;
     const team = home ? homeTeam.name : awayTeam.name; const other = home ? awayTeam.name : homeTeam.name;
