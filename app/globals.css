@@ -275,3 +275,10 @@ tbody tr:hover{background:rgba(131,201,244,.045)}
 .profile-contract-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
 .profile-contract-grid strong{font-size:12px;overflow-wrap:anywhere}
 @media(max-width:760px){.profile-modal-backdrop{padding:8px}.profile-modal{padding:13px;max-height:calc(100vh - 16px)}.profile-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.profile-contract-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.leaderboard-cards{grid-template-columns:1fr}.league-stats-table{min-width:760px}}
+
+.board-profile-panel{margin:16px 0 18px;border-color:rgba(231,196,106,.28)}
+.board-profile-row{display:flex;align-items:center;gap:14px}
+.board-avatar{display:grid;place-items:center;width:58px;height:58px;flex:0 0 58px;border-radius:50%;font-size:30px;background:rgba(231,196,106,.12);border:1px solid rgba(231,196,106,.35);color:var(--gold,#e7c46a)}
+.board-profile-row h3{margin:0 0 5px;font-size:17px}
+.board-profile-row p{margin:4px 0;font-size:12px}
+.board-profile-row strong{color:var(--gold,#e7c46a)}
