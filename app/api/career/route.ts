@@ -161,7 +161,7 @@ export async function POST(request: Request) {
    return NextResponse.json({ok:true,facility,level:next,cost,balance});
   }
   if(b.action==="report_injury"){
-    const playerId=String(b.playerId||"");const injuryType=String(b.injuryType||"Spierblessure").slice(0,120);const days=Math.max(1,Math.min(365,Number(b.recoveryDays)||7));
+    const playerId=String(b.playerId||"");const injuryType=String(b.injuryType||"Spierblessure").slice(0,120);const days=Math.max(1,Math.min(730,Number(b.recoveryDays)||7));
     const player=await sql.query("SELECT p.full_name FROM career_player_states cps JOIN players p ON p.id=cps.player_id WHERE cps.save_id=$1 AND cps.player_id=$2 LIMIT 1",[b.saveId,playerId]);if(!player.length)return fail("Speler hoort niet bij deze carrièredatabase.",404);
     const until=new Date(String(s.game_date).slice(0,10)+"T12:00:00Z");until.setUTCDate(until.getUTCDate()+days);const untilDate=dateOnly(until);
     await sql.query("UPDATE career_player_states SET injury_type=$1,injury_until=$2,fitness=GREATEST(25,fitness-20),updated_at=NOW() WHERE save_id=$3 AND player_id=$4",[injuryType,untilDate,b.saveId,playerId]);
