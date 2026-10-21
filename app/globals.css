@@ -245,3 +245,33 @@ tbody tr:hover{background:rgba(131,201,244,.045)}
 .discipline-feed{display:flex;flex-direction:column;gap:5px;max-height:190px;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;scrollbar-gutter:stable;padding:5px 6px}
 .discipline-feed::-webkit-scrollbar,.commentary::-webkit-scrollbar{width:8px}
 .discipline-feed::-webkit-scrollbar-thumb,.commentary::-webkit-scrollbar-thumb{background:#385064;border-radius:8px;border:2px solid #10202b}
+
+/* Player dossiers, sortable competition tables and staff/board approvals */
+.player-profile-link{appearance:none;background:transparent;border:0;padding:0;color:var(--gold,#e7c46a);font:inherit;font-weight:700;text-align:left;cursor:pointer;text-decoration:underline;text-decoration-color:transparent;text-underline-offset:3px}
+.player-profile-link:hover{text-decoration-color:currentColor}
+.player-profile-link:disabled{opacity:.45;cursor:default}
+.rating-numeric{display:block;color:var(--muted,#93a3ad);font-size:10px;margin-top:2px}
+.lineup-player-name{font-size:12px;color:var(--foreground,#e8edf1);text-align:right}
+.pitch-legend{font-size:11px}
+.table-sort-button{border:0;background:transparent;color:inherit;font:inherit;font-weight:800;cursor:pointer;white-space:nowrap;padding:4px 0}
+.table-sort-button:hover{color:var(--gold,#e7c46a)}
+.leaderboard-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:12px 0 18px}
+.leaderboard-card{display:flex;flex-direction:column;gap:7px;padding:13px;border:1px solid var(--line,#2a3b48);border-radius:10px;background:rgba(255,255,255,.025);min-width:0}
+.leaderboard-card>small{font-size:9px;letter-spacing:.1em;color:var(--gold,#e7c46a);font-weight:800}
+.leaderboard-card>strong{font-size:15px;overflow-wrap:anywhere}
+.leaderboard-card>span{color:var(--muted,#93a3ad);font-size:12px}
+.profile-modal-backdrop{position:fixed;inset:0;z-index:9999;background:rgba(4,10,15,.82);backdrop-filter:blur(7px);display:flex;align-items:center;justify-content:center;padding:22px;overflow-y:auto}
+.profile-modal{width:min(1040px,100%);max-height:calc(100vh - 44px);overflow:auto;background:var(--panel,#111e28);border:1px solid var(--line,#2a3b48);box-shadow:0 25px 90px rgba(0,0,0,.55);padding:22px}
+.profile-modal-top{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:18px}
+.profile-modal-top h2{margin:5px 0;font-size:26px}
+.profile-modal-top button{border:1px solid var(--line,#2a3b48);background:transparent;color:inherit;border-radius:7px;padding:8px 12px;cursor:pointer}
+.profile-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.profile-kpis>div,.profile-contract-grid>div{display:flex;flex-direction:column;gap:6px;padding:12px;border:1px solid var(--line,#2a3b48);border-radius:8px;min-width:0}
+.profile-kpis small,.profile-contract-grid small{font-size:9px;letter-spacing:.08em;color:var(--muted,#93a3ad);font-weight:800}
+.profile-kpis strong{font-size:18px;overflow-wrap:anywhere}
+.profile-kpis span{font-size:11px;color:var(--muted,#93a3ad)}
+.profile-section{margin-top:20px}
+.profile-section h3{font-size:15px;margin:0 0 10px}
+.profile-contract-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.profile-contract-grid strong{font-size:12px;overflow-wrap:anywhere}
+@media(max-width:760px){.profile-modal-backdrop{padding:8px}.profile-modal{padding:13px;max-height:calc(100vh - 16px)}.profile-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.profile-contract-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.leaderboard-cards{grid-template-columns:1fr}.league-stats-table{min-width:760px}}
