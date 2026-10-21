@@ -262,7 +262,7 @@ export default function Home() {
     const nextLineup=matchLineup.map(id=>id===outId?inId:id),nextBench=matchBench.filter(id=>id!==inId);const newWindow=minute!==lastSubMinute;
     setMatchLineup(nextLineup);setMatchBench(nextBench);setSubstitutions(prev=>[...prev,{minute,outId,inId,team}]);if(newWindow){setSubWindows(v=>v+1);setLastSubMinute(minute);}
     const outName=careerData?.squad?.find((p:any)=>p.id===outId)?.full_name||outId,inName=careerData?.squad?.find((p:any)=>p.id===inId)?.full_name||inId;
-    addEvent({minute:minute+"'",text:"WISSEL "+(substitutions.length+1)+"/5: "+inName+" komt erin voor "+outName+". Wisselmoment "+(subWindows+1)+"/3.",kind:"system"});
+    addEvent({minute:minute+"'",text:"WISSEL "+(substitutions.length+1)+"/5: "+inName+" komt erin voor "+outName+". Wisselmoment "+(newWindow?subWindows+1:subWindows)+"/3.",kind:"system"});
     setCareerError("");
   }
   function returnFromTactics(){
