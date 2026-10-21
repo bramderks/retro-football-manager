@@ -22,13 +22,13 @@ SET position = CASE UPPER(position)
   WHEN 'CV' THEN 'CB' WHEN 'CB1' THEN 'CB' WHEN 'CB2' THEN 'CB' WHEN 'CB3' THEN 'CB'
   WHEN 'LV' THEN 'LB' WHEN 'RV' THEN 'RB'
   WHEN 'VM' THEN 'DM' WHEN 'CDM' THEN 'DM'
-  WHEN 'LM' THEN 'LW' WHEN 'RM' THEN 'RW'
+  WHEN 'LM' THEN 'LW' WHEN 'RM' THEN 'RW' WHEN 'AML' THEN 'LW' WHEN 'AMR' THEN 'RW'
   WHEN 'LA' THEN 'LW' WHEN 'RA' THEN 'RW'
   WHEN 'SP' THEN 'ST' WHEN 'CF' THEN 'ST'
   WHEN 'WB' THEN CASE WHEN position ILIKE 'L%' THEN 'LWB' ELSE 'RWB' END
   ELSE UPPER(position)
 END
-WHERE UPPER(position) IN ('K','KEEPER','GOALKEEPER','CV','CB1','CB2','CB3','LV','RV','VM','CDM','LM','RM','LA','RA','SP','CF','WB');
+WHERE UPPER(position) IN ('K','KEEPER','GOALKEEPER','CV','CB1','CB2','CB3','LV','RV','VM','CDM','LM','RM','AML','AMR','LA','RA','SP','CF','WB');
 
 -- Recalibrate ratings consistently against the strength of the player's current club,
 -- preserving most of the original player rating while making the full database coherent.
