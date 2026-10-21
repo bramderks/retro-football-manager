@@ -48,6 +48,38 @@ SET current_rating = p.overall_rating,
 FROM players p
 WHERE p.id = cps.player_id;
 
+-- Ensure every player in every existing career has a contract record and full default terms.
+INSERT INTO career_player_contracts(id,save_id,player_id,club_id,start_date,end_date,weekly_wage,squad_status)
+SELECT 'contract-'||cps.save_id||'-'||p.id,cps.save_id,p.id,cps.club_id,COALESCE(s.game_date,CURRENT_DATE),'2028-06-30'::date,
+       GREATEST(500,COALESCE(cps.current_rating,p.overall_rating)*COALESCE(cps.current_rating,p.overall_rating)*2),'rotation'
+FROM career_player_states cps
+JOIN career_saves s ON s.id=cps.save_id
+JOIN players p ON p.id=cps.player_id
+WHERE NOT EXISTS (SELECT 1 FROM career_player_contracts pc WHERE pc.save_id=cps.save_id AND pc.player_id=p.id);
+
+INSERT INTO career_actions(save_id,action_date,action_type,payload,result)
+SELECT cps.save_id,COALESCE(s.game_date,CURRENT_DATE),'player_contract_terms',
+       jsonb_build_object(
+         'playerId',p.id,
+         'baseWage',COALESCE(pc.weekly_wage,GREATEST(500,COALESCE(cps.current_rating,p.overall_rating)*COALESCE(cps.current_rating,p.overall_rating)*2)),
+         'goalBonus',GREATEST(100,COALESCE(cps.current_rating,p.overall_rating)*5),
+         'assistBonus',GREATEST(50,COALESCE(cps.current_rating,p.overall_rating)*3),
+         'loyaltyBonus',GREATEST(1000,COALESCE(cps.current_rating,p.overall_rating)*100),
+         'signingBonus',GREATEST(5000,COALESCE(cps.current_rating,p.overall_rating)*100),
+         'sellOn',0,'appearanceThreshold',0,'appearanceBonus',0,
+         'goalThreshold',0,'internationalThreshold',0,'internationalBonus',0,
+         'cleanSheetBonus',0,'promotionBonus',0
+       ),'{}'::jsonb
+FROM career_player_states cps
+JOIN career_saves s ON s.id=cps.save_id
+JOIN players p ON p.id=cps.player_id
+LEFT JOIN career_player_contracts pc ON pc.save_id=cps.save_id AND pc.player_id=p.id
+WHERE NOT EXISTS (
+  SELECT 1 FROM career_actions ca
+  WHERE ca.save_id=cps.save_id AND ca.action_type='player_contract_terms'
+    AND ca.payload->>'playerId'=p.id
+);
+
 -- Recalculate already-recorded match ratings from ability, contribution, result and discipline.
 UPDATE career_player_match_stats m
 SET rating = ROUND(LEAST(10,GREATEST(4.5,
