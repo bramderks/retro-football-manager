@@ -166,7 +166,7 @@ export default function Home() {
     setLineupConfirmed(false);setMatchPhase("pre-match");setSubstitutions([]);setSubWindows(0);setLastSubMinute(-1);setYellowCards({});setRedCardIds([]);setRedCardsByTeam([0,0]);setInjuriesByTeam([0,0]);setAiSubstitutions([0,0]);setInjuredIds([]);setMatchFitness({});const nextAi:any={},nextBench:any={};for(const side of [0,1] as const){if(side===userSide)continue;const team=databaseTeams.find(t=>t.id===(side===0?selectedHomeId:selectedAwayId));const roster=[...(team?.players||[])].sort((x:any,y:any)=>Number(y.overall_rating||y.rating||0)-Number(x.overall_rating||x.rating||0));nextAi[side]=roster.slice(0,11).map((p:any)=>p.id);nextBench[side]=roster.slice(11,20).map((p:any)=>p.id);}setAiLineups(nextAi);setAiBenches(nextBench);
     const squad=(careerData?.squad||[]).filter((p:any)=>!p.injury_type);
     const starters: string[]=[];const slots=formationSlots(homeTactics.formation);
-    const accepted:Record<string,string[]>={K:["GK"],LV:["LB"],CV:["CV"],RV:["RB"],WB:["LB","RB"],VM:["VM"],CM:["CM","LM","RM"],LM:["LM","LA","AML"],RM:["RM","RA","AMR"],AM:["AM","AML","AMR"],LA:["LA","AML"],RA:["RA","AMR"],SP:["SP"]};
+    const accepted:Record<string,string[]>={K:["GK"],LV:["LB","LWB"],CV:["CB"],RV:["RB","RWB"],WB:["LB","RB","LWB","RWB"],VM:["DM"],CM:["CM","DM","AM"],LM:["LW","LWB","CM"],RM:["RW","RWB","CM"],AM:["AM","CM","LW","RW"],LA:["LW","ST"],RA:["RW","ST"],SP:["ST","AM"]};
     for(const slot of slots){const existing=homeTactics.lineup?.[slot.key];const assigned=squad.find((p:any)=>p.id===existing&&!starters.includes(p.id));const fit=assigned&&((accepted[slot.role]||[]).includes(assigned.position));const chosen=fit?assigned:squad.find((p:any)=>(accepted[slot.role]||[]).includes(p.position)&&!starters.includes(p.id));const fallback=squad.find((p:any)=>!starters.includes(p.id));const player=chosen||fallback;if(player)starters.push(player.id);}
     for(const p of squad){if(starters.length>=11)break;if(!starters.includes(p.id))starters.push(p.id);}
     setMatchLineup(starters.slice(0,11));setMatchBench(squad.map((p:any)=>p.id).filter((id:string)=>!starters.includes(id)).slice(0,9));
@@ -315,10 +315,10 @@ export default function Home() {
     const assignedPlayers = userIsTeam ? (careerData?.squad || []).filter((p:any) => assignedIds.includes(p.id)) : [];
     const squad: Player[] = userIsTeam && lineupConfirmed ? assignedPlayers.map((p:any) => ({
       name: p.full_name,
-      position: p.position === "GK" ? "keeper" : ["SP","ST","RA","LA","AML","AMR","RW","LW","CF"].includes(p.position) ? "forward" : ["CV","CB","LB","RB","LWB","RWB"].includes(p.position) ? "defender" : "midfielder",
+      position: p.position === "GK" ? "keeper" : ["ST","RW","LW"].includes(p.position) ? "forward" : ["CB","LB","RB","LWB","RWB"].includes(p.position) ? "defender" : "midfielder",
     })) : dbTeam?.players.length ? dbTeam.players.map(p => ({
       name: p.name,
-      position: p.position === "GK" ? "keeper" : ["SP","ST","RA","LA","AML","AMR","RW","LW"].includes(p.position) ? "forward" : ["CV","CB","LB","RB","LWB","RWB"].includes(p.position) ? "defender" : "midfielder",
+      position: p.position === "GK" ? "keeper" : ["ST","RW","LW"].includes(p.position) ? "forward" : ["CB","LB","RB","LWB","RWB"].includes(p.position) ? "defender" : "midfielder",
     })) : fallback;
     const pool = positions?.length ? squad.filter(p => positions.includes(p.position)) : squad.filter(p => p.position !== "keeper");
     return pool[Math.floor(Math.random() * pool.length)] ?? squad[0];
