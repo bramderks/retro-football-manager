@@ -301,7 +301,15 @@ export default function Home() {
     let penalty=0;for(const slot of formationSlots(t.formation)){const id=t.lineup?.[slot.key];const p=careerData.squad.find((x:any)=>x.id===id);if(!p||redCardIds.includes(id||"")||injuredIds.includes(id||""))continue;if(!(accepted[slot.role]||[]).includes(String(p.position||"")))penalty+=slot.role==="K"?12:2.2;}return penalty;
   }
   function teamStrength(team: Team, t: Tactics) {
-    return team.rating + team.reputation * .12 - lineupPositionPenalty(team,t) + ({ Verdedigend: -7, Normaal: 0, Aanvallend: 7 }[t.mentality] ?? 0)
+    const teamId=team.name===homeTeam.name?selectedHomeId:selectedAwayId;
+    const side:0|1=teamId===selectedHomeId?0:1;
+    const dbTeam=databaseTeams.find(x=>x.id===teamId);
+    const userTeam=Boolean(careerData?.save?.club_id&&teamId===careerData.save.club_id);
+    const ids=userTeam?(lineupConfirmed?matchLineup:Object.values(homeTactics.lineup||{}).filter(Boolean)):(aiLineups[side]?.length?aiLineups[side]:(dbTeam?.players||[]).slice(0,11).map((p:any)=>p.id));
+    const ratedPlayers=userTeam?(careerData?.squad||[]).filter((p:any)=>ids.includes(p.id)).map((p:any)=>Number(p.overall_rating||50)):(dbTeam?.players||[]).filter((p:any)=>ids.includes(p.id)).map((p:any)=>Number(careerData?.market?.find((m:any)=>m.id===p.id)?.overall_rating||p.overallRating||50));
+    const averagePlayerRating=ratedPlayers.length?ratedPlayers.reduce((sum:number,value:number)=>sum+value,0)/ratedPlayers.length:team.rating;
+    const playerQualityAdjustment=(averagePlayerRating-team.rating)*0.18;
+    return team.rating + playerQualityAdjustment + team.reputation * .12 - lineupPositionPenalty(team,t) + ({ Verdedigend: -7, Normaal: 0, Aanvallend: 7 }[t.mentality] ?? 0)
       + ({ Kort: 3, Direct: 2, Lang: -1 }[t.passing] ?? 0) + (t.pressing ? 3 : 0) + (t.counter ? 2 : 0) + ({ "4-3-3": 2, "4-4-2": 0, "4-2-3-1": 1, "3-5-2": 1, "5-3-2": -1 }[t.formation] ?? 0);
   }
   function tacticPower(team: Team, t: Tactics) {
