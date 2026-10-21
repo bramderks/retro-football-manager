@@ -105,6 +105,20 @@ export async function POST(request: Request) {
    await sql.query("INSERT INTO club_finances(save_id,entry_date,category,description,amount,balance_after) VALUES($1,$2,'contract',$3,$4,$5)",[b.saveId,dateOnly(s.game_date),"Contract ontbonden (75% resterend loon)",-penalty,Number(s.cash_balance)-penalty]);
    return NextResponse.json({ok:true,penalty});
   }
+  if(b.action==="hire_staff"){
+   const role=String(b.staffRole||"coach");const roles=["manager","assistant_manager","coach","scout","physio","sporting_director","chairperson"];
+   if(!roles.includes(role))return fail("Ongeldige stafrol.");
+   const current=await sql.query("SELECT COUNT(*)::int AS n FROM club_staff WHERE club_id=$1 AND role=$2 AND employed_until IS NULL",[s.club_id,role]);const cap=Math.max(1,Math.min(5,Math.ceil(Number(s.reputation||50)/20)));
+   if(Number(current[0]?.n||0)>=cap)return fail("Deze club heeft het maximale aantal medewerkers voor deze rol.");
+   const names=["Alex Morgan","Robin de Vries","Sam Taylor","Jordan Bakker","Jamie Wilson","Luca Moretti","Milan Jansen","Noah Peters","Ruben Visser","Thomas Smit"];const name=names[Math.floor(Math.random()*names.length)]+" "+(Math.floor(Math.random()*90)+10);
+   const wage=Math.max(250,Math.round(Number(s.reputation||50)*Number(s.reputation||50)*(role==="manager"?1.5:role==="sporting_director"?1.1:0.55)));const signing=Math.round(wage*4);
+   if(signing>Number(s.cash_balance||0))return fail("Onvoldoende clubkas voor tekengeld.");
+   await sql.query("INSERT INTO club_staff(id,club_id,full_name,role,reputation,wage_weekly,employed_from,date_of_birth,career_status,career_path) VALUES($1,$2,$3,$4,$5,$6,$7,$8,'employed',$9)",["staff-"+crypto.randomUUID(),s.club_id,name,role,Math.max(20,Math.min(95,Number(s.reputation||50)+Math.floor(Math.random()*15)-7)),wage,dateOnly(s.game_date),"1980-01-01",role]);
+   await sql.query("UPDATE career_saves SET cash_balance=cash_balance-$1,updated_at=NOW() WHERE id=$2",[signing,b.saveId]);
+   await sql.query("INSERT INTO club_finances(save_id,entry_date,category,description,amount,balance_after) VALUES($1,$2,'staff',$3,$4,$5)",[b.saveId,dateOnly(s.game_date),"Tekengeld staf: "+name,-signing,Number(s.cash_balance)-signing]);
+   await sql.query("INSERT INTO career_news(save_id,news_date,category,headline,body) VALUES($1,$2,'club',$3,$4)",[b.saveId,dateOnly(s.game_date),"Nieuwe aanstelling: "+name,name+" is aangesteld als "+role.replaceAll("_"," ")+"."]);
+   return NextResponse.json({ok:true});
+  }
   if(b.action==="terminate_staff_contract"){
    const staffId=String(b.staffId||"");const staff=await sql.query("SELECT id,full_name,role,wage_weekly FROM club_staff WHERE id=$1 AND club_id=$2 AND employed_until IS NULL LIMIT 1",[staffId,s.club_id]);if(!staff.length)return fail("Medewerker niet gevonden.");
    const penalty=Math.round(Number(staff[0].wage_weekly||0)*52*.75);if(penalty>Number(s.cash_balance||0))return fail("Onvoldoende clubkas voor de afkoopsom van €"+penalty.toLocaleString("nl-NL")+".");
