@@ -175,9 +175,10 @@ export async function POST(request: Request) {
     const cost=Math.round(base[facility]*Math.pow(next,1.65));const confidence=Math.max(0,Math.min(100,Number(s.board_confidence||50)));const cash=Number(s.cash_balance||0);
     const pending=await sql.query("SELECT id FROM career_actions WHERE save_id=$1 AND action_type='facility_approval_request' AND payload->>'facility'=$2 AND payload->>'status'='pending' LIMIT 1",[b.saveId,facility]);
     if(pending.length)return fail("Voor deze faciliteit loopt al een aanvraag.");
-    const threshold=next===5?65:42;const approved=cash>=cost*(next===5?1.3:1.05)&&confidence>=threshold&&!(facility==="stadium"&&next>Math.max(1,Math.min(5,Math.ceil(Number(s.reputation||50)/20)))&&confidence<75);
     const chairRows=await sql.query("SELECT full_name,reputation FROM club_staff WHERE club_id=$1 AND role='chairperson' AND employed_until IS NULL ORDER BY id DESC LIMIT 1",[s.club_id]);
-    const chairpersonName=chairRows[0]?.full_name||"De voorzitter";const mood=approved?"Tevreden en enthousiast":"Geïrriteerd en terughoudend";const emotion=approved?"Het bestuur ziet dit als een verantwoorde investering.":"Het bestuur vindt de financiële onderbouwing of het vertrouwen op dit moment onvoldoende.";
+    const chairpersonName=chairRows[0]?.full_name||"De voorzitter";const chairReputation=Number(chairRows[0]?.reputation||50);
+    const threshold=next===5?65:42;const approved=cash>=cost*(next===5?1.3:1.05)&&confidence>=threshold&&chairReputation>=(next===5?55:35)&&!(facility==="stadium"&&next>Math.max(1,Math.min(5,Math.ceil(Number(s.reputation||50)/20)))&&confidence<75);
+    const mood=approved?(chairReputation>=80?"Enthousiast en trots":"Tevreden en enthousiast"):(chairReputation<50?"Ontevreden en risicomijdend":"Geïrriteerd en terughoudend");const emotion=approved?"De voorzitter vindt de investering verantwoord en ziet groeipotentieel.":"De voorzitter is terughoudend over de investering of wil eerst meer vertrouwen en financiële ruimte zien.";
     const payload={facility,previousLevel:level,level:next,cost,status:approved?"approved":"rejected",requestedBy:s.role,chairperson:chairpersonName,chairpersonMood:mood,chairpersonReason:emotion,trust:confidence,requestedOn:dateOnly(s.game_date)};
     await sql.query("INSERT INTO career_actions(save_id,action_date,action_type,payload,result) VALUES($1,$2,'facility_approval_request',$3::jsonb,$4::jsonb)",[b.saveId,dateOnly(s.game_date),JSON.stringify(payload),JSON.stringify({ok:true,approved})]);
     if(approved){
