@@ -224,21 +224,33 @@ export async function POST(request: Request) {
    for(const app of applications as any[]){const accepted=Math.random()<(Math.max(0,Math.min(0.78,0.15+Number(s.career_xp||0)/500+Number(s.board_confidence||50)/500)));const status=accepted?"accepted":"rejected";await sql.query("UPDATE career_applications SET status=$1 WHERE id=$2",[status,app.id]);if(accepted){await sql.query("UPDATE career_saves SET club_id=$1,role=$2,board_confidence=60,updated_at=NOW() WHERE id=$3",[app.target_club_id,app.target_role,b.saveId]);await sql.query("INSERT INTO career_news(save_id,news_date,category,headline,body) VALUES($1,$2,'board',$3,$4)",[b.saveId,day,"Sollicitatie geslaagd", "Je bent aangenomen als "+app.target_role+" bij "+app.target_club+". Je nieuwe loopbaan begint vandaag."]);}else{await sql.query("INSERT INTO career_news(save_id,news_date,category,headline,body) VALUES($1,$2,'board',$3,$4)",[b.saveId,day,"Sollicitatie afgewezen",app.target_club+" heeft voor een andere kandidaat gekozen."]);}}
    const pending=await sql.query("SELECT o.*,p.full_name,p.overall_rating FROM transfer_offers o JOIN players p ON p.id=o.player_id WHERE o.save_id=$1 AND o.status='pending' AND o.submitted_on <= $2::date - INTERVAL '3 days'",[b.saveId,day]);
    for(const offer of pending as any[]){
-    const asking=Math.max(50000,Number(offer.overall_rating)*Number(offer.overall_rating)*450);
-    const accepted=Number(offer.fee)>=asking*.92?Math.random()<.78:Number(offer.fee)>=asking*.7?Math.random()<.32:Math.random()<.08;
-    if(accepted&&Number(offer.fee)<=balance){
-     await sql.query("UPDATE transfer_offers SET status='completed' WHERE id=$1",[offer.id]);
-     await sql.query("UPDATE career_player_states SET club_id=$1,updated_at=NOW() WHERE save_id=$2 AND player_id=$3",[s.club_id,b.saveId,offer.player_id]);
-     await sql.query("INSERT INTO career_player_contracts(id,save_id,player_id,club_id,start_date,end_date,weekly_wage,squad_status) VALUES($1,$2,$3,$4,$5,'2028-06-30',$6,'rotation')",["contract-"+crypto.randomUUID(),b.saveId,offer.player_id,s.club_id,day,offer.wage_offer]);
-     await sql.query("UPDATE career_saves SET cash_balance=cash_balance-$1,transfer_budget=GREATEST(0,transfer_budget-$1) WHERE id=$2",[offer.fee,b.saveId]);
-     await sql.query("INSERT INTO club_finances(save_id,entry_date,category,description,amount,balance_after) VALUES($1,$2,'transfer_out',$3,$4,$5)",[b.saveId,day,"Transfervergoeding "+offer.full_name,-Number(offer.fee),balance-Number(offer.fee)]);
-     await sql.query("INSERT INTO career_news(save_id,news_date,category,headline,body) VALUES($1,$2,'transfer',$3,$4)",[b.saveId,day,"Transfer afgerond: "+offer.full_name,offer.full_name+" komt naar "+s.club_name+" voor €"+Number(offer.fee).toLocaleString("nl-NL")+"."]);
-    }else{
-     await sql.query("UPDATE transfer_offers SET status='rejected' WHERE id=$1",[offer.id]);
-     await sql.query("INSERT INTO career_news(save_id,news_date,category,headline,body) VALUES($1,$2,'transfer',$3,$4)",[b.saveId,day,"Transferbod afgewezen",offer.full_name+" blijft voorlopig bij zijn huidige club."]);
+     const asking=Math.max(50000,Number(offer.overall_rating)*Number(offer.overall_rating)*450);
+     let terms:any={};try{terms=JSON.parse(String(offer.notes||"{}"));}catch{}
+     const months=Math.max(1,Math.min(60,Number(terms.installments||1))),upfront=Math.ceil(Number(offer.fee)/months);
+     const accepted=Number(offer.fee)>=asking*.92?Math.random()<.78:Number(offer.fee)>=asking*.7?Math.random()<.32:Math.random()<.08;
+     if(accepted&&upfront<=balance){
+      if(terms.endOfSeason){
+       const payload={playerId:offer.player_id,playerName:offer.full_name,buyingClubId:s.club_id,sellingClubId:offer.selling_club_id,fee:Number(offer.fee),wage:Number(offer.wage_offer),months,dueDate:"2027-06-30",status:"pending"};
+       await sql.query("UPDATE transfer_offers SET status='accepted' WHERE id=$1",[offer.id]);
+       await sql.query("INSERT INTO career_actions(save_id,action_date,action_type,payload,result) VALUES($1,$2,'deferred_transfer',$3::jsonb,$4::jsonb)",[b.saveId,day,JSON.stringify(payload),JSON.stringify({ok:true})]);
+       await sql.query("INSERT INTO career_news(save_id,news_date,category,headline,body) VALUES($1,$2,'transfer',$3,$4)",[b.saveId,day,"Akkoord bereikt: "+offer.full_name,offer.full_name+" sluit aan het einde van het seizoen aan bij "+s.club_name+"."]);
+       continue;
+      }
+      const returnDate=new Date(day+"T12:00:00Z");returnDate.setUTCDate(returnDate.getUTCDate()+180);
+      await sql.query("UPDATE transfer_offers SET status='completed' WHERE id=$1",[offer.id]);
+      await sql.query("UPDATE career_player_states SET club_id=$1,updated_at=NOW() WHERE save_id=$2 AND player_id=$3",[s.club_id,b.saveId,offer.player_id]);
+      await sql.query("INSERT INTO career_player_contracts(id,save_id,player_id,club_id,start_date,end_date,weekly_wage,squad_status) VALUES($1,$2,$3,$4,$5,$6,$7,$8)",["contract-"+crypto.randomUUID(),b.saveId,offer.player_id,s.club_id,day,terms.loan?dateOnly(returnDate):"2028-06-30",offer.wage_offer,terms.loan?"loan":"rotation"]);
+      if(terms.loan){const payload={playerId:offer.player_id,playerName:offer.full_name,listingType:"loan",status:"loaned",returnDate:dateOnly(returnDate),targetClub:s.club_id};await sql.query("INSERT INTO career_actions(save_id,action_date,action_type,payload,result) VALUES($1,$2,'player_listing',$3::jsonb,$4::jsonb)",[b.saveId,day,JSON.stringify(payload),JSON.stringify({ok:true})]);}
+      if(months>1){const next=new Date(day+"T12:00:00Z");next.setUTCDate(next.getUTCDate()+30);const payload={playerId:offer.player_id,playerName:offer.full_name,remaining:months-1,monthlyAmount:upfront,nextDate:dateOnly(next),status:"pending"};await sql.query("INSERT INTO career_actions(save_id,action_date,action_type,payload,result) VALUES($1,$2,'transfer_installment',$3::jsonb,$4::jsonb)",[b.saveId,day,JSON.stringify(payload),JSON.stringify({ok:true})]);}
+      await sql.query("UPDATE career_saves SET cash_balance=cash_balance-$1,transfer_budget=GREATEST(0,transfer_budget-$1) WHERE id=$2",[upfront,b.saveId]);
+      await sql.query("INSERT INTO club_finances(save_id,entry_date,category,description,amount,balance_after) VALUES($1,$2,'transfer_out',$3,$4,$5)",[b.saveId,day,(terms.loan?"Huurvergoeding ":"Transfertermijn ")+offer.full_name,-upfront,Number(s.cash_balance)-upfront]);
+      await sql.query("INSERT INTO career_news(save_id,news_date,category,headline,body) VALUES($1,$2,'transfer',$3,$4)",[b.saveId,day,terms.loan?"Huurdeal afgerond: "+offer.full_name:"Transfer afgerond: "+offer.full_name,offer.full_name+(terms.loan?" komt voor zes maanden op huurbasis naar ":" komt naar ")+s.club_name+" voor €"+Number(offer.fee).toLocaleString("nl-NL")+"."]);
+     }else{
+      await sql.query("UPDATE transfer_offers SET status='rejected' WHERE id=$1",[offer.id]);
+      await sql.query("INSERT INTO career_news(save_id,news_date,category,headline,body) VALUES($1,$2,'transfer',$3,$4)",[b.saveId,day,"Transferbod afgewezen",offer.full_name+" blijft voorlopig bij zijn huidige club."]);
+     }
     }
-   }
-   const xpGain=1+results.filter((x:any)=>(x.homeTeamId===s.club_id&&x.homeGoals>x.awayGoals)||(x.awayTeamId===s.club_id&&x.awayGoals>x.homeGoals)).length*3;
+    const xpGain=1+results.filter((x:any)=>(x.homeTeamId===s.club_id&&x.homeGoals>x.awayGoals)||(x.awayTeamId===s.club_id&&x.awayGoals>x.homeGoals)).length*3;
    await sql.query("UPDATE career_saves SET career_xp=career_xp+$1 WHERE id=$2",[xpGain,b.saveId]);
    // Keep the board objective tied to the live, save-specific league table.
    const currentRank=await sql.query("WITH table_rows AS (SELECT t.id,ROW_NUMBER() OVER (ORDER BY COALESCE(SUM(CASE WHEN cr.status='played' AND ((f.home_team_id=t.id AND cr.home_goals>cr.away_goals) OR (f.away_team_id=t.id AND cr.away_goals>cr.home_goals)) THEN 3 WHEN cr.status='played' AND cr.home_goals=cr.away_goals THEN 1 ELSE 0 END),0) DESC,COALESCE(SUM(CASE WHEN f.home_team_id=t.id AND cr.status='played' THEN cr.home_goals WHEN f.away_team_id=t.id AND cr.status='played' THEN cr.away_goals ELSE 0 END)-SUM(CASE WHEN f.home_team_id=t.id AND cr.status='played' THEN cr.away_goals WHEN f.away_team_id=t.id AND cr.status='played' THEN cr.home_goals ELSE 0 END),0) DESC) AS rank FROM teams t LEFT JOIN fixtures f ON (f.home_team_id=t.id OR f.away_team_id=t.id) AND f.season_id=$1 LEFT JOIN career_fixture_results cr ON cr.fixture_id=f.id AND cr.save_id=$3 WHERE t.division_id=$2 GROUP BY t.id) SELECT rank FROM table_rows WHERE id=$4",[SEASON,s.division_id,b.saveId,s.club_id]);
