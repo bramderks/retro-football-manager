@@ -123,8 +123,8 @@ export async function POST(request: Request) {
   }
   if(b.action==="advance_day"){
    const dayDate=new Date(dateOnly(s.game_date)+"T12:00:00Z");dayDate.setUTCDate(dayDate.getUTCDate()+1);const day=dateOnly(dayDate);
-   const userFixture=await sql.query("SELECT f.id,f.home_team_id,f.away_team_id,f.kickoff_date,h.name AS home_name,a.name AS away_name FROM fixtures f JOIN teams h ON h.id=f.home_team_id JOIN teams a ON a.id=f.away_team_id WHERE f.kickoff_date=$1 AND f.status='scheduled' AND f.division_id=$2 AND (f.home_team_id=$3 OR f.away_team_id=$3) AND NOT EXISTS (SELECT 1 FROM career_fixture_results cr WHERE cr.fixture_id=f.id AND cr.save_id=$4) LIMIT 1",[day,s.division_id,s.club_id,b.saveId]);
-   if(userFixture.length)return NextResponse.json({ok:true,needsMatch:true,fixture:userFixture[0],gameDate:day});
+   const pendingFixture=await sql.query("SELECT f.id,f.home_team_id,f.away_team_id,f.kickoff_date,h.name AS home_name,a.name AS away_name FROM fixtures f JOIN teams h ON h.id=f.home_team_id JOIN teams a ON a.id=f.away_team_id WHERE f.kickoff_date=$1 AND f.status='scheduled' AND f.division_id=$2 AND (f.home_team_id=$3 OR f.away_team_id=$3) AND NOT EXISTS (SELECT 1 FROM career_fixture_results cr WHERE cr.fixture_id=f.id AND cr.save_id=$4) LIMIT 1",[day,s.division_id,s.club_id,b.saveId]);
+   if(pendingFixture.length)return NextResponse.json({ok:true,needsMatch:true,fixture:pendingFixture[0],gameDate:day});
    await sql.query("UPDATE career_saves SET game_date=$1,updated_at=NOW() WHERE id=$2",[day,b.saveId]);
    const scheduled=await sql.query("SELECT f.*,h.team_strength AS hs,h.reputation AS hr,a.team_strength AS aws,a.reputation AS ar FROM fixtures f JOIN teams h ON h.id=f.home_team_id JOIN teams a ON a.id=f.away_team_id WHERE f.kickoff_date=$1 AND f.status='scheduled' AND f.division_id=$2 AND NOT EXISTS (SELECT 1 FROM career_fixture_results cr WHERE cr.fixture_id=f.id AND cr.save_id=$3)",[day,s.division_id,b.saveId]);
    const results=[];
