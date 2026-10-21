@@ -7,6 +7,11 @@ const lastNames=["de Vries","Jansen","Bakker","Visser","Smit","Meijer","de Jong"
 const positions=["GK","CB","CB","LB","RB","DM","CM","CM","AM","LW","RW","ST","ST","CM","CB","LB","RB","DM","LW","RW","ST","GK"];
 const slug=(s:string)=>s.normalize("NFKD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
 function schedule(teams:any[],divisionId:string,season:string){
+ const list=[...teams].sort((a,b)=>String(a.id).localeCompare(String(b.id)));if(list.length<2)return[];if(list.length%2)list.push({id:"BYE"});
+ const n=list.length,rounds=n-1;let rotation=[...list],first:any[]=[];const homeCount=new Map<string,number>();
+ for(let r=0;r<rounds;r++){for(let i=0;i<n/2;i++){let a=rotation[i],b=rotation[n-1-i];if(a.id==="BYE"||b.id==="BYE")continue;const ah=homeCount.get(a.id)||0,bh=homeCount.get(b.id)||0;let home=a,away=b;if(ah>bh||(ah===bh&&(r+i)%2===0)){home=b;away=a;}first.push({round:r+1,home:home.id,away:away.id});homeCount.set(home.id,(homeCount.get(home.id)||0)+1);}rotation=[rotation[0],rotation[n-1],...rotation.slice(1,n-1)];}
+ const fixtures:any[]=[],base=new Date(Number(season.slice(0,4)),7,8,12);for(const m of first){const d=new Date(base);d.setDate(d.getDate()+(m.round-1)*7);fixtures.push({id:divisionId+"-"+season+"-"+m.round+"-"+m.home+"-"+m.away,season,divisionId,round:m.round,date:d.toISOString().slice(0,10),home:m.home,away:m.away});}for(const m of first){const round=m.round+rounds,d=new Date(base);d.setDate(d.getDate()+(round-1)*7);fixtures.push({id:divisionId+"-"+season+"-"+round+"-"+m.away+"-"+m.home,season,divisionId,round,date:d.toISOString().slice(0,10),home:m.away,away:m.home});}return fixtures;
+}
  let list=[...teams].sort((a,b)=>String(a.id).localeCompare(String(b.id)));if(list.length<2)return [];
  if(list.length%2)list.push({id:"BYE"});const n=list.length,rounds=n-1;let rot=[...list];const out:any[]=[];const start=new Date(Number(season.slice(0,4)),7,7,12);
  for(let r=0;r<rounds;r++){for(let i=0;i<n/2;i++){let a=rot[i],b=rot[n-1-i];if(a.id==="BYE"||b.id==="BYE")continue;if((r+i)%2===0)[a,b]=[b,a];const d=new Date(start);d.setDate(d.getDate()+r*7);out.push({id:divisionId+"-"+season+"-r"+(r+1)+"-"+a.id+"-"+b.id,season,divisionId,round:r+1,date:d.toISOString().slice(0,10),home:a.id,away:b.id});}rot=[rot[0],rot[n-1],...rot.slice(1,n-1)];}
