@@ -183,3 +183,6 @@ tbody tr:hover{background:rgba(131,201,244,.045)}
 @media(max-width:620px){.squad-drag-list{grid-template-columns:repeat(2,minmax(0,1fr))}.transfer-filters{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
 .sidebar-save-button{width:100%;padding:9px 8px;background:#203c32;color:#e5c77c;border:1px solid #416c57;border-radius:7px;font-size:12px;font-weight:800}.sidebar-save-button:disabled{opacity:.5;cursor:not-allowed}
+
+.discipline-feed{display:flex;flex-wrap:wrap;gap:8px;padding:10px 15px;border-bottom:1px solid var(--line);background:#0b1721}.discipline-feed span{font-size:10px;padding:5px 8px;border:1px solid #344958;border-radius:6px;color:#d6e0e5}
+.match-sub-panel{margin-top:16px}.match-sub-panel .lineup-row{grid-template-columns:120px minmax(0,1fr)}
