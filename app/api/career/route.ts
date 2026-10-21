@@ -99,12 +99,7 @@ export async function POST(request: Request) {
    await sql.query("INSERT INTO career_news(save_id,news_date,category,headline,body) VALUES($1,$2,'board',$3,$4)",[b.saveId,dateOnly(s.game_date),"Sollicitatie verstuurd",s.manager_name+" heeft gesolliciteerd als "+targetRole+" bij "+target[0].name+". Een reactie wordt binnen een week verwacht."]);
    return NextResponse.json({ok:true,applicationId:id});
   }
-  if(b.action==="change_role"){
-   if(!["manager","sporting_director","chairperson"].includes(b.role))return fail("Ongeldige rol.");
-   const xp=Number(s.career_xp||0),required=b.role==="sporting_director"?120:b.role==="chairperson"?250:0;
-   if(xp<required)return fail("Deze functie is nog niet ontgrendeld. Je hebt "+xp+" ervaringspunten; nodig: "+required+".");
-   await sql.query("UPDATE career_saves SET role=$1,updated_at=NOW() WHERE id=$2",[b.role,b.saveId]);return NextResponse.json({ok:true,role:b.role});
-  }
+  if(b.action==="change_role") return fail("Je kunt niet rechtstreeks van functie wisselen. Solliciteer via Loopbaan.");
   if(b.action==="advance_day"){
    const dayDate=new Date(dateOnly(s.game_date)+"T12:00:00Z");dayDate.setUTCDate(dayDate.getUTCDate()+1);const day=dateOnly(dayDate);
    await sql.query("UPDATE career_saves SET game_date=$1,updated_at=NOW() WHERE id=$2",[day,b.saveId]);
