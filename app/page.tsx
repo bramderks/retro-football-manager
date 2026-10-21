@@ -135,7 +135,7 @@ export default function Home() {
     try {
       for(let i=0;i<15;i++){
         const r=await fetch("/api/career",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"advance_day",saveId:careerSaveId})});const d=await r.json();if(!r.ok)throw new Error(d.error||"Doorspelen mislukt.");
-        if(d.needsMatch&&d.fixture){setPendingCareerFixture(d.fixture);setSavedMatchFixture("");setSelectedHomeId(d.fixture.home_team_id);setSelectedAwayId(d.fixture.away_team_id);setMinute(0);setGoals([0,0]);setScorers([]);setStats([zeroStats(),zeroStats()]);setRunning(false);setHalfTime(false);setExtraTime(false);setPenaltiesFinished(false);setFeed([{minute:"WEDSTRIJDDAG",text:d.fixture.home_name+" – "+d.fixture.away_name+". Druk op Start om de wedstrijd te spelen.",kind:"system"}]);setActiveScreen("Wedstrijd");return;}
+        if(d.needsMatch&&d.fixture){setPendingCareerFixture(d.fixture);setSavedMatchFixture("");setSelectedHomeId(d.fixture.home_team_id);setSelectedAwayId(d.fixture.away_team_id);setMinute(0);setGoals([0,0]);setScorers([]);setStats([zeroStats(),zeroStats()]);setRunning(false);setHalfTime(false);setExtraTime(false);setPenaltiesFinished(false);setFeed([{minute:"WEDSTRIJDDAG",text:d.fixture.home_name+" – "+d.fixture.away_name+". Druk op Start om de wedstrijd te spelen.",kind:"system"}]);setActiveScreen("Opstelling");return;}
         const fresh=await fetch("/api/career?saveId="+encodeURIComponent(careerSaveId),{cache:"no-store"}).then(x=>x.json());if(fresh.save)setCareerData(fresh);
       }
       throw new Error("Binnen 15 dagen is geen volgende wedstrijd gevonden.");
@@ -233,6 +233,34 @@ export default function Home() {
     return () => window.clearTimeout(timer);
   }, [running, minute, speed, finished]);
 
+  function confirmMatchLineup(){
+    const available=(careerData?.squad||[]).filter((p:any)=>!p.injury_type);
+    const starters=matchLineup.filter(Boolean),bench=matchBench.filter(Boolean);
+    if(starters.length!==11||new Set(starters).size!==11){setCareerError("Kies precies 11 verschillende basisspelers.");return;}
+    if(bench.length!==9||new Set(bench).size!==9||bench.some(id=>starters.includes(id))){setCareerError("Kies 9 verschillende wisselspelers die niet in de basis staan.");return;}
+    if([...starters,...bench].some(id=>!available.some((p:any)=>p.id===id))){setCareerError("Geblesseerde of niet-beschikbare spelers kunnen niet worden opgesteld.");return;}
+    setLineupConfirmed(true);setMatchPhase("first-half");setCareerError("");
+    const lineup={...(homeTactics.lineup||{})};formationSlots(homeTactics.formation).forEach((slot,i)=>{lineup[slot.key]=starters[i]||"";});
+    saveCareerTactics({...homeTactics,lineup});setActiveScreen("Wedstrijd");
+    setFeed([{minute:"OPSTELLING",text:"Opstelling bevestigd. 11 basisspelers en 9 wissels zijn vastgelegd voor deze wedstrijd.",kind:"system"},{minute:"INFO",text:(pendingCareerFixture?.home_name||homeTeam.name)+" – "+(pendingCareerFixture?.away_name||awayTeam.name)+". Klaar voor de aftrap.",kind:"system"}]);
+  }
+  function makeSubstitution(outId:string,inId:string,team:0|1=0){
+    if(finished||!lineupConfirmed){setCareerError("Wisselen kan alleen tijdens een wedstrijd met bevestigde opstelling.");return;}
+    if(substitutions.length>=5){setCareerError("Alle vijf wissels zijn gebruikt.");return;}
+    if(subWindows>=3){setCareerError("Alle drie wisselmomenten zijn gebruikt.");return;}
+    if(!outId||!inId||outId===inId){setCareerError("Kies een speler om uit te wisselen en een invaller.");return;}
+    if(team!==0){setCareerError("Wissels van de tegenstander worden door de AI beheerd.");return;}
+    if(!matchLineup.includes(outId)||!matchBench.includes(inId)){setCareerError("Deze spelers staan niet op de juiste lijst voor een wissel.");return;}
+    if(injuredIds.includes(outId)||redCardIds.includes(outId)){setCareerError("Deze speler is al uitgevallen of van het veld gestuurd.");return;}
+    const nextLineup=matchLineup.map(id=>id===outId?inId:id),nextBench=matchBench.map(id=>id===inId?outId:id);
+    setMatchLineup(nextLineup);setMatchBench(nextBench);setSubstitutions(prev=>[...prev,{minute,outId,inId,team}]);setSubWindows(v=>v+1);
+    const outName=careerData?.squad?.find((p:any)=>p.id===outId)?.full_name||outId,inName=careerData?.squad?.find((p:any)=>p.id===inId)?.full_name||inId;
+    addEvent({minute:minute+"'",text:"WISSEL "+(substitutions.length+1)+"/5: "+inName+" komt erin voor "+outName+". Wisselmoment "+(subWindows+1)+"/3.",kind:"system"});
+    setCareerError("");
+  }
+  function returnFromTactics(){
+    if(finished)return;setActiveScreen("Wedstrijd");if(matchPhase!=="half-time"&&!injuredIds.length)setRunning(true);
+  }
   function addEvent(item: EventLine) { setFeed(prev => [...prev, item].slice(-300)); }
   function newMatch() {
     setRunning(false); setMinute(0); setGoals([0, 0]); setScorers([]); setStats([zeroStats(), zeroStats()]);
@@ -250,7 +278,7 @@ export default function Home() {
     const dbTeam = databaseTeams.find(t => t.id === selectedId);
     const fallback = team === 0 ? AJAX_PLAYERS : NEC_PLAYERS;
     const userIsTeam = Boolean(careerData?.save?.club_id && selectedId === careerData.save.club_id);
-    const assignedIds = userIsTeam ? Object.values(homeTactics.lineup || {}).filter(Boolean) : [];
+    const assignedIds = userIsTeam ? (lineupConfirmed ? matchLineup : Object.values(homeTactics.lineup || {}).filter(Boolean)) : [];
     const assignedPlayers = userIsTeam ? (careerData?.squad || []).filter((p:any) => assignedIds.includes(p.id)) : [];
     const squad: Player[] = assignedPlayers.length >= 11 ? assignedPlayers.map((p:any) => ({
       name: p.full_name,
