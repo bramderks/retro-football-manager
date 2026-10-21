@@ -75,6 +75,7 @@ export default function Home() {
   const [lineupConfirmed, setLineupConfirmed] = useState(false);
   const [substitutions, setSubstitutions] = useState<{minute:number;outId:string;inId:string;team:0|1}[]>([]);
   const [subWindows, setSubWindows] = useState(0);
+  const [lastSubMinute,setLastSubMinute]=useState(-1);
   const [yellowCards, setYellowCards] = useState<Record<string,number>>({});
   const [redCardIds, setRedCardIds] = useState<string[]>([]);
   const [redCardsByTeam,setRedCardsByTeam]=useState<[number,number]>([0,0]);
@@ -152,7 +153,7 @@ export default function Home() {
   }
   useEffect(() => {
     if(!pendingCareerFixture)return;
-    setLineupConfirmed(false);setMatchPhase("pre-match");setSubstitutions([]);setSubWindows(0);setYellowCards({});setRedCardIds([]);setRedCardsByTeam([0,0]);setInjuriesByTeam([0,0]);setAiSubstitutions([0,0]);setInjuredIds([]);
+    setLineupConfirmed(false);setMatchPhase("pre-match");setSubstitutions([]);setSubWindows(0);setLastSubMinute(-1);setYellowCards({});setRedCardIds([]);setRedCardsByTeam([0,0]);setInjuriesByTeam([0,0]);setAiSubstitutions([0,0]);setInjuredIds([]);
     const squad=(careerData?.squad||[]).filter((p:any)=>!p.injury_type);
     const starters: string[]=[];const slots=formationSlots(homeTactics.formation);
     for(const slot of slots){const id=homeTactics.lineup?.[slot.key];if(id&&squad.some((p:any)=>p.id===id)&&!starters.includes(id))starters.push(id);}
@@ -251,15 +252,15 @@ export default function Home() {
     setFeed([{minute:"OPSTELLING",text:"Opstelling bevestigd. 11 basisspelers en 9 wissels zijn vastgelegd voor deze wedstrijd.",kind:"system"},{minute:"INFO",text:(pendingCareerFixture?.home_name||homeTeam.name)+" – "+(pendingCareerFixture?.away_name||awayTeam.name)+". Klaar voor de aftrap.",kind:"system"}]);
   }
   function makeSubstitution(outId:string,inId:string,team:0|1=0){
-    if(finished||!lineupConfirmed){setCareerError("Wisselen kan alleen tijdens een wedstrijd met bevestigde opstelling.");return;}
+    if(finished||!lineupConfirmed||minute===0){setCareerError("Wisselen kan alleen tijdens een lopende wedstrijd of de rust.");return;}
     if(substitutions.length>=5){setCareerError("Alle vijf wissels zijn gebruikt.");return;}
-    if(subWindows>=3){setCareerError("Alle drie wisselmomenten zijn gebruikt.");return;}
+    if(subWindows>=3&&minute!==lastSubMinute){setCareerError("Alle drie wisselmomenten zijn gebruikt.");return;}
     if(!outId||!inId||outId===inId){setCareerError("Kies een speler om uit te wisselen en een invaller.");return;}
     if(team!==0){setCareerError("Wissels van de tegenstander worden door de AI beheerd.");return;}
     if(!matchLineup.includes(outId)||!matchBench.includes(inId)){setCareerError("Deze spelers staan niet op de juiste lijst voor een wissel.");return;}
     if(redCardIds.includes(outId)){setCareerError("Een speler met rood kan niet worden vervangen alsof het een blessure is; pas je formatie aan.");return;}
-    const nextLineup=matchLineup.map(id=>id===outId?inId:id),nextBench=matchBench.map(id=>id===inId?outId:id);
-    setMatchLineup(nextLineup);setMatchBench(nextBench);setSubstitutions(prev=>[...prev,{minute,outId,inId,team}]);setSubWindows(v=>v+1);
+    const nextLineup=matchLineup.map(id=>id===outId?inId:id),nextBench=matchBench.filter(id=>id!==inId);const newWindow=minute!==lastSubMinute;
+    setMatchLineup(nextLineup);setMatchBench(nextBench);setSubstitutions(prev=>[...prev,{minute,outId,inId,team}]);if(newWindow){setSubWindows(v=>v+1);setLastSubMinute(minute);}
     const outName=careerData?.squad?.find((p:any)=>p.id===outId)?.full_name||outId,inName=careerData?.squad?.find((p:any)=>p.id===inId)?.full_name||inId;
     addEvent({minute:minute+"'",text:"WISSEL "+(substitutions.length+1)+"/5: "+inName+" komt erin voor "+outName+". Wisselmoment "+(subWindows+1)+"/3.",kind:"system"});
     setCareerError("");
