@@ -174,7 +174,13 @@ export default function Home() {
     const selectedId = team === 0 ? selectedHomeId : selectedAwayId;
     const dbTeam = databaseTeams.find(t => t.id === selectedId);
     const fallback = team === 0 ? AJAX_PLAYERS : NEC_PLAYERS;
-    const squad: Player[] = dbTeam?.players.length ? dbTeam.players.map(p => ({
+    const userIsTeam = Boolean(careerData?.save?.club_id && selectedId === careerData.save.club_id);
+    const assignedIds = userIsTeam ? Object.values(homeTactics.lineup || {}).filter(Boolean) : [];
+    const assignedPlayers = userIsTeam ? (careerData?.squad || []).filter((p:any) => assignedIds.includes(p.id)) : [];
+    const squad: Player[] = assignedPlayers.length ? assignedPlayers.map((p:any) => ({
+      name: p.full_name,
+      position: p.position === "GK" ? "keeper" : ["ST","RW","LW","CF"].includes(p.position) ? "forward" : ["CB","LB","RB","LWB","RWB"].includes(p.position) ? "defender" : "midfielder",
+    })) : dbTeam?.players.length ? dbTeam.players.map(p => ({
       name: p.name,
       position: p.position === "GK" ? "keeper" : p.position === "ST" || p.position === "RW" || p.position === "LW" ? "forward" : p.position === "CB" || p.position === "LB" || p.position === "RB" ? "defender" : "midfielder",
     })) : fallback;
