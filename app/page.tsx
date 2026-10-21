@@ -319,25 +319,25 @@ export default function Home() {
     const m = minute + 1; setMinute(m);
     if(m>45&&matchPhase==="first-half")setMatchPhase("second-half");
     if(m>90&&extraTime)setMatchPhase("extra-time");
-    const tackleRisk=(homeTactics.hardTackles||awayTactics.hardTackles)?0.115:0.075;
+    const tackleRisk=(homeTactics.hardTackles||awayTactics.hardTackles)?0.15:0.10;
     if(m>1&&Math.random()<tackleRisk){
       const side=(Math.random()<.5?0:1) as 0|1, victim=matchPlayer(side), tackler=matchPlayer((side===0?1:0) as 0|1), opponentTactics=side===0?awayTactics:homeTactics;
       const previousYellow=Number(yellowCards[victim.id]||0);
-      if(Math.random()<(opponentTactics.hardTackles ? .055 : .018)){
+      if(Math.random()<(opponentTactics.hardTackles ? .015 : .004)){
         setRedCardIds(prev=>prev.includes(victim.id)?prev:[...prev,victim.id]);setRedCardsByTeam(prev=>side===0?[prev[0]+1,prev[1]]:[prev[0],prev[1]+1]);
         addEvent({minute:m+"'",text:"RODE KAART! "+tackler.name+" maakt een zware overtreding op "+victim.name+". De scheidsrechter stuurt "+victim.name+" van het veld. "+(side===userSide?"Je moet je formatie aanpassen.":"De AI moet verder met tien man."),kind:"var"});
         setRunning(false);setActiveScreen("Tactiek");setMatchPhase(m<=45?"first-half":m<=90?"second-half":"extra-time");return;
       }
-      if(Math.random()<(opponentTactics.hardTackles ? .30 : .12)){
+      if(Math.random()<(opponentTactics.hardTackles ? .24 : .08)){
         setYellowCards(prev=>({...prev,[victim.id]:previousYellow+1}));
         if(previousYellow>=1){setRedCardIds(prev=>prev.includes(victim.id)?prev:[...prev,victim.id]);setRedCardsByTeam(prev=>side===0?[prev[0]+1,prev[1]]:[prev[0],prev[1]+1]);addEvent({minute:m+"'",text:"TWEEDE GELE KAART! "+victim.name+" krijgt rood na opnieuw een overtreding.",kind:"var"});setRunning(false);setActiveScreen("Tactiek");return;}
         addEvent({minute:m+"'",text:"GELE KAART voor "+victim.name+" na een tackle van "+tackler.name+".",kind:"var"});
       }
-      if(Math.random()<(opponentTactics.hardTackles ? .09 : .025)){
+      if(Math.random()<(opponentTactics.hardTackles ? .15 : .08)){
         const injury=randomInjury();setInjuredIds(prev=>prev.includes(victim.id)?prev:[...prev,victim.id]);setInjuriesByTeam(prev=>side===0?[prev[0]+1,prev[1]]:[prev[0],prev[1]+1]);
         addEvent({minute:m+"'",text:"BLESSURE: "+victim.name+" loopt "+injury.name.toLowerCase()+" op. Verwachte hersteltijd: "+injury.recoveryDays+" dagen.",kind:"var"});
         if(side===userSide){setRunning(false);setActiveScreen("Tactiek");persistMatchInjury(victim.id,injury);return;}
-        if(Math.random()<.72)addEvent({minute:m+"'",text:"De AI bereidt een vervanging voor en past de formatie aan.",kind:"system"});
+        if(aiSubstitutions[side]<5){setAiSubstitutions(prev=>side===0?[Math.min(5,prev[0]+1),prev[1]]:[prev[0],Math.min(5,prev[1]+1)]);addEvent({minute:m+"'",text:"AI-wissel na blessure: de medische staf haalt "+victim.name+" eraf en de trainer brengt een vervanger in.",kind:"system"});}
       }
     }
     if (m === 45) { setRunning(false); setHalfTime(true); setMatchPhase("half-time"); addEvent({minute:"RUST",text:"Rust! Pas je tactiek aan en kies daarna Begin tweede helft.",kind:"system"}); return; }
