@@ -13,5 +13,5 @@ export default function SeasonCalendar(){
  {error&&<p>{error}</p>}{!data&&!error&&<p>Kalender laden…</p>}
  {data&&Object.keys(groups).sort().map(month=><section key={month} style={{marginBottom:26}}><h2 style={{fontSize:20,borderBottom:"1px solid #555",paddingBottom:8}}>{new Date(month+"-01T12:00:00Z").toLocaleDateString("nl-NL",{month:"long",year:"numeric",timeZone:"Europe/Amsterdam"})}</h2>{groups[month].map((e:any)=><article key={e.id} style={{display:"grid",gridTemplateColumns:"125px 1fr",gap:14,padding:"12px 0",borderBottom:"1px solid #333"}}><time style={{opacity:.7}}>{fmt(e.event_date)}</time><div><strong>{e.title}</strong><p style={{margin:"4px 0 0",opacity:.7,fontSize:13}}>{e.description||e.event_type.replaceAll("_"," ")}</p></div></article>)}</section>)}
  <section style={{border:"1px solid #555",borderRadius:10,padding:16,marginTop:20}}><h2>Automatische zomerfase</h2><p style={{opacity:.8}}>Op 1 juli hoort het spel de eindstanden vast te leggen, promotie en degradatie toe te passen, Europese plaatsen toe te wijzen, selecties tot minimaal 20 spelers aan te vullen en het volledige rooster voor het volgende seizoen te genereren.</p><p style={{fontSize:13,opacity:.65}}>De kalender is aangesloten op de database. De automatische seizoenswissel is nog niet volledig aangesloten op het doorspelen van de carrière.</p></section>
- </main>
+ </main></div>
 }
