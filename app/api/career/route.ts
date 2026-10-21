@@ -5,7 +5,14 @@ export const dynamic = "force-dynamic";
 const SEASON = "2026-2027";
 const START = "2026-08-01";
 const COUNTRY_LABELS: Record<string,string> = { NED:"Nederland",ENG:"Engeland",GER:"Duitsland",FRA:"Frankrijk",ITA:"Italië",ESP:"Spanje" };
-function makeSchedule(teams: any[], divisionId: string, season: string) { const list=[...teams].sort((a,b)=>String(a.id).localeCompare(String(b.id))); if(list.length%2)list.push({id:"BYE"}); const n=list.length, rounds=n-1, first:any[]=[]; let rotation=[...list]; for(let r=0;r<rounds;r++){for(let i=0;i<n/2;i++){let a=rotation[i],b=rotation[n-1-i];if(a.id==="BYE"||b.id==="BYE")continue;if((r+i)%2===0)[a,b]=[b,a];first.push({round:r+1,home:a.id,away:b.id});}rotation=[rotation[0],rotation[n-1],...rotation.slice(1,n-1)];}const fixtures:any[]=[];const base=new Date("2026-08-07T12:00:00Z");for(const m of first){const date=new Date(base);date.setUTCDate(date.getUTCDate()+(m.round-1)*7);fixtures.push({id:divisionId+"-md"+m.round+"-"+m.home+"-"+m.away,season,divisionId,round:m.round,date:date.toISOString().slice(0,10),home:m.home,away:m.away});}for(const m of first){const round=m.round+rounds,date=new Date(base);date.setUTCDate(date.getUTCDate()+(round-1)*7);fixtures.push({id:divisionId+"-md"+round+"-"+m.away+"-"+m.home,season,divisionId,round,date:date.toISOString().slice(0,10),home:m.away,away:m.home});}return fixtures;}
+function makeSchedule(teams:any[],divisionId:string,season:string){
+ const list=[...teams].sort((a,b)=>String(a.id).localeCompare(String(b.id)));if(list.length<2)return[];if(list.length%2)list.push({id:"BYE"});
+ const n=list.length,rounds=n-1;let rotation=[...list],first:any[]=[];const homeCount=new Map<string,number>();
+ for(let r=0;r<rounds;r++){for(let i=0;i<n/2;i++){let a=rotation[i],b=rotation[n-1-i];if(a.id==="BYE"||b.id==="BYE")continue;const ah=homeCount.get(a.id)||0,bh=homeCount.get(b.id)||0;let home=a,away=b;if(ah>bh||(ah===bh&&(r+i)%2===0)){home=b;away=a;}first.push({round:r+1,home:home.id,away:away.id});homeCount.set(home.id,(homeCount.get(home.id)||0)+1);}rotation=[rotation[0],rotation[n-1],...rotation.slice(1,n-1)];}
+ const fixtures:any[]=[],base=new Date("2026-08-07T12:00:00Z");
+ for(const m of first){const d=new Date(base);d.setUTCDate(d.getUTCDate()+(m.round-1)*7);fixtures.push({id:divisionId+"-md"+m.round+"-"+m.home+"-"+m.away,season,divisionId,round:m.round,date:d.toISOString().slice(0,10),home:m.home,away:m.away});}
+ for(const m of first){const round=m.round+rounds,d=new Date(base);d.setUTCDate(d.getUTCDate()+(round-1)*7);fixtures.push({id:divisionId+"-md"+round+"-"+m.away+"-"+m.home,season,divisionId,round,date:d.toISOString().slice(0,10),home:m.away,away:m.home});}return fixtures;
+}
 const fail = (error: string, status = 400) => NextResponse.json({ error }, { status });
 const dateOnly = (d: Date | string) => new Date(d).toISOString().slice(0, 10);
 function matchScore(home: number, away: number, ht: any = {}, at: any = {}) {
