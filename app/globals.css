@@ -235,3 +235,13 @@ tbody tr:hover{background:rgba(131,201,244,.045)}
 .squad-drag-player span em.fitness-low{color:#ff907d}
 .squad-drag-player{min-width:0}
 .squad-drag-player strong,.squad-drag-player span{overflow-wrap:anywhere}
+
+/* Audit polish: only tactical runs get arrows; event history is clearly labelled and scrollable. */
+.player-dot:not(.has-runline):before,.player-dot:not(.has-runline):after{content:none}
+.event-feed-label{flex:1 0 100%;position:sticky;top:0;z-index:1;padding:5px 7px;background:#0c1923;color:var(--gold);font:9px 'DM Mono',monospace;letter-spacing:.09em;border-bottom:1px solid var(--line)}
+.event-empty{display:block;padding:8px 7px;color:var(--muted);font-size:11px}
+.discipline-feed .event-chip{display:block;min-width:0;overflow-wrap:anywhere;flex:1 1 100%;padding:7px 9px;border-radius:6px;line-height:1.45}
+.discipline-feed .event-chip strong{color:var(--gold);font:10px 'DM Mono',monospace}
+.discipline-feed{display:flex;flex-direction:column;gap:5px;max-height:190px;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;scrollbar-gutter:stable;padding:5px 6px}
+.discipline-feed::-webkit-scrollbar,.commentary::-webkit-scrollbar{width:8px}
+.discipline-feed::-webkit-scrollbar-thumb,.commentary::-webkit-scrollbar-thumb{background:#385064;border-radius:8px;border:2px solid #10202b}
