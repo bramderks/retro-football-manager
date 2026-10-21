@@ -48,6 +48,21 @@ SET current_rating = p.overall_rating,
 FROM players p
 WHERE p.id = cps.player_id;
 
+-- Recalculate already-recorded match ratings from ability, contribution, result and discipline.
+UPDATE career_player_match_stats m
+SET rating = ROUND(LEAST(10,GREATEST(4.5,
+  6.1 + (COALESCE((SELECT cps.current_rating FROM career_player_states cps WHERE cps.save_id=m.save_id AND cps.player_id=m.player_id),p.overall_rating)-50)*0.035
+  + m.goals*0.75 + m.assists*0.45
+  + CASE
+      WHEN EXISTS (SELECT 1 FROM fixtures f JOIN career_fixture_results cr ON cr.fixture_id=f.id AND cr.save_id=m.save_id WHERE f.id=m.fixture_id AND ((f.home_team_id=m.club_id AND cr.home_goals>cr.away_goals) OR (f.away_team_id=m.club_id AND cr.away_goals>cr.home_goals))) THEN 0.45
+      WHEN EXISTS (SELECT 1 FROM fixtures f JOIN career_fixture_results cr ON cr.fixture_id=f.id AND cr.save_id=m.save_id WHERE f.id=m.fixture_id AND ((f.home_team_id=m.club_id AND cr.home_goals<cr.away_goals) OR (f.away_team_id=m.club_id AND cr.away_goals<cr.home_goals))) THEN -0.45
+      ELSE 0
+    END
+  - m.yellow_cards*0.35 - m.red_cards*1.25
+))::numeric,2)
+FROM players p
+WHERE p.id=m.player_id;
+
 CREATE INDEX IF NOT EXISTS idx_player_match_stats_season_rating
   ON career_player_match_stats(save_id, player_id, rating);
 
