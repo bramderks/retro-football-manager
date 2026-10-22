@@ -13,6 +13,13 @@ export async function GET(request: Request) {
     const url = new URL(request.url);
     const search = (url.searchParams.get("q") || "").trim();
     const limit = Math.min(200, Math.max(1, Number(url.searchParams.get("limit") || 100)));
+    const imported = await sql.query("SELECT COUNT(*)::int AS n FROM public.cm0102_player_club_assignments");
+    if (Number(imported[0]?.n || 0) === 0) {
+      return NextResponse.json(
+        { error: "De oorspronkelijke clubkoppelingen zijn nog niet geïmporteerd. De spelerslijst wordt bewust niet als Free Transfer getoond om te voorkomen dat alle spelers onterecht clubloos lijken." },
+        { status: 409 }
+      );
+    }
     const rows = await sql.query(
       `SELECT p.cm_player_id AS id,
               COALESCE(NULLIF(BTRIM(p.common_name), ''), NULLIF(BTRIM(p.full_name), 'Onbekend'), p.full_name) AS full_name,
