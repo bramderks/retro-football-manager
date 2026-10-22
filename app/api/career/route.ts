@@ -139,7 +139,7 @@ export async function POST(request: Request) {
   if(b.action==="terminate_player_contract"){if(!["sporting_director","chairperson"].includes(s.role))return fail("Alleen de technisch directeur of voorzitter kan spelerscontracten beëindigen.");
    const playerId=String(b.playerId||"");const contract=await sql.query("SELECT id,weekly_wage,end_date FROM career_player_contracts WHERE save_id=$1 AND player_id=$2 AND club_id=$3 AND end_date >= $4::date ORDER BY end_date DESC LIMIT 1",[b.saveId,playerId,s.club_id,dateOnly(s.game_date)]);
    if(!contract.length)return fail("Geen actief contract gevonden voor deze speler.");
-   const weeks=Math.max(0,Math.ceil((new Date(String(contract[0].end_date)+"T12:00:00Z").getTime()-new Date(dateOnly(s.game_date)+"T12:00:00Z").getTime())/604800000));const penalty=Math.round(Number(contract[0].weekly_wage)*weeks*.75);
+   const weeks=Math.max(0,Math.ceil((new Date(dateOnly(contract[0].end_date)+"T12:00:00Z").getTime()-new Date(dateOnly(s.game_date)+"T12:00:00Z").getTime())/604800000));const penalty=Math.round(Number(contract[0].weekly_wage)*weeks*.75);
    if(penalty>Number(s.cash_balance||0))return fail("Onvoldoende clubkas voor de afkoopsom van €"+penalty.toLocaleString("nl-NL")+".");
    await sql.query("UPDATE career_player_contracts SET end_date=$1 WHERE id=$2",[dateOnly(s.game_date),contract[0].id]);await sql.query("UPDATE career_saves SET cash_balance=cash_balance-$1,updated_at=NOW() WHERE id=$2",[penalty,b.saveId]);
    await sql.query("INSERT INTO club_finances(save_id,entry_date,category,description,amount,balance_after) VALUES($1,$2,'contract',$3,$4,$5)",[b.saveId,dateOnly(s.game_date),"Contract ontbonden (75% resterend loon)",-penalty,Number(s.cash_balance)-penalty]);
@@ -156,7 +156,7 @@ export async function POST(request: Request) {
    const staffRep=Math.max(20,Math.min(95,Number(s.reputation||50)+Math.floor(Math.random()*15)-7));
    const personalities=["Ambitieus","Loyaal","Resultaatgericht","Risicomijdend","Mentor","Teamgericht"];const personality=personalities[Math.floor(Math.random()*personalities.length)];
    const mood=staffRep>=75?"Enthousiast":staffRep>=55?"Tevreden":staffRep>=40?"Neutraal":"Ontevreden";
-   const birthYear=Math.max(1955,Number(String(s.game_date).slice(0,4))-30-Math.floor(Math.random()*20));const birthDate=birthYear+"-"+String(Math.floor(Math.random()*12)+1).padStart(2,"0")+"-"+String(Math.floor(Math.random()*27)+1).padStart(2,"0");
+   const birthYear=Math.max(1955,Number(dateOnly(s.game_date).slice(0,4))-30-Math.floor(Math.random()*20));const birthDate=birthYear+"-"+String(Math.floor(Math.random()*12)+1).padStart(2,"0")+"-"+String(Math.floor(Math.random()*27)+1).padStart(2,"0");
    const wage=Math.max(250,Math.round(Number(s.reputation||50)*Number(s.reputation||50)*(role==="manager"?1.5:role==="sporting_director"?1.1:0.55)));const signing=Math.round(wage*4);
    if(signing>Number(s.cash_balance||0))return fail("Onvoldoende clubkas voor tekengeld.");
    await sql.query("INSERT INTO club_staff(id,club_id,full_name,role,reputation,wage_weekly,employed_from,date_of_birth,career_status,career_path,personality,mood) VALUES($1,$2,$3,$4,$5,$6,$7,$8,'employed',$9,$10,$11)",["staff-"+crypto.randomUUID(),s.club_id,name,role,staffRep,wage,dateOnly(s.game_date),birthDate,role,personality,mood]);
@@ -194,7 +194,7 @@ export async function POST(request: Request) {
       await sql.query("INSERT INTO career_actions(save_id,action_date,action_type,payload,result) VALUES($1,$2,'facility_upgrade',$3::jsonb,$4::jsonb)",[b.saveId,dateOnly(s.game_date),JSON.stringify({facility,level:next,cost,approvedBy:chairpersonName,approvalRequest:true}),JSON.stringify({ok:true})]);
       await sql.query("UPDATE career_saves SET cash_balance=$1,updated_at=NOW() WHERE id=$2",[balance,b.saveId]);
       if(facility==="stadium"){await sql.query("UPDATE teams SET stadium_capacity=GREATEST(COALESCE(stadium_capacity,0)+1000,ROUND(COALESCE(stadium_capacity,0)*1.10)::int) WHERE id=$1",[s.club_id]);await sql.query("UPDATE stadiums SET capacity=GREATEST(COALESCE(capacity,0)+1000,ROUND(COALESCE(capacity,0)*1.10)::int) WHERE team_id=$1",[s.club_id]);}
-      await sql.query("INSERT INTO club_finances(save_id,entry_date,category,description,amount,balance_after) VALUES($1,$2,'facility',$3,$4,$5)",[b.saveId,dateOnly(s.game_date),"Goedgekeurde investering: "+facility,-cost,balance]);
+      await sql.query("INSERT INTO club_finances(save_id,entry_date,category,description,amount,balance_after) VALUES($1,$2,$3,$4,$5,$6)",[b.saveId,dateOnly(s.game_date),facility==="stadium"?"stadium":(["youth","academy"].includes(facility)?"youth":"operating_cost"),"Goedgekeurde investering: "+facility,-cost,balance]);
       await sql.query("INSERT INTO career_news(save_id,news_date,category,headline,body) VALUES($1,$2,'board',$3,$4)",[b.saveId,dateOnly(s.game_date),"Voorzitter keurt investering goed",chairpersonName+" keurt niveau "+next+"/5 voor "+facility+" goed. "+emotion]);
     }else{
       await sql.query("INSERT INTO career_news(save_id,news_date,category,headline,body) VALUES($1,$2,'board',$3,$4)",[b.saveId,dateOnly(s.game_date),"Voorzitter wijst investering af",chairpersonName+" wijst de aanvraag voor "+facility+" niveau "+next+"/5 af. "+emotion+" Versterk de financiële positie of het vertrouwen van het bestuur en probeer het later opnieuw."]);
@@ -214,14 +214,14 @@ export async function POST(request: Request) {
    await sql.query("INSERT INTO career_actions(save_id,action_date,action_type,payload,result) VALUES($1,$2,'facility_upgrade',$3::jsonb,$4::jsonb)",[b.saveId,dateOnly(s.game_date),JSON.stringify(payload),JSON.stringify({ok:true})]);
    await sql.query("UPDATE career_saves SET cash_balance=$1,updated_at=NOW() WHERE id=$2",[balance,b.saveId]);
    if(facility==="stadium"){await sql.query("UPDATE teams SET stadium_capacity=GREATEST(COALESCE(stadium_capacity,0)+1000,ROUND(COALESCE(stadium_capacity,0)*1.10)::int) WHERE id=$1",[s.club_id]);await sql.query("UPDATE stadiums SET capacity=GREATEST(COALESCE(capacity,0)+1000,ROUND(COALESCE(capacity,0)*1.10)::int) WHERE team_id=$1",[s.club_id]);}
-   await sql.query("INSERT INTO club_finances(save_id,entry_date,category,description,amount,balance_after) VALUES($1,$2,'facility',$3,$4,$5)",[b.saveId,dateOnly(s.game_date),"Investering faciliteit: "+facility,-cost,balance]);
+   await sql.query("INSERT INTO club_finances(save_id,entry_date,category,description,amount,balance_after) VALUES($1,$2,$3,$4,$5,$6)",[b.saveId,dateOnly(s.game_date),facility==="stadium"?"stadium":(["youth","academy"].includes(facility)?"youth":"operating_cost"),"Investering faciliteit: "+facility,-cost,balance]);
    await sql.query("INSERT INTO career_news(save_id,news_date,category,headline,body) VALUES($1,$2,'club',$3,$4)",[b.saveId,dateOnly(s.game_date),"Clubfaciliteit verbeterd","De club investeert €"+cost.toLocaleString("nl-NL")+" in "+facility+". Het niveau is nu "+next+"/5."]);
    return NextResponse.json({ok:true,facility,level:next,cost,balance});
   }
   if(b.action==="report_injury"){
     const playerId=String(b.playerId||"");const injuryType=String(b.injuryType||"Spierblessure").slice(0,120);const days=Math.max(1,Math.min(730,Number(b.recoveryDays)||7));
     const player=await sql.query("SELECT p.full_name FROM career_player_states cps JOIN players p ON p.id=cps.player_id WHERE cps.save_id=$1 AND cps.player_id=$2 LIMIT 1",[b.saveId,playerId]);if(!player.length)return fail("Speler hoort niet bij deze carrièredatabase.",404);
-    const until=new Date(String(s.game_date).slice(0,10)+"T12:00:00Z");until.setUTCDate(until.getUTCDate()+days);const untilDate=dateOnly(until);
+    const until=new Date(dateOnly(s.game_date)+"T12:00:00Z");until.setUTCDate(until.getUTCDate()+days);const untilDate=dateOnly(until);
     await sql.query("UPDATE career_player_states SET injury_type=$1,injury_until=$2,fitness=GREATEST(25,fitness-20),updated_at=NOW() WHERE save_id=$3 AND player_id=$4",[injuryType,untilDate,b.saveId,playerId]);
     await sql.query("INSERT INTO career_news(save_id,news_date,category,headline,body) VALUES($1,$2,'injury',$3,$4)",[b.saveId,dateOnly(s.game_date),"Blessure tijdens wedstrijd: "+player[0].full_name,player[0].full_name+" is uitgevallen met "+injuryType+". Verwachte terugkeer: "+untilDate+"."]);
     return NextResponse.json({ok:true,injuryUntil:untilDate});
@@ -234,7 +234,7 @@ export async function POST(request: Request) {
    const player=await sql.query("SELECT p.id,cps.club_id AS team_id,p.full_name,p.overall_rating,t.name AS club_name FROM players p JOIN career_player_states cps ON cps.player_id=p.id AND cps.save_id=$3 JOIN teams t ON t.id=cps.club_id WHERE p.id=$1 AND p.is_active=TRUE AND cps.club_id<>$2 LIMIT 1",[playerId,s.club_id,b.saveId]);
    if(!player.length)return fail("Deze speler is niet beschikbaar voor een bod.",404);
    if(fee>Number(s.transfer_budget))return fail("Dit bod ligt boven het beschikbare transferbudget.");
-   const p:any=player[0],offerId="offer-"+crypto.randomUUID(),expires=new Date(String(s.game_date)+"T12:00:00Z");expires.setUTCDate(expires.getUTCDate()+7);
+   const p:any=player[0],offerId="offer-"+crypto.randomUUID(),expires=new Date(dateOnly(s.game_date)+"T12:00:00Z");expires.setUTCDate(expires.getUTCDate()+7);
    await sql.query("INSERT INTO transfer_offers(id,save_id,player_id,buying_club_id,selling_club_id,fee,wage_offer,status,submitted_on,expires_on,notes) VALUES($1,$2,$3,$4,$5,$6,$7,'pending',$8,$9,$10)",[offerId,b.saveId,p.id,s.club_id,p.team_id,fee,wage,dateOnly(s.game_date),dateOnly(expires),JSON.stringify({summary:"Bod uitgebracht op "+p.full_name,installments:Number(b.installments||1),sellOn:Number(b.sellOn||0),endOfSeason:Boolean(b.endOfSeason),appearanceThreshold:Number(b.appearanceThreshold||0),appearanceBonus:Number(b.appearanceBonus||0),goalThreshold:Number(b.goalThreshold||0),goalBonus:Number(b.goalBonus||0),internationalThreshold:Number(b.internationalThreshold||0),internationalBonus:Number(b.internationalBonus||0),signingBonus:Number(b.signingBonus||0),cleanSheetBonus:Number(b.cleanSheetBonus||0),promotionBonus:Number(b.promotionBonus||0),loan:Boolean(b.loan)})]);
    await sql.query("INSERT INTO career_news(save_id,news_date,category,headline,body) VALUES($1,$2,'transfer',$3,$4)",[b.saveId,dateOnly(s.game_date),"Transferbod uitgebracht","Een bod van €"+fee.toLocaleString("nl-NL")+" is uitgebracht op "+p.full_name+" ("+p.club_name+"). De club reageert na onderhandelingen."]);
    return NextResponse.json({ok:true,offerId});
@@ -247,7 +247,7 @@ export async function POST(request: Request) {
    if(targetRole==="sporting_director" && Number(s.career_xp||0)<60)return fail("Voor een functie als technisch directeur heb je minimaal 60 XP nodig.");
    const target=await sql.query("SELECT id,name FROM teams WHERE id=$1 LIMIT 1",[targetClubId]);if(!target.length)return fail("Club niet gevonden.",404);
    const duplicate=await sql.query("SELECT id FROM career_applications WHERE save_id=$1 AND target_club_id=$2 AND target_role=$3 AND status='pending' LIMIT 1",[b.saveId,targetClubId,targetRole]);if(duplicate.length)return fail("Je sollicitatie bij deze club loopt al.");
-   const responseDate=new Date(String(s.game_date)+"T12:00:00Z");responseDate.setUTCDate(responseDate.getUTCDate()+7);
+   const responseDate=new Date(dateOnly(s.game_date)+"T12:00:00Z");responseDate.setUTCDate(responseDate.getUTCDate()+7);
    const id="application-"+crypto.randomUUID();await sql.query("INSERT INTO career_applications(id,save_id,target_club_id,target_role,applied_on,response_on,status,note) VALUES($1,$2,$3,$4,$5,$6,'pending',$7)",[id,b.saveId,targetClubId,targetRole,dateOnly(s.game_date),dateOnly(responseDate),"Sollicitatie voor "+targetRole]);
    await sql.query("INSERT INTO career_news(save_id,news_date,category,headline,body) VALUES($1,$2,'board',$3,$4)",[b.saveId,dateOnly(s.game_date),"Sollicitatie verstuurd",s.manager_name+" heeft gesolliciteerd als "+targetRole+" bij "+target[0].name+". Een reactie wordt binnen een week verwacht."]);
    return NextResponse.json({ok:true,applicationId:id});
