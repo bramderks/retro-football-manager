@@ -43,7 +43,7 @@ export async function POST(request: Request) {
     );
     if (!rows.length) return fail("Jeugdspeler niet gevonden of al overgeheveld.", 404);
     const p: any = rows[0];
-    const slug = p.full_name.normalize("NFKD").replace(/[\\u0300-\\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
+    const slug = p.full_name.normalize("NFKD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
     const existing = await sql.query(
       "SELECT id FROM players WHERE LOWER(full_name)=LOWER($1) AND team_id IN ('ajax','jong-ajax') ORDER BY CASE WHEN team_id=$2 THEN 0 ELSE 1 END LIMIT 1",
       [p.full_name, teamId]
@@ -65,9 +65,9 @@ export async function POST(request: Request) {
     }
     await sql.query(
       "UPDATE youth_squad_players SET promoted_player_id=$2,promoted_to_team_id=$3,promoted_at=NOW() WHERE id=$1",
-      [youthId, result[0].id, teamId]
+      [youthId, playerId, teamId]
     );
-    return NextResponse.json({ ok: true, playerId: result[0].id, teamId, player: p.full_name });
+    return NextResponse.json({ ok: true, playerId, teamId, player: p.full_name });
   } catch (error) {
     console.error("youth squad POST", error);
     return fail("Overhevelen is mislukt.", 500);
