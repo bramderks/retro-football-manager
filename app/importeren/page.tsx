@@ -46,14 +46,31 @@ export default function Cm0102ImportPage() {
       const rows = parseCsv(csv);
       setTotal(rows.length);
       setStatus("Spelers controleren en importeren…");
-      const chunkSize = 1000;
+      const chunkSize = 100;
       for (let i = 0; i < rows.length; i += chunkSize) {
-        const response = await fetch("/api/import/cm0102", {
-          method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ rows: rows.slice(i, i + chunkSize) })
-        });
-        const result = await response.json();
-        if (!response.ok) throw new Error(`Batch vanaf speler ${i + 1}: ${result.error ?? "import mislukt"}`);
+        let lastError = "onbekende netwerkfout";
+        let succeeded = false;
+        for (let attempt = 1; attempt <= 3 && !succeeded; attempt++) {
+          try {
+            const response = await fetch("/api/import/cm0102", {
+              method: "POST", headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ rows: rows.slice(i, i + chunkSize) })
+            });
+            const responseText = await response.text();
+            let result: { error?: string; processed?: number } = {};
+            try { result = JSON.parse(responseText); }
+            catch { throw new Error(`Server gaf geen geldig antwoord (HTTP ${response.status}). ${responseText.slice(0, 180)}`); }
+            if (!response.ok) throw new Error(result.error ?? `HTTP ${response.status}: import mislukt`);
+            succeeded = true;
+          } catch (err) {
+            lastError = err instanceof Error ? err.message : String(err);
+            if (attempt < 3) {
+              setStatus(`Batch ${Math.floor(i / chunkSize) + 1}: verbinding herstellen (poging ${attempt + 1}/3)…`);
+              await new Promise(resolve => setTimeout(resolve, 1200 * attempt));
+            }
+          }
+        }
+        if (!succeeded) throw new Error(`Batch vanaf speler ${i + 1} (maximaal ${Math.min(i + chunkSize, rows.length)}): ${lastError}. Start opnieuw; reeds verwerkte spelers worden bijgewerkt zonder duplicaten.`);
         setProgress(Math.min(i + chunkSize, rows.length));
         setStatus(`Bezig: ${Math.min(i + chunkSize, rows.length).toLocaleString("nl-NL")} van ${rows.length.toLocaleString("nl-NL")} spelers verwerkt`);
       }
@@ -68,7 +85,7 @@ export default function Cm0102ImportPage() {
     <div style={{maxWidth:760,margin:"0 auto"}}>
       <a href="/" style={{color:"#9fb4cf",textDecoration:"none"}}>← Terug naar Retro Football Manager</a>
       <h1 style={{fontSize:32,margin:"26px 0 8px"}}>CM0102-spelers importeren</h1>
-      <p style={{color:"#a9b8cc",lineHeight:1.6}}>Upload het bestand <strong>cm0102_players_correctly_decoded.csv</strong>. De spelers worden in batches verwerkt en op CM-speler-ID bijgewerkt, zodat opnieuw starten geen dubbele spelers oplevert.</p>
+      <p style={{color:"#a9b8cc",lineHeight:1.6}}>Upload het bestand <strong>cm0102_players_corrected_positions.csv</strong>. De spelers worden in kleine batches verwerkt en op CM-speler-ID bijgewerkt, zodat opnieuw starten geen dubbele spelers oplevert.</p>
       <section style={{marginTop:26,padding:24,border:"1px solid #26364d",borderRadius:16,background:"#111c2e"}}>
         <label htmlFor="csvfile" style={{display:"block",fontWeight:700,marginBottom:12}}>Kies het CSV-bestand</label>
         <input id="csvfile" type="file" accept=".csv,text/csv" disabled={busy} onChange={e=>{setFile(e.target.files?.[0] ?? null);setError("");setStatus("");setProgress(0);setTotal(0);}} style={{display:"block",width:"100%",padding:12,background:"#0b1220",border:"1px solid #34465f",borderRadius:8,color:"#e5edf7"}} />
