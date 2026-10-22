@@ -349,7 +349,7 @@ const applications=await sql.query("SELECT a.*,t.name AS target_club FROM career
      const asking=Math.max(50000,Number(offer.overall_rating)*Number(offer.overall_rating)*450);
      let terms:any={};try{terms=JSON.parse(String(offer.notes||"{}"));}catch{}
      const months=Math.max(1,Math.min(60,Number(terms.installments||1))),upfront=Math.ceil(Number(offer.fee)/months);
-     const accepted=Number(offer.fee)>=asking*.92?Math.random()<.78:Number(offer.fee)>=asking*.7?Math.random()<.32:Math.random()<.08;
+     const feeProbability=Number(offer.fee)>=asking*.92?.78:Number(offer.fee)>=asking*.7?.32:.08;const playerRating=Number(offer.overall_rating||50);const clubReputation=Number(s.reputation||50);const expectedWage=Math.max(500,playerRating*playerRating*2);const wageRatio=Number(offer.wage_offer||0)/expectedWage;const eliteBlocked=(playerRating>=85&&clubReputation<60)||(playerRating>=78&&clubReputation<40);const interestProbability=Math.max(.03,Math.min(.95,.45+(clubReputation-playerRating+20)/100+(wageRatio-1)*.25));const accepted=!eliteBlocked&&wageRatio>=.65&&Math.random()<interestProbability&&Math.random()<feeProbability;
      if(accepted&&upfront<=balance){
       if(terms.endOfSeason){
        const payload={playerId:offer.player_id,playerName:offer.full_name,buyingClubId:s.club_id,sellingClubId:offer.selling_club_id,fee:Number(offer.fee),wage:Number(offer.wage_offer),months,dueDate:"2027-06-30",status:"pending"};
