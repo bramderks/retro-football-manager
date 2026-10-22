@@ -5,7 +5,6 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const fail = (error: string, status = 400) => NextResponse.json({ error }, { status });
-const validPosition = new Set(["GK","RB","CB","LB","RWB","LWB","DM","CM","AM","RW","LW","ST"]);
 
 export async function GET() {
   const conn = process.env.DATABASE_URL;
@@ -45,11 +44,25 @@ export async function POST(request: Request) {
     if (!rows.length) return fail("Jeugdspeler niet gevonden of al overgeheveld.", 404);
     const p: any = rows[0];
     const slug = p.full_name.normalize("NFKD").replace(/[\\u0300-\\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
-    const playerId = "ajax-youth-" + slug;
-    const result = await sql.query(
-      "INSERT INTO players(id,team_id,full_name,known_as,date_of_birth,nationality,position,preferred_foot,overall_rating,potential_rating,source_url,source_checked_at,is_active,career_status) VALUES($1,$2,$3,$4,NULL,$5,$6,$7,$8,$9,$10,CURRENT_DATE,TRUE,'active') ON CONFLICT(id) DO UPDATE SET team_id=EXCLUDED.team_id,nationality=COALESCE(players.nationality,EXCLUDED.nationality),position=EXCLUDED.position,overall_rating=EXCLUDED.overall_rating,potential_rating=EXCLUDED.potential_rating,is_active=TRUE,career_status='active' RETURNING id",
-      [playerId, teamId, p.full_name, p.full_name.split(" ")[0], p.nationality, p.position, p.preferred_foot, p.overall_rating, p.potential_rating, p.source_url]
+    const existing = await sql.query(
+      "SELECT id FROM players WHERE LOWER(full_name)=LOWER($1) AND team_id IN ('ajax','jong-ajax') ORDER BY CASE WHEN team_id=$2 THEN 0 ELSE 1 END LIMIT 1",
+      [p.full_name, teamId]
     );
+    let playerId: string;
+    if (existing.length) {
+      playerId = String(existing[0].id);
+      await sql.query(
+        "UPDATE players SET team_id=$2,nationality=COALESCE(nationality,$3),position=$4,overall_rating=$5,potential_rating=GREATEST(potential_rating,$6),source_url=COALESCE(source_url,$7),source_checked_at=CURRENT_DATE,is_active=TRUE,career_status='active' WHERE id=$1",
+        [playerId, teamId, p.nationality, p.position, p.overall_rating, p.potential_rating, p.source_url]
+      );
+    } else {
+      playerId = "ajax-youth-" + slug;
+      const result = await sql.query(
+        "INSERT INTO players(id,team_id,full_name,known_as,date_of_birth,nationality,position,preferred_foot,overall_rating,potential_rating,source_url,source_checked_at,is_active,career_status) VALUES($1,$2,$3,$4,NULL,$5,$6,$7,$8,$9,$10,CURRENT_DATE,TRUE,'active') ON CONFLICT(id) DO UPDATE SET team_id=EXCLUDED.team_id,nationality=COALESCE(players.nationality,EXCLUDED.nationality),position=EXCLUDED.position,overall_rating=EXCLUDED.overall_rating,potential_rating=GREATEST(players.potential_rating,EXCLUDED.potential_rating),is_active=TRUE,career_status='active' RETURNING id",
+        [playerId, teamId, p.full_name, p.full_name.split(" ")[0], p.nationality, p.position, p.preferred_foot, p.overall_rating, p.potential_rating, p.source_url]
+      );
+      playerId = String(result[0].id);
+    }
     await sql.query(
       "UPDATE youth_squad_players SET promoted_player_id=$2,promoted_to_team_id=$3,promoted_at=NOW() WHERE id=$1",
       [youthId, result[0].id, teamId]
