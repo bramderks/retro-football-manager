@@ -42,7 +42,14 @@ export async function GET() {
         p.source_checked_at
       FROM teams t
       JOIN divisions d ON d.id = t.division_id
-      LEFT JOIN players p ON p.team_id = t.id AND p.is_active = TRUE
+      LEFT JOIN (
+        SELECT DISTINCT ON (team_id, lower(full_name))
+          id, team_id, full_name, position, shirt_number, overall_rating, potential_rating,
+          source_url, source_checked_at
+        FROM all_players
+        WHERE team_id IS NOT NULL AND is_active = TRUE AND record_source <> 'cm0102'
+        ORDER BY team_id, lower(full_name), CASE WHEN record_source = 'current' THEN 0 ELSE 1 END, overall_rating DESC
+      ) p ON p.team_id = t.id
       WHERE d.season_id = '2026-2027'
       ORDER BY d.tier, t.name, p.position, p.full_name
     `;
