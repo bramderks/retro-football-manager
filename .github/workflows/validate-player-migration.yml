@@ -1,0 +1,34 @@
+name: Player migration preflight
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_preflight:
+        description: "Type CHECK to run read-only migration preflight"
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  preflight:
+    if: ${{ inputs.confirm_preflight == 'CHECK' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Verify migration file exists
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s db/migrations/20261021_player_profiles_stats_and_development.sql
+          echo "Migration file exists."
+      - name: Show migration summary without executing it
+        shell: bash
+        run: |
+          set -euo pipefail
+          FILE=db/migrations/20261021_player_profiles_stats_and_development.sql
+          echo "Migration file: $FILE"
+          echo "Line count: $(wc -l < "$FILE")"
+          echo "ALTER TABLE statements: $(grep -ci '^[[:space:]]*ALTER TABLE' "$FILE" || true)"
+          echo "UPDATE statements: $(grep -ci '^[[:space:]]*UPDATE ' "$FILE" || true)"
+          echo "INSERT statements: $(grep -ci '^[[:space:]]*INSERT INTO' "$FILE" || true)"
+          echo "This workflow does not connect to or modify any database."
