@@ -199,13 +199,12 @@ export async function POST(request: Request) {
       );
       await sql.query(
         `INSERT INTO public.career_player_states(save_id,player_id,club_id,current_rating,potential_rating)
-         SELECT s.id,p.id,COALESCE(tmSelected.team_id,tmPrimary.team_id,tmYouth.team_id,p.team_id),p.overall_rating,p.potential_rating
+         SELECT s.id,p.id,COALESCE(tmSelected.team_id,tmPrimary.team_id,p.team_id),p.overall_rating,p.potential_rating
            FROM public.career_saves s CROSS JOIN public.players p
-           LEFT JOIN public.team_player_memberships tmSelected ON tmSelected.player_id=p.id AND tmSelected.team_id=s.club_id AND tmSelected.season_id=s.season_id
+           LEFT JOIN public.team_player_memberships tmSelected ON tmSelected.player_id=p.id AND tmSelected.team_id=s.club_id AND tmSelected.season_id=s.season_id AND tmSelected.membership_type='primary'
            LEFT JOIN public.team_player_memberships tmPrimary ON tmPrimary.player_id=p.id AND tmPrimary.membership_type='primary' AND tmPrimary.season_id=s.season_id
-           LEFT JOIN public.team_player_memberships tmYouth ON tmYouth.player_id=p.id AND tmYouth.membership_type='youth-affiliate' AND tmYouth.season_id=s.season_id
           WHERE p.source_cm_player_id = ANY($1::integer[])
-            AND COALESCE(tmSelected.team_id,tmPrimary.team_id,tmYouth.team_id,p.team_id) IS NOT NULL AND p.is_active=TRUE
+            AND (tmSelected.team_id IS NOT NULL OR tmPrimary.team_id IS NOT NULL OR (p.team_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM public.team_player_memberships ty WHERE ty.player_id=p.id AND ty.season_id=s.season_id AND ty.membership_type='youth-affiliate'))) AND p.is_active=TRUE
          ON CONFLICT(save_id,player_id) DO NOTHING`,
         [ids]
       );
