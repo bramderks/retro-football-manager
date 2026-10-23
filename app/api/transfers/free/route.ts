@@ -30,7 +30,7 @@ export async function GET(request: Request) {
               p.source_current_ability AS current_ability,
               p.source_potential_ability AS potential_ability,
               p.source_positions AS positions,
-              p.cm_sides AS sides,
+              p.source_sides AS sides,
               p.preferred_foot,
               p.source_current_ability_stars AS current_ability_stars,
               p.source_potential_ability_stars AS potential_ability_stars
