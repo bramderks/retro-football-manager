@@ -299,7 +299,7 @@ export async function POST(request: Request) {
    const seasonStartYear=Number(String(s.season_id||SEASON).slice(0,4));
    if(day===String(seasonStartYear+1)+"-07-01"){
      const nextSeason=String(seasonStartYear+1)+"-"+String(seasonStartYear+2);
-     const rolloverResponse=await generateWorldSeason(new Request("https://internal/api/world",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({fromSeason:s.season_id||SEASON,season:nextSeason})}));
+     const rolloverResponse=await generateWorldSeason(new Request("https://internal/api/world",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({fromSeason:s.season_id||SEASON,season:nextSeason,saveId:b.saveId})}));
      const rolloverData=await rolloverResponse.json();
      if(!rolloverResponse.ok)return fail(rolloverData.detail||rolloverData.error||"Seizoensovergang mislukt.",500);
      return NextResponse.json({ok:true,seasonRolledOver:true,season:nextSeason,gameDate:day,rollover:rolloverData});
