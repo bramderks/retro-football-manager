@@ -133,7 +133,8 @@ export async function POST(request: Request) {
         params.push(...vals);
         return "(" + vals.map((_, j) => "$" + (start + j + 1)).join(",") + ")";
       });
-      // CSV source data may refresh, but live ratings belong to career_player_states and must not be reset by a database import.\n      const updateColumns = columns.filter(c => !["id","source_cm_player_id","team_id","source_cm_club_id","overall_rating","potential_rating"].includes(c));
+      // CSV source data may refresh, but live ratings belong to career_player_states and must not be reset by a database import.
+      const updateColumns = columns.filter(c => !["id","source_cm_player_id","team_id","source_cm_club_id","overall_rating","potential_rating"].includes(c));
       const query = `INSERT INTO public.players (${columns.join(",")}) VALUES ${values.join(",")}
         ON CONFLICT (source_cm_player_id) DO UPDATE SET
         ${updateColumns.map(c => `${c}=EXCLUDED.${c}`).join(",")},
