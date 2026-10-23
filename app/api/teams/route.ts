@@ -41,9 +41,9 @@ export async function GET() {
       JOIN divisions d ON d.id = t.division_id
       LEFT JOIN players p
         ON p.team_id = t.id
-       AND p.cm_player_id IS NOT NULL
+       AND p.source_cm_player_id IS NOT NULL
        AND p.is_active = TRUE
-       AND p.record_source = 'cm0102'
+       AND p.source_type = 'cm0102'
       WHERE d.season_id = '2026-2027'
       ORDER BY d.tier, t.name, p.position, p.full_name
     `;
