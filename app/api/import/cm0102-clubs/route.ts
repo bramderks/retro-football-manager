@@ -31,6 +31,11 @@ function clean(row: MappingRow) {
 }
 
 export async function POST(request: Request) {
+  const expectedToken = process.env.DATABASE_IMPORT_TOKEN;
+  if (!expectedToken) return NextResponse.json({ error: "CSV-import is beveiligd maar nog niet ingeschakeld. Stel DATABASE_IMPORT_TOKEN in Vercel in." }, { status: 503 });
+  if (request.headers.get("authorization") !== "Bearer " + expectedToken) {
+    return NextResponse.json({ error: "Geen geldige importbeveiligingscode." }, { status: 401 });
+  }
   if (!process.env.DATABASE_URL) {
     return NextResponse.json({ error: "DATABASE_URL ontbreekt in de Vercel-omgevingsvariabelen." }, { status: 503 });
   }
