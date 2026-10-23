@@ -99,6 +99,56 @@ SELECT season_id,youth_team_id,player_id,'youth-affiliate'
 FROM youth_roster WHERE rn<=24
 ON CONFLICT(season_id,team_id,player_id) DO NOTHING;
 
+-- Rebuild Ajax O19 as a membership list pointing at canonical CM players, not a second player store.
+ALTER TABLE public.youth_squad_players ADD COLUMN IF NOT EXISTS player_id TEXT REFERENCES public.players(id) ON DELETE CASCADE;
+DELETE FROM public.youth_squad_players;
+ALTER TABLE public.youth_squad_players DROP CONSTRAINT IF EXISTS youth_squad_players_squad_id_full_name_key;
+ALTER TABLE public.youth_squad_players DROP CONSTRAINT IF EXISTS youth_squad_players_position_check;
+ALTER TABLE public.youth_squad_players DROP CONSTRAINT IF EXISTS youth_squad_players_preferred_foot_check;
+ALTER TABLE public.youth_squad_players DROP COLUMN IF EXISTS full_name;
+ALTER TABLE public.youth_squad_players DROP COLUMN IF EXISTS nationality;
+ALTER TABLE public.youth_squad_players DROP COLUMN IF EXISTS position;
+ALTER TABLE public.youth_squad_players DROP COLUMN IF EXISTS preferred_foot;
+ALTER TABLE public.youth_squad_players DROP COLUMN IF EXISTS overall_rating;
+ALTER TABLE public.youth_squad_players DROP COLUMN IF EXISTS potential_rating;
+ALTER TABLE public.youth_squad_players DROP COLUMN IF EXISTS source_url;
+ALTER TABLE public.youth_squad_players DROP COLUMN IF EXISTS source_checked_at;
+ALTER TABLE public.youth_squad_players DROP COLUMN IF EXISTS promoted_player_id;
+ALTER TABLE public.youth_squad_players ALTER COLUMN player_id SET NOT NULL;
+ALTER TABLE public.youth_squad_players ADD CONSTRAINT youth_squad_players_squad_player_key UNIQUE(squad_id,player_id);
+
+INSERT INTO public.youth_squad_players(id,squad_id,player_id,age_years)
+SELECT 'ajax-o19-cm-'||p.source_cm_player_id::text,'ajax-o19',p.id,
+       GREATEST(0,2001-EXTRACT(YEAR FROM p.date_of_birth)::int)
+FROM public.players p
+WHERE p.source_cm_player_id IS NOT NULL
+  AND p.source_cm_club_id IN (
+    SELECT m.cm_club_id FROM public.cm0102_game_team_mappings m
+    JOIN public.teams t ON t.id=m.team_id
+    JOIN public.divisions d ON d.id=t.division_id AND d.season_id='2026-2027'
+    WHERE t.name='Ajax'
+  )
+  AND p.date_of_birth BETWEEN DATE '1980-07-01' AND DATE '1987-06-30'
+ORDER BY p.potential_rating DESC,p.overall_rating DESC,p.full_name
+LIMIT 30
+ON CONFLICT(squad_id,player_id) DO NOTHING;
+
+
+INSERT INTO public.team_player_memberships(season_id,team_id,player_id,membership_type)
+SELECT '2026-2027','jong-ajax',yp.player_id,'youth-affiliate'
+FROM public.youth_squad_players yp
+WHERE yp.squad_id='ajax-o19'
+ON CONFLICT(season_id,team_id,player_id) DO NOTHING;
+
+-- A player belongs to one matchday squad at a time: youth-affiliates are removed from the parent's match roster.
+DELETE FROM public.team_player_memberships p
+WHERE p.season_id='2026-2027' AND p.membership_type='primary'
+  AND EXISTS (SELECT 1 FROM public.team_player_memberships y
+              WHERE y.season_id=p.season_id AND y.player_id=p.player_id
+                AND y.membership_type='youth-affiliate');
+
+
+
 -- Clubs absent from the CM 01/02 database get generated players in the SAME canonical table,
 -- so every playable team has a complete matchday squad without reintroducing a second roster store.
 WITH roster_counts AS (
@@ -140,55 +190,25 @@ WHERE p.source_type='regen' AND p.team_id IS NOT NULL AND p.is_active=TRUE
 ON CONFLICT(season_id,team_id,player_id) DO NOTHING;
 
 INSERT INTO public.career_player_states(save_id,player_id,club_id,current_rating,potential_rating)
-SELECT s.id,p.id,COALESCE(tm.team_id,p.team_id),p.overall_rating,p.potential_rating
+SELECT s.id,p.id,COALESCE(tmSelected.team_id,tmPrimary.team_id,tmYouth.team_id,p.team_id),p.overall_rating,p.potential_rating
 FROM public.career_saves s CROSS JOIN public.players p
-LEFT JOIN public.team_player_memberships tm ON tm.player_id=p.id AND tm.team_id=s.club_id AND tm.season_id=s.season_id
-WHERE COALESCE(tm.team_id,p.team_id) IS NOT NULL AND p.is_active=TRUE
-ON CONFLICT(save_id,player_id) DO NOTHING;
+LEFT JOIN public.team_player_memberships tmSelected ON tmSelected.player_id=p.id AND tmSelected.team_id=s.club_id AND tmSelected.season_id=s.season_id
+LEFT JOIN public.team_player_memberships tmPrimary ON tmPrimary.player_id=p.id AND tmPrimary.membership_type='primary' AND tmPrimary.season_id=s.season_id
+LEFT JOIN public.team_player_memberships tmYouth ON tmYouth.player_id=p.id AND tmYouth.membership_type='youth-affiliate' AND tmYouth.season_id=s.season_id
+WHERE COALESCE(tmSelected.team_id,tmPrimary.team_id,tmYouth.team_id,p.team_id) IS NOT NULL AND p.is_active=TRUE
+ON CONFLICT(save_id,player_id) DO UPDATE SET club_id=EXCLUDED.club_id,current_rating=EXCLUDED.current_rating,potential_rating=EXCLUDED.potential_rating;
 
 INSERT INTO public.career_player_contracts(id,save_id,player_id,club_id,start_date,end_date,weekly_wage,squad_status,release_clause)
-SELECT 'contract-'||s.id||'-'||p.id,s.id,p.id,COALESCE(tm.team_id,p.team_id),COALESCE(s.game_date,CURRENT_DATE),COALESCE(s.game_date,CURRENT_DATE)+INTERVAL '2 years',
+SELECT 'contract-'||s.id||'-'||p.id,s.id,p.id,COALESCE(tmSelected.team_id,tmPrimary.team_id,tmYouth.team_id,p.team_id),COALESCE(s.game_date,CURRENT_DATE),COALESCE(s.game_date,CURRENT_DATE)+INTERVAL '2 years',
        GREATEST(500,p.overall_rating*p.overall_rating*2),'rotation',
        GREATEST(100000,p.overall_rating*p.overall_rating*900)
 FROM public.career_saves s
 CROSS JOIN public.players p
-LEFT JOIN public.team_player_memberships tm ON tm.player_id=p.id AND tm.team_id=s.club_id AND tm.season_id=s.season_id
-WHERE COALESCE(tm.team_id,p.team_id) IS NOT NULL AND p.is_active=TRUE
+LEFT JOIN public.team_player_memberships tmSelected ON tmSelected.player_id=p.id AND tmSelected.team_id=s.club_id AND tmSelected.season_id=s.season_id
+LEFT JOIN public.team_player_memberships tmPrimary ON tmPrimary.player_id=p.id AND tmPrimary.membership_type='primary' AND tmPrimary.season_id=s.season_id
+LEFT JOIN public.team_player_memberships tmYouth ON tmYouth.player_id=p.id AND tmYouth.membership_type='youth-affiliate' AND tmYouth.season_id=s.season_id
+WHERE COALESCE(tmSelected.team_id,tmPrimary.team_id,tmYouth.team_id,p.team_id) IS NOT NULL AND p.is_active=TRUE
 ON CONFLICT DO NOTHING;
-
--- Rebuild Ajax O19 as a membership list pointing at canonical CM players, not a second player store.
-ALTER TABLE public.youth_squad_players ADD COLUMN IF NOT EXISTS player_id TEXT REFERENCES public.players(id) ON DELETE CASCADE;
-DELETE FROM public.youth_squad_players;
-ALTER TABLE public.youth_squad_players DROP CONSTRAINT IF EXISTS youth_squad_players_squad_id_full_name_key;
-ALTER TABLE public.youth_squad_players DROP CONSTRAINT IF EXISTS youth_squad_players_position_check;
-ALTER TABLE public.youth_squad_players DROP CONSTRAINT IF EXISTS youth_squad_players_preferred_foot_check;
-ALTER TABLE public.youth_squad_players DROP COLUMN IF EXISTS full_name;
-ALTER TABLE public.youth_squad_players DROP COLUMN IF EXISTS nationality;
-ALTER TABLE public.youth_squad_players DROP COLUMN IF EXISTS position;
-ALTER TABLE public.youth_squad_players DROP COLUMN IF EXISTS preferred_foot;
-ALTER TABLE public.youth_squad_players DROP COLUMN IF EXISTS overall_rating;
-ALTER TABLE public.youth_squad_players DROP COLUMN IF EXISTS potential_rating;
-ALTER TABLE public.youth_squad_players DROP COLUMN IF EXISTS source_url;
-ALTER TABLE public.youth_squad_players DROP COLUMN IF EXISTS source_checked_at;
-ALTER TABLE public.youth_squad_players DROP COLUMN IF EXISTS promoted_player_id;
-ALTER TABLE public.youth_squad_players ALTER COLUMN player_id SET NOT NULL;
-ALTER TABLE public.youth_squad_players ADD CONSTRAINT youth_squad_players_squad_player_key UNIQUE(squad_id,player_id);
-
-INSERT INTO public.youth_squad_players(id,squad_id,player_id,age_years)
-SELECT 'ajax-o19-cm-'||p.source_cm_player_id::text,'ajax-o19',p.id,
-       GREATEST(0,2001-EXTRACT(YEAR FROM p.date_of_birth)::int)
-FROM public.players p
-WHERE p.source_cm_player_id IS NOT NULL
-  AND p.source_cm_club_id IN (
-    SELECT m.cm_club_id FROM public.cm0102_game_team_mappings m
-    JOIN public.teams t ON t.id=m.team_id
-    JOIN public.divisions d ON d.id=t.division_id AND d.season_id='2026-2027'
-    WHERE t.name='Ajax'
-  )
-  AND p.date_of_birth BETWEEN DATE '1980-07-01' AND DATE '1987-06-30'
-ORDER BY p.potential_rating DESC,p.overall_rating DESC,p.full_name
-LIMIT 30
-ON CONFLICT(squad_id,player_id) DO NOTHING;
 
 ALTER TABLE public.players ALTER COLUMN source_type SET DEFAULT 'regen';
 DROP TABLE IF EXISTS public.world_roster_players;
