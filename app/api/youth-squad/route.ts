@@ -49,6 +49,7 @@ export async function POST(request: Request) {
       "UPDATE players SET team_id=$2,is_active=TRUE,career_status='active' WHERE id=$1",
       [playerId, teamId]
     );
+    await sql.query("DELETE FROM team_player_memberships WHERE season_id='2026-2027' AND player_id=$1",[playerId]);
     const membershipType = teamId === "jong-ajax" ? "youth-affiliate" : "primary";
     await sql.query(
       "INSERT INTO team_player_memberships(season_id,team_id,player_id,membership_type) VALUES('2026-2027',$1,$2,$3) ON CONFLICT(season_id,team_id,player_id) DO UPDATE SET membership_type=EXCLUDED.membership_type",
