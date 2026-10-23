@@ -39,13 +39,14 @@ function parseCsv(text: string): CsvRow[] {
 
 export default function Cm0102ImportPage() {
   const [file, setFile] = useState<File | null>(null);
+  const [importToken, setImportToken] = useState("");
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState(0);
   const [total, setTotal] = useState(0);
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
   async function startImport() {
-    if (!file || busy) return;
+    if (!file || !importToken.trim() || busy) return;
     setBusy(true); setError(""); setStatus("Bestand lezen…"); setProgress(0);
     try {
       const rows = parseCsv(await file.text());
@@ -56,7 +57,7 @@ export default function Cm0102ImportPage() {
         let lastError = "onbekende netwerkfout", succeeded = false;
         for (let attempt = 1; attempt <= 3 && !succeeded; attempt++) {
           try {
-            const response = await fetch("/api/import/cm0102", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ rows: rows.slice(i, i + chunkSize) }) });
+            const response = await fetch("/api/import/cm0102", { method: "POST", headers: { "Content-Type": "application/json", "Authorization": "Bearer " + importToken.trim() }, body: JSON.stringify({ rows: rows.slice(i, i + chunkSize) }) });
             const responseText = await response.text();
             let result: { error?: string } = {};
             try { result = JSON.parse(responseText); }
@@ -85,8 +86,8 @@ export default function Cm0102ImportPage() {
       <header className="import-header"><div className="import-mark">CM</div><div><div className="import-kicker">CENTRALE SPELERSDATABASE</div><h1>Spelersbestand importeren</h1><p>Werk de centrale database bij vanuit een CM 01/02 CSV-export. Teams, selecties, transfers en profielen blijven naar dezelfde spelerrecords verwijzen.</p></div></header>
       <section className="import-panel">
         <div className="import-panel-head"><div><span className="import-kicker">STAP 1</span><h2>Kies je CSV-bestand</h2></div><span className="import-chip">CSV · UTF-8</span></div>
-        <label className="import-drop" htmlFor="csvfile"><span className="import-file-icon">↑</span><strong>{file ? file.name : "Selecteer een CM0102-spelersbestand"}</strong><small>{file ? `${(file.size / 1024 / 1024).toFixed(1)} MB · klaar om te controleren` : "Komma-, puntkomma- en tabgescheiden CSV worden ondersteund."}</small><input id="csvfile" type="file" accept=".csv,text/csv" disabled={busy} onChange={e => {setFile(e.target.files?.[0] ?? null);setError("");setStatus("");setProgress(0);setTotal(0);}} /></label>
-        <div className="import-actions"><div><strong>Importmodus: bijwerken + toevoegen</strong><small>CM-speler-ID is de unieke sleutel; bestaande spelers worden niet dubbel aangemaakt.</small></div><button disabled={!file || busy} onClick={startImport}>{busy ? "Import bezig…" : "Import starten →"}</button></div>
+        <label className="import-token" htmlFor="import-token"><strong>Importbeveiligingscode</strong><input id="import-token" type="password" autoComplete="current-password" value={importToken} disabled={busy} onChange={e=>setImportToken(e.target.value)} placeholder="Voer DATABASE_IMPORT_TOKEN in" /><small>De code moet overeenkomen met de beveiligingsvariabele in Vercel.</small></label><label className="import-drop" htmlFor="csvfile"><span className="import-file-icon">↑</span><strong>{file ? file.name : "Selecteer een CM0102-spelersbestand"}</strong><small>{file ? `${(file.size / 1024 / 1024).toFixed(1)} MB · klaar om te controleren` : "Komma-, puntkomma- en tabgescheiden CSV worden ondersteund."}</small><input id="csvfile" type="file" accept=".csv,text/csv" disabled={busy} onChange={e => {setFile(e.target.files?.[0] ?? null);setError("");setStatus("");setProgress(0);setTotal(0);}} /></label>
+        <div className="import-actions"><div><strong>Importmodus: bijwerken + toevoegen</strong><small>CM-speler-ID is de unieke sleutel; bestaande spelers worden niet dubbel aangemaakt.</small></div><button disabled={!file || !importToken.trim() || busy} onClick={startImport}>{busy ? "Import bezig…" : "Import starten →"}</button></div>
         {status && <div className="import-status" role="status"><div>{status}</div>{total > 0 && <><div className="import-progress"><span style={{width: percent + "%"}} /></div><small>{percent}% · {progress.toLocaleString("nl-NL")} / {total.toLocaleString("nl-NL")}</small></>}</div>}
         {error && <div role="alert" className="import-error">{error}</div>}
       </section>
@@ -105,7 +106,7 @@ export default function Cm0102ImportPage() {
       .import-panel{background:#f6f8f9;border:1px solid #9eafbb;box-shadow:0 2px 5px #243f5410}
       .import-panel-head{display:flex;justify-content:space-between;align-items:center;padding:18px 20px;background:#e6edf2;border-bottom:1px solid #b3c1ca}
       .import-panel-head h2{font-size:17px;margin:5px 0 0;color:#193d58}.import-chip{padding:6px 8px;border:1px solid #a5b7c4;background:#f8fafb;color:#3e5e75;font-size:10px;font-weight:bold}
-      .import-drop{display:flex;flex-direction:column;align-items:center;text-align:center;margin:20px;padding:28px 14px;border:2px dashed #9eafbb;background:#fff;cursor:pointer;gap:8px}
+      .import-token{display:flex;flex-direction:column;gap:7px;margin:18px 20px 0;color:#244e70;font-weight:bold}.import-token input{padding:10px;background:#fff;border:1px solid #96a6b2;color:#172d40}.import-token small{font-weight:normal;color:#627888;line-height:1.5}.import-drop{display:flex;flex-direction:column;align-items:center;text-align:center;margin:20px;padding:28px 14px;border:2px dashed #9eafbb;background:#fff;cursor:pointer;gap:8px}
       .import-file-icon{display:grid;place-items:center;width:38px;height:38px;background:#e4edf4;color:#255f8d;font-size:23px;font-weight:bold}
       .import-drop strong{font-size:14px;color:#203e54}.import-drop small{color:#647887}.import-drop input{max-width:100%;margin-top:10px;color:#536c7d}
       .import-actions{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:16px 20px;border-top:1px solid #d0d9df;background:#edf2f5}
