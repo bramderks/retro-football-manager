@@ -82,7 +82,7 @@ export async function POST(request: Request) {
        )
        INSERT INTO public.cm0102_game_team_mappings(cm_club_id,team_id,mapping_method)
        SELECT cm_club_id,team_id,'exact-normalized-name' FROM exact_candidates WHERE rn=1
-       ON CONFLICT (cm_club_id) DO NOTHING`
+       ON CONFLICT DO NOTHING`
     );
     await sql.query(
       `WITH aliases(team_name,cm_club_name) AS (VALUES
