@@ -1,6 +1,7 @@
 -- Phase 3/3: run only after the batched backfill reports 0 updated rows.
 ALTER TABLE public.players ADD CONSTRAINT canonical_players_pkey PRIMARY KEY(id);
 ALTER TABLE public.players ADD CONSTRAINT players_source_cm_player_id_key UNIQUE(source_cm_player_id);
+ALTER TABLE public.players DROP COLUMN cm_player_id;
 
 -- Bring across the small legacy game roster; CM data remains in the same canonical table.
 INSERT INTO public.players (
