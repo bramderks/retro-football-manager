@@ -11,6 +11,7 @@ ALTER TABLE public.players
   ADD COLUMN IF NOT EXISTS source_original_potential_ability SMALLINT,
   ADD COLUMN IF NOT EXISTS source_pa_resolution_rule TEXT,
   ADD COLUMN IF NOT EXISTS source_foot_attributes JSONB NOT NULL DEFAULT '{}'::jsonb,
+  ADD COLUMN IF NOT EXISTS source_sides JSONB NOT NULL DEFAULT '[]'::jsonb,
   ADD COLUMN IF NOT EXISTS source_current_ability_stars NUMERIC(3,1),
   ADD COLUMN IF NOT EXISTS source_potential_ability_stars NUMERIC(3,1),
   ADD COLUMN IF NOT EXISTS source_randomize_zero_attributes BOOLEAN NOT NULL DEFAULT TRUE,
@@ -53,7 +54,7 @@ INSERT INTO public.players (
   is_active, career_status, source_type, source_cm_player_id, source_cm_staff_id,
   source_cm_club_id, source_cm_nationality_id, source_cm_second_nationality_id,
   source_current_ability, source_potential_ability, source_original_potential_ability,
-  source_pa_resolution_rule, source_club_name, source_positions, source_attributes,
+  source_pa_resolution_rule, source_club_name, source_positions, source_sides, source_attributes,
   source_foot_attributes, source_current_ability_stars, source_potential_ability_stars,
   source_randomize_zero_attributes, source_version
 )
@@ -84,7 +85,7 @@ SELECT
   NULL, cp.imported_at::date, TRUE, 'active', 'cm0102', cp.cm_player_id, cp.cm_staff_id,
   a.cm_club_id, cp.nationality_id, cp.second_nationality_id, cp.current_ability,
   cp.potential_ability, cp.source_potential_ability, cp.pa_resolution_rule, c.club_name,
-  COALESCE(cp.positions, '[]'::jsonb), COALESCE(cp.attributes, '{}'::jsonb),
+  COALESCE(cp.positions, '[]'::jsonb), COALESCE(cp.sides, '[]'::jsonb), COALESCE(cp.attributes, '{}'::jsonb),
   COALESCE(cp.foot_attributes, '{}'::jsonb), cp.current_ability_stars,
   cp.potential_ability_stars, COALESCE(cp.randomize_zero_attributes, TRUE), cp.source_version
 FROM public.cm0102_player_profiles cp
@@ -113,6 +114,7 @@ ON CONFLICT (source_cm_player_id) WHERE source_cm_player_id IS NOT NULL DO UPDAT
   source_pa_resolution_rule=EXCLUDED.source_pa_resolution_rule,
   source_club_name=EXCLUDED.source_club_name,
   source_positions=EXCLUDED.source_positions,
+  source_sides=EXCLUDED.source_sides,
   source_attributes=EXCLUDED.source_attributes,
   source_foot_attributes=EXCLUDED.source_foot_attributes,
   source_current_ability_stars=EXCLUDED.source_current_ability_stars,
