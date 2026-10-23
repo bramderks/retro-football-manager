@@ -110,8 +110,8 @@ export async function POST(request: Request) {
         "is_active","career_status","source_type","source_cm_player_id","source_cm_staff_id",
         "source_cm_club_id","source_cm_nationality_id","source_cm_second_nationality_id",
         "source_current_ability","source_potential_ability","source_original_potential_ability",
-        "source_pa_resolution_rule","source_club_name","source_positions","source_sides","source_attributes",
-        "source_foot_attributes","source_current_ability_stars","source_potential_ability_stars",
+        "source_pa_resolution_rule","source_club_name","positions","sides","attributes",
+        "foot_attributes","source_current_ability_stars","source_potential_ability_stars",
         "source_randomize_zero_attributes","source_version"
       ];
       const params: unknown[] = [];
