@@ -99,6 +99,25 @@ SELECT season_id,youth_team_id,player_id,'youth-affiliate'
 FROM youth_roster WHERE rn<=24
 ON CONFLICT(season_id,team_id,player_id) DO NOTHING;
 
+-- A player may be affiliated with a youth side, but only one primary matchday team per season.
+WITH ranked_primary AS (
+  SELECT tm.ctid,
+         ROW_NUMBER() OVER (
+           PARTITION BY tm.season_id, tm.player_id
+           ORDER BY CASE WHEN tm.team_id=p.team_id THEN 0 ELSE 1 END, tm.team_id
+         ) AS rn
+  FROM public.team_player_memberships tm
+  JOIN public.players p ON p.id=tm.player_id
+  WHERE tm.membership_type='primary'
+)
+DELETE FROM public.team_player_memberships tm
+USING ranked_primary r
+WHERE tm.ctid=r.ctid AND r.rn>1;
+
+CREATE UNIQUE INDEX IF NOT EXISTS team_player_one_primary_team_per_season
+  ON public.team_player_memberships(season_id,player_id)
+  WHERE membership_type='primary';
+
 -- Rebuild Ajax O19 as a membership list pointing at canonical CM players, not a second player store.
 ALTER TABLE public.youth_squad_players ADD COLUMN IF NOT EXISTS player_id TEXT REFERENCES public.players(id) ON DELETE CASCADE;
 DELETE FROM public.youth_squad_players;
