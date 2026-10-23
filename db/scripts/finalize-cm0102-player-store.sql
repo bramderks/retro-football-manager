@@ -147,7 +147,7 @@ WHERE COALESCE(tm.team_id,p.team_id) IS NOT NULL AND p.is_active=TRUE
 ON CONFLICT(save_id,player_id) DO NOTHING;
 
 INSERT INTO public.career_player_contracts(id,save_id,player_id,club_id,start_date,end_date,weekly_wage,squad_status,release_clause)
-SELECT 'contract-'||s.id||'-'||p.id,s.id,p.id,COALESCE(tm.team_id,p.team_id),s.game_date,'2028-06-30',
+SELECT 'contract-'||s.id||'-'||p.id,s.id,p.id,COALESCE(tm.team_id,p.team_id),COALESCE(s.game_date,CURRENT_DATE),COALESCE(s.game_date,CURRENT_DATE)+INTERVAL '2 years',
        GREATEST(500,p.overall_rating*p.overall_rating*2),'rotation',
        GREATEST(100000,p.overall_rating*p.overall_rating*900)
 FROM public.career_saves s
