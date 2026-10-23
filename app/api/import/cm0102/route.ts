@@ -133,7 +133,7 @@ export async function POST(request: Request) {
         params.push(...vals);
         return "(" + vals.map((_, j) => "$" + (start + j + 1)).join(",") + ")";
       });
-      const updateColumns = columns.filter(c => !["id","source_cm_player_id","team_id","source_cm_club_id"].includes(c));
+      // CSV source data may refresh, but live ratings belong to career_player_states and must not be reset by a database import.\n      const updateColumns = columns.filter(c => !["id","source_cm_player_id","team_id","source_cm_club_id","overall_rating","potential_rating"].includes(c));
       const query = `INSERT INTO public.players (${columns.join(",")}) VALUES ${values.join(",")}
         ON CONFLICT (source_cm_player_id) DO UPDATE SET
         ${updateColumns.map(c => `${c}=EXCLUDED.${c}`).join(",")},
@@ -189,7 +189,7 @@ export async function POST(request: Request) {
            LEFT JOIN public.team_player_memberships tmYouth ON tmYouth.player_id=p.id AND tmYouth.membership_type='youth-affiliate' AND tmYouth.season_id=s.season_id
           WHERE p.source_cm_player_id = ANY($1::integer[])
             AND COALESCE(tmSelected.team_id,tmPrimary.team_id,tmYouth.team_id,p.team_id) IS NOT NULL AND p.is_active=TRUE
-         ON CONFLICT(save_id,player_id) DO UPDATE SET club_id=EXCLUDED.club_id,current_rating=EXCLUDED.current_rating,potential_rating=EXCLUDED.potential_rating`,
+         ON CONFLICT(save_id,player_id) DO NOTHING`,
         [ids]
       );
       processed += batch.length;
