@@ -364,6 +364,7 @@ export default function Home() {
   }
   function playMinute() {
     const m = minute + 1; setMinute(m);
+    const userIsHome = !careerData?.save?.club_id || selectedHomeId === careerData.save.club_id;
      const nextFitness={...matchFitness};
      const sideLineups: string[][] = [0,1].map(side => {
        if ((side as 0|1) === userSide && lineupConfirmed) return matchLineup;
@@ -373,7 +374,7 @@ export default function Home() {
        return (team?.players || []).slice(0,11).map((p:any) => p.id);
      });
      for (const side of [0,1] as const) {
-       const tactic = side === userSide ? homeTactics : awayTactics;
+       const tactic = side === 0 ? (userIsHome ? homeTactics : awayTactics) : (userIsHome ? awayTactics : homeTactics);
        const fatigueStep=(tactic.tempo==="Snel"?.34:tactic.tempo==="Geduldig"?.12:.22)+(tactic.pressing?.12:0)+(tactic.hardTackles?.08:0);
        for (const id of sideLineups[side]) {
          if (!id || redCardIds.includes(id) || injuredIds.includes(id)) continue;
@@ -417,7 +418,6 @@ export default function Home() {
       if(out.id&&incoming){setAiLineups(prev=>({...prev,[aiSide]:(prev[aiSide]||[]).map(id=>id===out.id?incomingId:id)}));setAiBenches(prev=>({...prev,[aiSide]:(prev[aiSide]||[]).slice(1)}));setAiSubstitutions(prev=>aiSide===0?[Math.min(5,prev[0]+1),prev[1]]:[prev[0],Math.min(5,prev[1]+1)]);setSubstitutions(prev=>[...prev,{minute:m,outId:out.id,inId:incomingId,team:aiSide}]);addEvent({minute:m+"'",text:"AI-WISSEL: "+incoming.name+" komt erin voor "+out.name+". De trainer past de energie en veldbezetting aan.",kind:"system"});}
     }
     const homeLeadNow = goals[0] - goals[1];
-    const userIsHome = !careerData?.save?.club_id || selectedHomeId === careerData.save.club_id;
     const configuredHome = userIsHome ? homeTactics : awayTactics; const configuredAway = userIsHome ? awayTactics : homeTactics;
     const effectiveHomeTactics: Tactics = homeLeadNow >= 3 ? { ...configuredHome, mentality: "Verdedigend", pressing: false, counter: true } : homeLeadNow <= -2 ? { ...configuredHome, mentality: "Aanvallend", pressing: true } : configuredHome;
     const effectiveAwayTactics: Tactics = goals[1] - goals[0] >= 3 ? { ...configuredAway, mentality: "Verdedigend", pressing: false, counter: true } : goals[1] - goals[0] <= -2 ? { ...configuredAway, mentality: "Aanvallend", pressing: true } : configuredAway;
