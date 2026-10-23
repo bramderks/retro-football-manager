@@ -385,9 +385,11 @@ export default function Home() {
      setMatchFitness(nextFitness);
     if(m>45&&matchPhase==="first-half")setMatchPhase("second-half");
     if(m>90&&extraTime)setMatchPhase("extra-time");
-    const tackleRisk=(homeTactics.hardTackles||awayTactics.hardTackles)?0.15:0.10;
-    if(m>1&&Math.random()<tackleRisk){
-      const side=(Math.random()<.5?0:1) as 0|1, victim=matchPlayer(side), tackler=matchPlayer((side===0?1:0) as 0|1), opponentTactics=side===0?awayTactics:homeTactics;
+    if(m>1){
+      const side=(Math.random()<.5?0:1) as 0|1;
+      const tackleRisk=(side===0?awayTactics:homeTactics).hardTackles?0.15:0.10;
+      if(Math.random()<tackleRisk){
+      const victim=matchPlayer(side), tackler=matchPlayer((side===0?1:0) as 0|1), opponentTactics=side===0?awayTactics:homeTactics;
       const previousYellow=Number(yellowCards[tackler.id]||0);
       const tacklerSide=(1-side) as 0|1;
       if(Math.random()<(opponentTactics.hardTackles ? .015 : .004)){
@@ -406,6 +408,7 @@ export default function Home() {
         persistMatchInjury(victim.id,injury);
         if(side===userSide){setRunning(false);setActiveScreen("Tactiek");return;}
         if(aiSubstitutions[side]<5&&aiBenches[side]?.length){const incomingId=aiBenches[side][0],aiTeam=databaseTeams.find(t=>t.id===(side===0?selectedHomeId:selectedAwayId)),incoming=(aiTeam?.players||[]).find((p:any)=>p.id===incomingId);if(incoming){setAiLineups(prev=>({...prev,[side]:(prev[side]||[]).map(id=>id===victim.id?incomingId:id)}));setAiBenches(prev=>({...prev,[side]:(prev[side]||[]).slice(1)}));setAiSubstitutions(prev=>side===0?[Math.min(5,prev[0]+1),prev[1]]:[prev[0],Math.min(5,prev[1]+1)]);setInjuriesByTeam(prev=>side===0?[Math.max(0,prev[0]-1),prev[1]]:[prev[0],Math.max(0,prev[1]-1)]);addEvent({minute:m+"'",text:"AI-wissel na blessure: "+incoming.name+" vervangt "+victim.name+".",kind:"system"});}}
+      }
       }
     }
     if (m === 45) { setRunning(false); setHalfTime(true); setMatchPhase("half-time"); setActiveScreen("Tactiek"); addEvent({minute:"RUST",text:"Rust! Pas je tactiek aan en kies daarna Begin tweede helft.",kind:"system"}); return; }
