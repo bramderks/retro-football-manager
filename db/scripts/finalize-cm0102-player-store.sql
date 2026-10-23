@@ -118,6 +118,25 @@ CREATE UNIQUE INDEX IF NOT EXISTS team_player_one_primary_team_per_season
   ON public.team_player_memberships(season_id,player_id)
   WHERE membership_type='primary';
 
+CREATE TABLE IF NOT EXISTS public.world_fixture_results (
+  fixture_id text PRIMARY KEY REFERENCES public.fixtures(id) ON DELETE CASCADE,
+  season_id text NOT NULL,
+  home_goals smallint NOT NULL CHECK(home_goals BETWEEN 0 AND 8),
+  away_goals smallint NOT NULL CHECK(away_goals BETWEEN 0 AND 8),
+  simulated_at timestamptz NOT NULL DEFAULT now()
+);
+
+-- Connect seeded European participants to canonical domestic teams where names and countries match.
+UPDATE public.uefa_clubs u
+SET domestic_team_id=t.id
+FROM public.teams t
+JOIN public.divisions d ON d.id=t.division_id
+WHERE u.id LIKE 'uefa-%'
+  AND u.domestic_team_id IS NULL
+  AND lower(trim(u.name))=lower(trim(t.name))
+  AND u.country_code=d.country_code;
+
+
 -- Rebuild Ajax O19 as a membership list pointing at canonical CM players, not a second player store.
 ALTER TABLE public.youth_squad_players ADD COLUMN IF NOT EXISTS player_id TEXT REFERENCES public.players(id) ON DELETE CASCADE;
 DELETE FROM public.youth_squad_players;
