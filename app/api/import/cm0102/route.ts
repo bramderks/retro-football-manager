@@ -188,6 +188,7 @@ export async function POST(request: Request) {
            JOIN public.divisions d ON d.id=t.division_id
           WHERE d.season_id='2026-2027' AND p.source_cm_player_id = ANY($1::integer[])
             AND p.team_id IS NOT NULL AND p.is_active=TRUE
+            AND NOT EXISTS (SELECT 1 FROM public.team_player_memberships y WHERE y.season_id=d.season_id AND y.player_id=p.id AND y.membership_type='youth-affiliate')
          ON CONFLICT(season_id,team_id,player_id) DO UPDATE SET membership_type='primary'`,
         [ids]
       );
