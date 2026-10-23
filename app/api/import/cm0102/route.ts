@@ -177,12 +177,7 @@ export async function POST(request: Request) {
           WHERE tm.player_id=p.id AND tm.season_id='2026-2027'
             AND tm.membership_type='primary'
             AND p.source_cm_player_id = ANY($1::integer[])
-            AND (p.team_id IS NULL OR tm.team_id<>p.team_id)
-            AND NOT EXISTS (
-              SELECT 1 FROM public.team_player_memberships youth
-              WHERE youth.season_id=tm.season_id AND youth.player_id=tm.player_id
-                AND youth.membership_type='youth-affiliate'
-            )`,
+            AND (p.team_id IS NULL OR tm.team_id<>p.team_id)`,
         [ids]
       );
       await sql.query(
@@ -193,7 +188,6 @@ export async function POST(request: Request) {
            JOIN public.divisions d ON d.id=t.division_id
           WHERE d.season_id='2026-2027' AND p.source_cm_player_id = ANY($1::integer[])
             AND p.team_id IS NOT NULL AND p.is_active=TRUE
-            AND NOT EXISTS (SELECT 1 FROM public.team_player_memberships y WHERE y.season_id=d.season_id AND y.player_id=p.id AND y.membership_type='youth-affiliate')
          ON CONFLICT(season_id,team_id,player_id) DO UPDATE SET membership_type='primary'`,
         [ids]
       );
