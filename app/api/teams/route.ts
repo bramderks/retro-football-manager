@@ -19,6 +19,7 @@ type Row = {
   overall_rating: number | null;
   potential_rating: number | null;
   source_checked_at: string | null;
+  attributes: Record<string, unknown> | string | null;
 };
 
 export async function GET() {
@@ -36,7 +37,7 @@ export async function GET() {
         t.reputation, t.team_strength,
         p.id AS player_id,
         COALESCE(NULLIF(BTRIM(p.known_as), ''), p.full_name) AS player_name,
-        p.position, p.overall_rating, p.potential_rating, p.source_checked_at
+        p.position, p.overall_rating, p.potential_rating, p.source_checked_at, p.attributes
       FROM teams t
       JOIN divisions d ON d.id = t.division_id
       LEFT JOIN team_player_memberships tm
@@ -55,7 +56,7 @@ export async function GET() {
     const teams = new Map<string, {
       id: string; name: string; city: string; divisionId: string;
       division: string; tier: number; reputation: number; teamStrength: number;
-      players: Array<{ id: string; name: string; position: string; shirtNumber: number | null; overallRating: number; potentialRating: number; sourceUrl: string | null; sourceCheckedAt: string | null }>;
+      players: Array<{ id: string; name: string; position: string; shirtNumber: number | null; overallRating: number; potentialRating: number; sourceUrl: string | null; sourceCheckedAt: string | null; skills: Record<string, number | null> }>;
     }>();
 
     for (const row of rows as unknown as Row[]) {
@@ -73,6 +74,17 @@ export async function GET() {
         });
       }
       if (row.player_id && row.player_name && row.position) {
+        let rawSkills: Record<string, unknown> = {};
+        try {
+          rawSkills = typeof row.attributes === "string" ? JSON.parse(row.attributes) : (row.attributes || {}) as Record<string, unknown>;
+        } catch { rawSkills = {}; }
+        const skillKeys = ["acceleration","aggression","agility","anticipation","balance","bravery","crossing","decisions","dribbling","finishing","heading","long_shots","marking","movement","natural_fitness","one_on_ones","pace","passing","positioning","reflexes","stamina","strength","tackling","technique","teamwork","vision","work_rate","handling"];
+        const skills: Record<string, number | null> = {};
+        for (const key of skillKeys) {
+          const value = rawSkills[key];
+          const parsed = value === null || value === undefined || value === "" ? NaN : Number(value);
+          skills[key] = Number.isFinite(parsed) ? parsed : null;
+        }
         teams.get(row.id)!.players.push({
           id: row.player_id,
           name: row.player_name,
@@ -82,6 +94,7 @@ export async function GET() {
           potentialRating: row.potential_rating ?? 60,
           sourceUrl: null,
           sourceCheckedAt: row.source_checked_at,
+          skills,
         });
       }
     }
