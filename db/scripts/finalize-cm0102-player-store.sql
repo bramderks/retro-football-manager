@@ -126,6 +126,16 @@ CREATE TABLE IF NOT EXISTS public.world_fixture_results (
   simulated_at timestamptz NOT NULL DEFAULT now()
 );
 
+CREATE TABLE IF NOT EXISTS public.uefa_club_player_memberships (
+  season_id text NOT NULL REFERENCES public.seasons(id) ON DELETE CASCADE,
+  club_id text NOT NULL REFERENCES public.uefa_clubs(id) ON DELETE CASCADE,
+  player_id text NOT NULL REFERENCES public.players(id) ON DELETE CASCADE,
+  membership_type text NOT NULL DEFAULT 'primary',
+  PRIMARY KEY(season_id,club_id,player_id)
+);
+CREATE INDEX IF NOT EXISTS idx_uefa_club_player_memberships_roster
+  ON public.uefa_club_player_memberships(season_id,club_id,membership_type);
+
 -- Connect seeded European participants to canonical domestic teams where names and countries match.
 UPDATE public.uefa_clubs u
 SET domestic_team_id=t.id
@@ -227,25 +237,62 @@ FROM public.players p
 WHERE p.source_type='regen' AND p.team_id IS NOT NULL AND p.is_active=TRUE
 ON CONFLICT(season_id,team_id,player_id) DO NOTHING;
 
+-- UEFA squads are memberships to the same canonical players table, never a second player store.
+INSERT INTO public.uefa_club_player_memberships(season_id,club_id,player_id,membership_type)
+SELECT '2026-2027',u.id,tm.player_id,'primary'
+FROM public.uefa_clubs u
+JOIN public.team_player_memberships tm ON tm.team_id=u.domestic_team_id AND tm.season_id='2026-2027' AND tm.membership_type='primary'
+JOIN public.players p ON p.id=tm.player_id AND p.is_active=TRUE AND p.career_status='active'
+WHERE u.domestic_team_id IS NOT NULL
+ON CONFLICT(season_id,club_id,player_id) DO NOTHING;
+
+WITH external_slots AS (
+  SELECT u.id AS club_id,u.name AS club_name,u.reputation,u.team_strength,
+         generate_series(1,23) AS slot
+  FROM public.uefa_clubs u
+  WHERE u.domestic_team_id IS NULL
+), external_players AS (
+  SELECT 'regen-europe-'||regexp_replace(lower(club_id),'[^a-z0-9]+','-','g')||'-2026-2027-'||LPAD(slot::text,2,'0') AS player_id,
+         club_id,club_name,reputation,team_strength,slot,
+         (ARRAY['Alex','Ben','Chris','Daniel','Elias','Finn','Gijs','Hugo','Isaac','Jesse','Kai','Luca','Milan','Noah','Oscar','Ravi','Sam','Timo','Yassin','Zion'])[1+((slot-1)%20)] AS first_name,
+         (ARRAY['Bakker','Visser','Smit','Meijer','De Jong','Bos','Vos','Peters','Hendriks','Dijkstra','Kok','Jansen','Muller','Schmidt','Fischer','Weber','Rossi','Costa','Garcia','Silva','Lopez','Martin','Perez'])[1+((slot-1)%23)] AS last_name
+  FROM external_slots
+)
+INSERT INTO public.players(id,team_id,full_name,known_as,date_of_birth,nationality,position,shirt_number,preferred_foot,overall_rating,potential_rating,is_active,career_status,development_bias,source_type,source_club_name)
+SELECT player_id,NULL,first_name||' '||last_name,first_name,
+       make_date(2026-(17+((slot-1)%9)),1+((slot-1)%12),1+((slot-1)%27)),
+       'Fictief',(ARRAY['GK','LB','CV','RB','VM','CM','AM','AML','AMR','SP'])[1+((slot-1)%10)],
+       1+((slot-1)%23),CASE WHEN slot%2=0 THEN 'left' ELSE 'right' END,
+       GREATEST(35,LEAST(84,COALESCE(team_strength,55)-10+((slot*7)%22))),
+       LEAST(95,GREATEST(35,LEAST(84,COALESCE(team_strength,55)-10+((slot*7)%22)))+5+(slot%12)),
+       TRUE,'active',(slot%9)-4,'regen',club_name
+FROM external_players
+ON CONFLICT(id) DO NOTHING;
+
+INSERT INTO public.uefa_club_player_memberships(season_id,club_id,player_id,membership_type)
+SELECT '2026-2027',u.id,p.id,'primary'
+FROM public.uefa_clubs u
+JOIN public.players p ON p.id LIKE 'regen-europe-'||regexp_replace(lower(u.id),'[^a-z0-9]+','-','g')||'-2026-2027-%'
+WHERE u.domestic_team_id IS NULL AND p.is_active=TRUE AND p.career_status='active'
+ON CONFLICT(season_id,club_id,player_id) DO NOTHING;
+
 INSERT INTO public.career_player_states(save_id,player_id,club_id,current_rating,potential_rating)
-SELECT s.id,p.id,COALESCE(tmSelected.team_id,tmPrimary.team_id,tmYouth.team_id,p.team_id),p.overall_rating,p.potential_rating
+SELECT s.id,p.id,COALESCE(tmSelected.team_id,tmPrimary.team_id,p.team_id),p.overall_rating,p.potential_rating
 FROM public.career_saves s CROSS JOIN public.players p
-LEFT JOIN public.team_player_memberships tmSelected ON tmSelected.player_id=p.id AND tmSelected.team_id=s.club_id AND tmSelected.season_id=s.season_id
+LEFT JOIN public.team_player_memberships tmSelected ON tmSelected.player_id=p.id AND tmSelected.team_id=s.club_id AND tmSelected.season_id=s.season_id AND tmSelected.membership_type='primary'
 LEFT JOIN public.team_player_memberships tmPrimary ON tmPrimary.player_id=p.id AND tmPrimary.membership_type='primary' AND tmPrimary.season_id=s.season_id
-LEFT JOIN public.team_player_memberships tmYouth ON tmYouth.player_id=p.id AND tmYouth.membership_type='youth-affiliate' AND tmYouth.season_id=s.season_id
-WHERE COALESCE(tmSelected.team_id,tmPrimary.team_id,tmYouth.team_id,p.team_id) IS NOT NULL AND p.is_active=TRUE
+WHERE (tmSelected.team_id IS NOT NULL OR tmPrimary.team_id IS NOT NULL OR (p.team_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM public.team_player_memberships ty WHERE ty.player_id=p.id AND ty.season_id=s.season_id AND ty.membership_type='youth-affiliate'))) AND p.is_active=TRUE
 ON CONFLICT(save_id,player_id) DO UPDATE SET club_id=EXCLUDED.club_id,current_rating=EXCLUDED.current_rating,potential_rating=EXCLUDED.potential_rating;
 
 INSERT INTO public.career_player_contracts(id,save_id,player_id,club_id,start_date,end_date,weekly_wage,squad_status,release_clause)
-SELECT 'contract-'||s.id||'-'||p.id,s.id,p.id,COALESCE(tmSelected.team_id,tmPrimary.team_id,tmYouth.team_id,p.team_id),COALESCE(s.game_date,CURRENT_DATE),COALESCE(s.game_date,CURRENT_DATE)+INTERVAL '2 years',
+SELECT 'contract-'||s.id||'-'||p.id,s.id,p.id,COALESCE(tmSelected.team_id,tmPrimary.team_id,p.team_id),COALESCE(s.game_date,CURRENT_DATE),COALESCE(s.game_date,CURRENT_DATE)+INTERVAL '2 years',
        GREATEST(500,p.overall_rating*p.overall_rating*2),'rotation',
        GREATEST(100000,p.overall_rating*p.overall_rating*900)
 FROM public.career_saves s
 CROSS JOIN public.players p
-LEFT JOIN public.team_player_memberships tmSelected ON tmSelected.player_id=p.id AND tmSelected.team_id=s.club_id AND tmSelected.season_id=s.season_id
+LEFT JOIN public.team_player_memberships tmSelected ON tmSelected.player_id=p.id AND tmSelected.team_id=s.club_id AND tmSelected.season_id=s.season_id AND tmSelected.membership_type='primary'
 LEFT JOIN public.team_player_memberships tmPrimary ON tmPrimary.player_id=p.id AND tmPrimary.membership_type='primary' AND tmPrimary.season_id=s.season_id
-LEFT JOIN public.team_player_memberships tmYouth ON tmYouth.player_id=p.id AND tmYouth.membership_type='youth-affiliate' AND tmYouth.season_id=s.season_id
-WHERE COALESCE(tmSelected.team_id,tmPrimary.team_id,tmYouth.team_id,p.team_id) IS NOT NULL AND p.is_active=TRUE
+WHERE (tmSelected.team_id IS NOT NULL OR tmPrimary.team_id IS NOT NULL OR (p.team_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM public.team_player_memberships ty WHERE ty.player_id=p.id AND ty.season_id=s.season_id AND ty.membership_type='youth-affiliate'))) AND p.is_active=TRUE
 ON CONFLICT DO NOTHING;
 
 ALTER TABLE public.players ALTER COLUMN source_type SET DEFAULT 'regen';
