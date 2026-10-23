@@ -35,13 +35,14 @@ function jsonValue(value: unknown, fallback: unknown) {
   return value ?? fallback;
 }
 function primaryPosition(positions: unknown): string {
+  const categoryMap: Array<[string, string]> = [
+    ["goalkeeper", "GK"], ["left_back", "LB"], ["right_back", "RB"], ["defender", "CV"],
+    ["defensive_midfielder", "VM"], ["midfielder", "CM"], ["attacking_midfielder", "AM"],
+    ["left_wing", "AML"], ["right_wing", "AMR"], ["striker", "SP"], ["attacker", "SP"],
+    ["wing_back", "RB"], ["sweeper", "CV"]
+  ];
   if (positions && typeof positions === "object" && !Array.isArray(positions)) {
     const keys = Object.keys(positions as Record<string, unknown>);
-    const categoryMap: Array<[string, string]> = [
-      ["goalkeeper", "GK"], ["left_back", "LB"], ["right_back", "RB"], ["defender", "CV"],
-      ["defensive_midfielder", "VM"], ["attacking_midfielder", "AM"],
-      ["left_wing", "AML"], ["right_wing", "AMR"], ["striker", "SP"], ["attacker", "SP"]
-    ];
     for (const [key, position] of categoryMap) if (keys.includes(key)) return position;
   }
   const list = Array.isArray(positions) ? positions : [positions];
@@ -50,6 +51,9 @@ function primaryPosition(positions: unknown): string {
       entry && typeof entry === "object"
         ? String((entry as Record<string, unknown>).position ?? (entry as Record<string, unknown>).code ?? (entry as Record<string, unknown>).name ?? "")
         : "";
+    const normalized = raw.trim().toLowerCase();
+    const category = categoryMap.find(([key]) => key === normalized)?.[1];
+    if (category) return category;
     const mapped = POSITION_MAP[raw.trim().toUpperCase()];
     if (mapped) return mapped;
   }
@@ -131,7 +135,7 @@ export async function POST(request: Request) {
       });
       const updateColumns = columns.filter(c => !["id","source_cm_player_id","team_id","source_cm_club_id"].includes(c));
       const query = `INSERT INTO public.players (${columns.join(",")}) VALUES ${values.join(",")}
-        ON CONFLICT (source_cm_player_id) WHERE source_cm_player_id IS NOT NULL DO UPDATE SET
+        ON CONFLICT (source_cm_player_id) DO UPDATE SET
         ${updateColumns.map(c => `${c}=EXCLUDED.${c}`).join(",")},
         team_id=COALESCE(public.players.team_id, EXCLUDED.team_id),
         source_cm_club_id=COALESCE(public.players.source_cm_club_id, EXCLUDED.source_cm_club_id),
