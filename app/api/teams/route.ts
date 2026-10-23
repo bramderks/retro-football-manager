@@ -42,6 +42,7 @@ export async function GET() {
       LEFT JOIN team_player_memberships tm
         ON tm.team_id = t.id
        AND tm.season_id = d.season_id
+       AND tm.membership_type = 'primary'
       LEFT JOIN players p
         ON p.id = tm.player_id
        AND (p.source_cm_player_id IS NOT NULL OR p.source_type = 'regen')
