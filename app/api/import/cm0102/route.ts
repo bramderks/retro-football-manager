@@ -169,6 +169,22 @@ export async function POST(request: Request) {
             AND p.source_cm_player_id = ANY($1::integer[])`,
         [ids]
       );
+      // Reconcile baseline memberships when a refreshed CSV moves a player to another club.
+      // Active career saves keep their current club in career_player_states.
+      await sql.query(
+        `DELETE FROM public.team_player_memberships tm
+          USING public.players p
+          WHERE tm.player_id=p.id AND tm.season_id='2026-2027'
+            AND tm.membership_type='primary'
+            AND p.source_cm_player_id = ANY($1::integer[])
+            AND (p.team_id IS NULL OR tm.team_id<>p.team_id)
+            AND NOT EXISTS (
+              SELECT 1 FROM public.team_player_memberships youth
+              WHERE youth.season_id=tm.season_id AND youth.player_id=tm.player_id
+                AND youth.membership_type='youth-affiliate'
+            )`,
+        [ids]
+      );
       await sql.query(
         `INSERT INTO public.team_player_memberships(season_id,team_id,player_id,membership_type)
          SELECT d.season_id,p.team_id,p.id,'primary'
