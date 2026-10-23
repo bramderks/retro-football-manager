@@ -5,7 +5,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 const SEASON = "2026-2027";
 const START = "2026-08-01";
-async function getActiveSeason(sql:any){const rows=await sql.query("SELECT id,starts_on,ends_on FROM seasons ORDER BY starts_on DESC LIMIT 1");const id=String(rows[0]?.id||SEASON);return {id,start:dateOnly(rows[0]?.starts_on||START),end:dateOnly(rows[0]?.ends_on||((Number(id.slice(0,4))+1)+"-06-30"))};}
+async function getActiveSeason(sql:any){const rows=await sql.query("SELECT s.id,s.starts_on,s.ends_on FROM seasons s WHERE EXISTS (SELECT 1 FROM divisions d JOIN teams t ON t.division_id=d.id WHERE d.season_id=s.id) ORDER BY s.starts_on DESC LIMIT 1");const id=String(rows[0]?.id||SEASON);return {id,start:dateOnly(rows[0]?.starts_on||START),end:dateOnly(rows[0]?.ends_on||((Number(id.slice(0,4))+1)+"-06-30"))};}
 const COUNTRY_LABELS: Record<string,string> = { NED:"Nederland",ENG:"Engeland",GER:"Duitsland",FRA:"Frankrijk",ITA:"Italië",ESP:"Spanje" };
 function makeSchedule(teams:any[],divisionId:string,season:string){
  const list=[...teams].sort((a,b)=>String(a.id).localeCompare(String(b.id)));if(list.length<2)return[];if(list.length%2)list.push({id:"BYE"});
