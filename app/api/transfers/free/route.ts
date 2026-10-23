@@ -12,35 +12,40 @@ export async function GET(request: Request) {
     const sql = neon(connection);
     const url = new URL(request.url);
     const search = (url.searchParams.get("q") || "").trim();
-    const limit = Math.min(200, Math.max(1, Number(url.searchParams.get("limit") || 100)));
+    const parsedLimit = Number(url.searchParams.get("limit") || 100);
+    const limit = Number.isFinite(parsedLimit) ? Math.min(200, Math.max(1, Math.trunc(parsedLimit))) : 100;
     const imported = await sql.query("SELECT COUNT(*)::int AS n FROM public.cm0102_player_club_assignments");
     if (Number(imported[0]?.n || 0) === 0) {
       return NextResponse.json(
-        { error: "De oorspronkelijke clubkoppelingen zijn nog niet geïmporteerd. De spelerslijst wordt bewust niet als Free Transfer getoond om te voorkomen dat alle spelers onterecht clubloos lijken." },
+        { error: "De oorspronkelijke CM 01/02-clubkoppelingen zijn nog niet geïmporteerd. De spelers worden niet onterecht als transfervrij getoond." },
         { status: 409 }
       );
     }
     const rows = await sql.query(
       `SELECT p.cm_player_id AS id,
-              COALESCE(NULLIF(BTRIM(p.common_name), ''), NULLIF(BTRIM(p.full_name), 'Onbekend'), p.full_name) AS full_name,
+              COALESCE(NULLIF(BTRIM(p.known_as), ''), NULLIF(BTRIM(p.full_name), '')) AS full_name,
               p.full_name AS legal_name,
               p.date_of_birth,
-              p.nationality_id,
-              p.current_ability,
-              p.potential_ability,
-              p.positions,
-              p.sides,
-              p.preferred_foot
-         FROM public.cm0102_player_profiles p
+              p.cm_nationality_id AS nationality_id,
+              p.cm_current_ability AS current_ability,
+              p.cm_potential_ability AS potential_ability,
+              p.cm_positions AS positions,
+              p.cm_sides AS sides,
+              p.preferred_foot,
+              p.cm_current_ability_stars AS current_ability_stars,
+              p.cm_potential_ability_stars AS potential_ability_stars
+         FROM public.players p
          LEFT JOIN public.cm0102_player_club_assignments a ON a.cm_player_id = p.cm_player_id
-        WHERE a.cm_player_id IS NULL
+        WHERE p.cm_player_id IS NOT NULL
+          AND p.is_active = TRUE
+          AND a.cm_player_id IS NULL
           AND COALESCE(p.full_name, '') <> ''
-          AND ($1 = '' OR COALESCE(p.common_name, p.full_name, '') ILIKE '%' || $1 || '%')
-        ORDER BY COALESCE(NULLIF(BTRIM(p.common_name), ''), p.full_name)
+          AND ($1 = '' OR COALESCE(p.known_as, p.full_name, '') ILIKE '%' || $1 || '%')
+        ORDER BY COALESCE(NULLIF(BTRIM(p.known_as), ''), p.full_name)
         LIMIT $2`,
       [search, limit]
     );
-    return NextResponse.json({ players: rows, totalReturned: rows.length }, { headers: { "Cache-Control": "no-store" } });
+    return NextResponse.json({ players: rows, totalReturned: rows.length, playerStore: "players" }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     console.error("Free-transfer list failed", error);
     return NextResponse.json({ error: "Transfervrije spelers konden niet worden geladen." }, { status: 500 });
