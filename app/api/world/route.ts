@@ -15,10 +15,18 @@ async function fillRoster(sql:any,t:any,season:string){
  return added;
 }
 async function fillEuropean(sql:any,c:any,season:string){
- if(!c.domestic_team_id)return 0;
- const teams=await sql.query("SELECT id,name,team_strength FROM teams WHERE id=$1",[c.domestic_team_id]);
- if(!teams.length)return 0;
- return fillRoster(sql,teams[0],season);
+ if(c.domestic_team_id){
+  await sql.query("INSERT INTO uefa_club_player_memberships(season_id,club_id,player_id,membership_type) SELECT $1,$2,tm.player_id,'primary' FROM team_player_memberships tm JOIN players p ON p.id=tm.player_id WHERE tm.team_id=$3 AND tm.season_id=$1 AND tm.membership_type='primary' AND p.is_active=TRUE AND p.career_status='active' ON CONFLICT(season_id,club_id,player_id) DO NOTHING",[season,c.id,c.domestic_team_id]);
+  return 0;
+ }
+ const count=await sql.query("SELECT COUNT(*)::int n FROM uefa_club_player_memberships um JOIN players p ON p.id=um.player_id WHERE um.club_id=$1 AND um.season_id=$2 AND um.membership_type='primary' AND p.is_active=TRUE AND p.career_status='active'",[c.id,season]);
+ let added=0;
+ for(let i=0;i<Math.max(0,23-Number(count[0]?.n||0));i++){
+  const s=seed(c.id)+i*19,age=17+s%9,r=Math.max(35,Math.min(84,Number(c.team_strength||c.reputation||55)-10+s%22)),id="regen-europe-"+slug(c.id)+"-"+season+"-"+String(i+1).padStart(2,"0"),fullName=name(c.id,i);
+  const player=await sql.query("INSERT INTO players(id,team_id,full_name,known_as,date_of_birth,nationality,position,shirt_number,preferred_foot,overall_rating,potential_rating,is_active,career_status,development_bias,source_type,source_club_name) VALUES($1,NULL,$2,$3,$4,'Fictief',$5,$6,$7,$8,$9,TRUE,'active',$10,'regen',$11) ON CONFLICT DO NOTHING RETURNING id",[id,fullName,fullName.split(" ")[0],(Number(season.slice(0,4))-age)+"-"+String(1+s%12).padStart(2,"0")+"-"+String(1+s%27).padStart(2,"0"),pos[s%pos.length],i%99+1,s%2?"left":"right",r,Math.min(95,r+5+s%12),s%9-4,c.name]);
+  if(player.length){await sql.query("INSERT INTO uefa_club_player_memberships(season_id,club_id,player_id,membership_type) VALUES($1,$2,$3,'primary') ON CONFLICT DO NOTHING",[season,c.id,player[0].id]);added+=player.length;}
+ }
+ return added;
 }
 function makeFixtures(teams:any[],div:string,season:string){
  let a=[...teams].sort((x,y)=>String(x.id).localeCompare(String(y.id)));if(a.length<2)return[];if(a.length%2)a.push({id:"BYE"});
@@ -66,6 +74,7 @@ let promoted=0,relegated=0;
   for(let i=0;i<standing.length;i++){const row=standing[i],t=ts.find((x:any)=>x.id===row.id);if(!t)continue;let tier=Number(d.tier),up=false,down=false;if(higher&&i<2){tier--;up=true;promoted++;}else if(lower&&i>=Math.max(0,standing.length-2)){tier++;down=true;relegated++;}const target=divs.find((x:any)=>x.country_code===d.country_code&&Number(x.tier)===tier)||d;await sql.query("INSERT INTO team_season_history(id,team_id,season_id,division_id,final_position,promoted,relegated,points) VALUES($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT(team_id,season_id) DO UPDATE SET final_position=EXCLUDED.final_position,promoted=EXCLUDED.promoted,relegated=EXCLUDED.relegated,points=EXCLUDED.points",[from+"-"+t.id,t.id,from,d.id,i+1,up,down,Number(row.points||0)]);await sql.query("UPDATE teams SET division_id=$2 WHERE id=$1",[t.id,target.country_code+"-"+target.tier+"-"+season]);}
  }
  await sql.query("INSERT INTO team_player_memberships(season_id,team_id,player_id,membership_type) SELECT $1,tm.team_id,tm.player_id,tm.membership_type FROM team_player_memberships tm JOIN teams t ON t.id=tm.team_id JOIN divisions d ON d.id=t.division_id WHERE tm.season_id=$2 AND d.season_id=$1 ON CONFLICT(season_id,team_id,player_id) DO NOTHING",[season,from]);
+ await sql.query("INSERT INTO uefa_club_player_memberships(season_id,club_id,player_id,membership_type) SELECT $1,um.club_id,um.player_id,um.membership_type FROM uefa_club_player_memberships um JOIN uefa_clubs u ON u.id=um.club_id WHERE um.season_id=$2 AND u.domestic_team_id IS NULL ON CONFLICT(season_id,club_id,player_id) DO NOTHING",[season,from]);
  const teams=await sql.query("SELECT t.id,t.name,t.city,t.reputation,t.team_strength,t.stadium_name,t.stadium_capacity,t.ticket_price FROM teams t JOIN divisions d ON d.id=t.division_id WHERE d.season_id=$1 ORDER BY t.id",[season]);let added=0;
  for(const t of teams){added+=await fillRoster(sql,t,season);const rep=Number(t.reputation||50),strength=Number(t.team_strength||50),revenue=Math.round(350000+rep*rep*13000+strength*strength*6500),wages=Math.round(revenue*(.42+strength/500)),capacity=Math.max(3500,Math.min(95000,Math.round(5000+rep*rep*18))),price=Math.max(8,Math.min(110,Number((5+rep*.48).toFixed(2)))),stadium=t.stadium_name||"Stadion "+t.name;
   await sql.query("UPDATE teams SET stadium_name=COALESCE(stadium_name,$2),stadium_capacity=COALESCE(stadium_capacity,$3),ticket_price=COALESCE(ticket_price,$4),annual_revenue=CASE WHEN annual_revenue=0 THEN $5 ELSE annual_revenue END,annual_wage_bill=CASE WHEN annual_wage_bill=0 THEN $6 ELSE annual_wage_bill END,season_budget=CASE WHEN season_budget=0 THEN $7 ELSE season_budget END,financial_tier=CASE WHEN reputation>=80 THEN 'elite' WHEN reputation>=65 THEN 'upper' WHEN reputation>=45 THEN 'stable' ELSE 'small' END WHERE id=$1",[t.id,stadium,capacity,price,revenue,wages,Math.round(revenue*.12)]);
@@ -73,7 +82,7 @@ let promoted=0,relegated=0;
   await sql.query("INSERT INTO world_financial_profiles(team_id,season_id,cash_balance,transfer_budget,annual_revenue,annual_wages,debt,ticket_price) VALUES($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT(team_id) DO UPDATE SET season_id=EXCLUDED.season_id,annual_revenue=EXCLUDED.annual_revenue,annual_wages=EXCLUDED.annual_wages,ticket_price=EXCLUDED.ticket_price,updated_at=now()",[t.id,season,Math.round(revenue*.08),Math.round(revenue*.12),revenue,wages,Math.round(Math.max(0,rep-65)*rep*40000),price]);
   await sql.query("INSERT INTO world_financial_events(team_id,season_id,event_date,category,description,amount,balance_after) VALUES($1,$2,$3,'season_budget','Season budget opening estimate',$4,$5) ON CONFLICT DO NOTHING",[t.id,season,start,Math.round(revenue*.12),Math.round(revenue*.08)]);
  }
- const euro=await sql.query("SELECT id,name,country_code,reputation,team_strength,domestic_team_id FROM uefa_clubs");for(const c of euro)added+=await fillEuropean(sql,c,season);
+ 
  // Every non-human manager and staff member gets a generated birthday if the source data lacks one.
  await sql.query("UPDATE managers SET date_of_birth=(DATE '1950-01-01' + ((ASCII(SUBSTRING(id,1,1))*173 + LENGTH(id)*29) % 15000)::int) WHERE date_of_birth IS NULL AND career_status='active'");
  await sql.query("UPDATE club_staff SET date_of_birth=(DATE '1950-01-01' + ((ASCII(SUBSTRING(id,1,1))*137 + LENGTH(id)*31) % 16000)::int) WHERE date_of_birth IS NULL AND career_status='active'");
@@ -114,6 +123,7 @@ let promoted=0,relegated=0;
  }
  const aged=await sql.query("UPDATE players SET overall_rating=CASE WHEN EXTRACT(YEAR FROM age($1::date,date_of_birth))>=34 THEN GREATEST(20,overall_rating-2) WHEN EXTRACT(YEAR FROM age($1::date,date_of_birth))<=22 THEN LEAST(potential_rating,overall_rating+1) ELSE overall_rating END,career_status=CASE WHEN EXTRACT(YEAR FROM age($1::date,date_of_birth))>=40 THEN 'retired' ELSE career_status END,retired_on=CASE WHEN EXTRACT(YEAR FROM age($1::date,date_of_birth))>=40 THEN $1::date ELSE retired_on END,is_active=CASE WHEN EXTRACT(YEAR FROM age($1::date,date_of_birth))>=40 THEN FALSE ELSE is_active END WHERE source_type='regen' AND career_status='active' AND date_of_birth IS NOT NULL RETURNING id,team_id,full_name,career_status,date_of_birth,overall_rating",[start]);
  let converted=0;for(const p of aged.filter((x:any)=>x.career_status==="retired")){await sql.query("INSERT INTO world_person_history(person_type,person_id,season_id,event_type,details) VALUES('player',$1,$2,'retirement',$3::jsonb)",[p.id,season,JSON.stringify({name:p.full_name})]);if(Number(p.overall_rating)>=68&&seed(p.id)%4===0){const m=await sql.query("INSERT INTO managers(id,full_name,reputation,coaching,tactical_knowledge,man_management,date_of_birth,career_status,career_role) VALUES($1,$2,$3,$4,$5,$6,$7,'active','manager') ON CONFLICT(id) DO NOTHING RETURNING id",["ex-player-manager-"+p.id,p.full_name,Math.max(25,p.overall_rating-8),Math.max(25,p.overall_rating-5),Math.max(25,p.overall_rating-3),Math.max(25,p.overall_rating-7),p.date_of_birth]);converted+=m.length;}}
+ const euro=await sql.query("SELECT id,name,country_code,reputation,team_strength,domestic_team_id FROM uefa_clubs");for(const c of euro)added+=await fillEuropean(sql,c,season);
  const comps=await sql.query("SELECT code,name,format,league_phase_clubs,matches_per_club FROM uefa_competitions WHERE season_id=$1 ORDER BY CASE code WHEN 'UCL' THEN 1 WHEN 'UEL' THEN 2 ELSE 3 END",[from]);
  for(const c of comps){
   const id=season+"-"+c.code;
