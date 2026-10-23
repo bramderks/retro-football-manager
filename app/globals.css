@@ -398,3 +398,28 @@ main.min-h-screen.bg-slate-950 tr:hover{background:#e2edf5!important}
 @media(max-width:900px){.route-shell{padding-left:0!important}.route-sidebar{position:sticky!important;top:0!important;left:auto!important;width:100%!important;height:auto!important;max-height:none!important;flex-direction:row!important;flex-wrap:nowrap!important;overflow-x:auto!important;padding:8px!important;border-right:0!important;border-bottom:1px solid #9baab5!important}.route-sidebar .game-clock{display:none!important}.route-sidebar a{flex:0 0 auto!important;white-space:nowrap}.route-topbar{height:64px!important;padding:0 12px!important}}
 
 .lineup-slot-row{display:flex;align-items:stretch;gap:6px}.lineup-slot-button{display:flex;flex:1;align-items:center;justify-content:space-between;gap:10px;padding:9px 10px;background:#fff;border:1px solid #b3c0c9;color:#20394c;text-align:left;cursor:pointer}.lineup-slot-row.selected .lineup-slot-button,.sub-player-option.selected{background:#d8e8f4!important;border-color:#2b6595!important;box-shadow:inset 3px 0 #2b6595}.lineup-slot-button>span:first-child{display:flex;flex-direction:column;gap:3px}.lineup-slot-button small{color:#647887;font-size:10px}.lineup-player-name{font-weight:700;color:#244d70}.lineup-clear-button{padding:8px 10px;background:#e6ecef;border:1px solid #b3c0c9;color:#3f596b;cursor:pointer}.lineup-clear-button:disabled{opacity:.4}.squad-drag-player.assigned-starter{border-color:#2b6595;background:#e3eef6}.squad-drag-player.assigned-bench{border-color:#6c9b79;background:#e8f2eb}.bench-chip-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.bench-chip{padding:6px 9px;background:#e8f2eb;border:1px solid #9dbba4;color:#235d3b;cursor:pointer}.bench-chip span{font-weight:900;margin-left:6px}.sub-selection-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0}.sub-player-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:6px;margin-top:8px}.sub-player-option{padding:8px;background:#fff;border:1px solid #b3c0c9;color:#20394c;text-align:left;cursor:pointer;font-size:11px}.sub-player-option:hover{background:#e2edf5}.sub-selection-grid section{min-width:0}@media(max-width:650px){.sub-selection-grid{grid-template-columns:1fr}.lineup-slot-button{align-items:flex-start;flex-direction:column}}
+
+
+/* Remaining legacy panels and the fixed primary navigation use the same light manager skin. */
+.sidebar-nav{background:#e7ecef!important;border-right:1px solid #9baab5!important}
+.sidebar-nav .nav-button{color:#29465c!important;border-color:transparent!important;border-radius:0!important}
+.sidebar-nav .nav-button.active{background:#fff!important;border-color:#9baab5!important;border-bottom-color:#2b6595!important;color:#173f62!important}
+.sidebar-nav .game-clock{background:#f5f7f8!important;border:1px solid #a5b3bd!important;border-radius:0!important}
+.sidebar-nav .game-clock>strong{color:#17364d!important}
+.sidebar-nav .page-arrows button{background:#dce5eb!important;border:1px solid #9eafbb!important;color:#244a65!important;border-radius:0!important}
+.power-card{background:#edf2f5!important;border:1px solid #b4c2cb!important;color:#20394c!important}
+.power-card>div:first-child,.power-card>div:first-child strong{color:#173a55!important}
+.power-meter{background:#d4dfe6!important}
+.ai-note{background:#e7edf1!important;color:#3b5568!important}
+.ai-note strong,.ai-note p{color:#29465c!important}
+.scorers-panel{background:#f3f6f8!important}
+.tactics-controls,.pitch-panel{background:#f5f7f8!important;border-color:#a5b3bd!important}
+.pitch-heading,.pitch-heading label,.tactic-setting label,.tactic-check{color:#29465c!important}
+.pitch-heading select,.tactic-setting select{background:#fff!important;color:#172d40!important;border:1px solid #96a6b2!important}
+.tactic-setting p,.power-card p,.ai-note p{color:#526a7b!important}
+.route-main .route-topbar{background:#244d70!important}
+main[style*="#0b1220"]{background:#d9e0e5!important;color:#182a3a!important}
+main[style*="#0b1220"] h1,main[style*="#0b1220"] h2,main[style*="#0b1220"] h3,main[style*="#0b1220"] p,main[style*="#0b1220"] div,main[style*="#0b1220"] td,main[style*="#0b1220"] th,main[style*="#0b1220"] label,main[style*="#0b1220"] li{color:#243e52!important}
+main[style*="#0b1220"] section,main[style*="#0b1220"] article,main[style*="#0b1220"] div[style*="background"]{background:#f3f6f8!important;border-color:#b4c0c9!important}
+main[style*="#0b1220"] input{background:#fff!important;color:#172d40!important;border-color:#96a6b2!important}
+main[style*="#0b1220"] button{background:#2b6595!important;color:#fff!important;border:1px solid #1b4f79!important;border-radius:0!important}
