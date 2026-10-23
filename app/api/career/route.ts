@@ -1,5 +1,6 @@
 import { neon } from "@neondatabase/serverless";
 import { NextResponse } from "next/server";
+import { POST as generateWorldSeason } from "../world/route";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 const SEASON = "2026-2027";
@@ -292,6 +293,14 @@ export async function POST(request: Request) {
   }
   if(b.action==="advance_day"){
    const dayDate=new Date(dateOnly(s.game_date)+"T12:00:00Z");dayDate.setUTCDate(dayDate.getUTCDate()+1);const day=dateOnly(dayDate);
+   const seasonStartYear=Number(String(s.season_id||SEASON).slice(0,4));
+   if(day===String(seasonStartYear+1)+"-07-01"){
+     const nextSeason=String(seasonStartYear+1)+"-"+String(seasonStartYear+2);
+     const rolloverResponse=await generateWorldSeason(new Request("https://internal/api/world",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({fromSeason:s.season_id||SEASON,season:nextSeason})}));
+     const rolloverData=await rolloverResponse.json();
+     if(!rolloverResponse.ok)return fail(rolloverData.detail||rolloverData.error||"Seizoensovergang mislukt.",500);
+     return NextResponse.json({ok:true,seasonRolledOver:true,season:nextSeason,gameDate:day,rollover:rolloverData});
+   }
     const pendingFixture=await sql.query("SELECT cfs.fixture_id AS id,cfs.home_team_id,cfs.away_team_id,cfs.kickoff_date,h.name AS home_name,a.name AS away_name FROM career_fixture_schedule cfs JOIN fixtures f ON f.id=cfs.fixture_id JOIN teams h ON h.id=cfs.home_team_id JOIN teams a ON a.id=cfs.away_team_id WHERE cfs.save_id=$4 AND cfs.kickoff_date=$1 AND f.status='scheduled' AND f.division_id=$2 AND (cfs.home_team_id=$3 OR cfs.away_team_id=$3) AND NOT EXISTS (SELECT 1 FROM career_fixture_results cr WHERE cr.fixture_id=cfs.fixture_id AND cr.save_id=$4) LIMIT 1",[day,s.division_id,s.club_id,b.saveId]);
    if(pendingFixture.length)return NextResponse.json({ok:true,needsMatch:true,fixture:pendingFixture[0],gameDate:day});
    await sql.query("UPDATE career_saves SET game_date=$1,updated_at=NOW() WHERE id=$2",[day,b.saveId]);
