@@ -99,12 +99,62 @@ SELECT season_id,youth_team_id,player_id,'youth-affiliate'
 FROM youth_roster WHERE rn<=24
 ON CONFLICT(season_id,team_id,player_id) DO NOTHING;
 
+-- Clubs absent from the CM 01/02 database get generated players in the SAME canonical table,
+-- so every playable team has a complete matchday squad without reintroducing a second roster store.
+WITH roster_counts AS (
+  SELECT t.id,t.name,t.team_strength,COUNT(p.id) FILTER (WHERE p.is_active=TRUE AND p.career_status='active')::int AS roster_count
+  FROM public.teams t
+  JOIN public.divisions d ON d.id=t.division_id AND d.season_id='2026-2027'
+  LEFT JOIN public.team_player_memberships tm ON tm.team_id=t.id AND tm.season_id=d.season_id
+  LEFT JOIN public.players p ON p.id=tm.player_id
+  GROUP BY t.id,t.name,t.team_strength
+), missing AS (
+  SELECT rc.*,generate_series(1,GREATEST(0,23-rc.roster_count)) AS slot
+  FROM roster_counts rc WHERE rc.roster_count<23
+), generated AS (
+  SELECT
+    'regen-'||regexp_replace(lower(id),'[^a-z0-9]+','-','g')||'-2026-2027-'||LPAD(slot::text,2,'0') AS player_id,
+    id AS team_id,name AS team_name,team_strength,slot,
+    (ARRAY['Alex','Ben','Chris','Daniel','Elias','Finn','Gijs','Hugo','Isaac','Jesse','Kai','Luca','Milan','Noah','Oscar','Ravi','Sam','Timo','Yassin','Zion'])[1+((slot-1)%20)] AS first_name,
+    (ARRAY['Bakker','Visser','Smit','Meijer','De Jong','Bos','Vos','Peters','Hendriks','Dijkstra','Kok','Jansen','Muller','Schmidt','Fischer','Weber','Rossi','Costa','Garcia','Silva','Lopez','Martin','Perez'])[1+((slot-1)%23)] AS last_name
+  FROM missing
+)
+INSERT INTO public.players(
+ id,team_id,full_name,known_as,date_of_birth,nationality,position,shirt_number,preferred_foot,
+ overall_rating,potential_rating,is_active,career_status,development_bias,source_type,source_club_name
+)
+SELECT player_id,team_id,first_name||' '||last_name,first_name,
+       make_date(2026-(17+((slot-1)%20)),1+((slot-1)%12),1+((slot-1)%27)),
+       'Fictief',(ARRAY['GK','LB','CV','RB','VM','CM','AM','AML','AMR','SP'])[1+((slot-1)%10)],
+       1+((slot-1)%23),CASE WHEN slot%2=0 THEN 'left' ELSE 'right' END,
+       GREATEST(35,LEAST(80,team_strength-12+((slot*7)%24))),
+       LEAST(95,GREATEST(35,LEAST(80,team_strength-12+((slot*7)%24)))+5+(slot%12)),
+       TRUE,'active',(slot%9)-4,'regen',team_name
+FROM generated
+ON CONFLICT DO NOTHING;
+
+INSERT INTO public.team_player_memberships(season_id,team_id,player_id,membership_type)
+SELECT '2026-2027',p.team_id,p.id,'primary'
+FROM public.players p
+WHERE p.source_type='regen' AND p.team_id IS NOT NULL AND p.is_active=TRUE
+ON CONFLICT(season_id,team_id,player_id) DO NOTHING;
+
 INSERT INTO public.career_player_states(save_id,player_id,club_id,current_rating,potential_rating)
 SELECT s.id,p.id,COALESCE(tm.team_id,p.team_id),p.overall_rating,p.potential_rating
 FROM public.career_saves s CROSS JOIN public.players p
 LEFT JOIN public.team_player_memberships tm ON tm.player_id=p.id AND tm.team_id=s.club_id AND tm.season_id=s.season_id
-WHERE p.source_cm_player_id IS NOT NULL AND COALESCE(tm.team_id,p.team_id) IS NOT NULL AND p.is_active=TRUE
+WHERE COALESCE(tm.team_id,p.team_id) IS NOT NULL AND p.is_active=TRUE
 ON CONFLICT(save_id,player_id) DO NOTHING;
+
+INSERT INTO public.career_player_contracts(id,save_id,player_id,club_id,start_date,end_date,weekly_wage,squad_status,release_clause)
+SELECT 'contract-'||s.id||'-'||p.id,s.id,p.id,COALESCE(tm.team_id,p.team_id),s.game_date,'2028-06-30',
+       GREATEST(500,p.overall_rating*p.overall_rating*2),'rotation',
+       GREATEST(100000,p.overall_rating*p.overall_rating*900)
+FROM public.career_saves s
+CROSS JOIN public.players p
+LEFT JOIN public.team_player_memberships tm ON tm.player_id=p.id AND tm.team_id=s.club_id AND tm.season_id=s.season_id
+WHERE COALESCE(tm.team_id,p.team_id) IS NOT NULL AND p.is_active=TRUE
+ON CONFLICT DO NOTHING;
 
 -- Rebuild Ajax O19 as a membership list pointing at canonical CM players, not a second player store.
 ALTER TABLE public.youth_squad_players ADD COLUMN IF NOT EXISTS player_id TEXT REFERENCES public.players(id) ON DELETE CASCADE;
