@@ -39,8 +39,11 @@ export async function GET() {
         p.position, p.overall_rating, p.potential_rating, p.source_checked_at
       FROM teams t
       JOIN divisions d ON d.id = t.division_id
+      LEFT JOIN team_player_memberships tm
+        ON tm.team_id = t.id
+       AND tm.season_id = d.season_id
       LEFT JOIN players p
-        ON p.team_id = t.id
+        ON p.id = tm.player_id
        AND p.source_cm_player_id IS NOT NULL
        AND p.is_active = TRUE
        AND p.source_type = 'cm0102'
