@@ -318,7 +318,8 @@ export default function Home() {
     const ratedPlayers=userTeam?(careerData?.squad||[]).filter((p:any)=>ids.includes(p.id)).map((p:any)=>Number(p.overall_rating||50)):(dbTeam?.players||[]).filter((p:any)=>ids.includes(p.id)).map((p:any)=>Number(careerData?.market?.find((m:any)=>m.id===p.id)?.overall_rating||p.overallRating||50));
     const averagePlayerRating=ratedPlayers.length?ratedPlayers.reduce((sum:number,value:number)=>sum+value,0)/ratedPlayers.length:team.rating;
     const playerQualityAdjustment=(averagePlayerRating-team.rating)*0.18;
-    return team.rating + playerQualityAdjustment + team.reputation * .12 - lineupPositionPenalty(team,t) + ({ Verdedigend: -7, Normaal: 0, Aanvallend: 7 }[t.mentality] ?? 0)
+    const analysisBonus=userTeam?Math.max(0,Number(careerData?.facilityLevels?.analysis||1)-1)*0.65:0;
+    return team.rating + playerQualityAdjustment + analysisBonus + team.reputation * .12 - lineupPositionPenalty(team,t) + ({ Verdedigend: -7, Normaal: 0, Aanvallend: 7 }[t.mentality] ?? 0)
       + ({ Kort: 3, Direct: 2, Lang: -1 }[t.passing] ?? 0) + (t.pressing ? 3 : 0) + (t.counter ? 2 : 0) + ({ "4-3-3": 2, "4-4-2": 0, "4-2-3-1": 1, "3-5-2": 1, "5-3-2": -1 }[t.formation] ?? 0);
   }
   function tacticPower(team: Team, t: Tactics) {
