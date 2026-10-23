@@ -11,8 +11,6 @@ type Player = { name: string; position: "keeper" | "defender" | "midfielder" | "
 type DatabasePlayer = { id: string; name: string; position: string; overallRating: number; potentialRating: number; sourceUrl: string | null; skills?: Record<string, number | null> };
 type DatabaseTeam = { id: string; name: string; city: string; division: string; tier: number; reputation: number; teamStrength: number; players: DatabasePlayer[] };
 type Stats = { shots: number; onTarget: number; chances: number; corners: number };
-const AJAX: Team = { name: "Ajax", city: "Amsterdam", rating: 88, reputation: 92, keeper: 78 };
-const NEC: Team = { name: "NEC", city: "Nijmegen", rating: 70, reputation: 68, keeper: 74 };
 const initialTactics: Tactics = { mentality: "Normaal", passing: "Direct", tempo: "Normaal", pressing: false, offside: false, counter: false, hardTackles: false, formation: "4-3-3", lineup: {}, runLines: {} };
 type FormationSlot = { key: string; role: string; x: number; y: number };
 function formationSlots(formation: string): FormationSlot[] {
@@ -65,7 +63,7 @@ export default function Home() {
   const [scorers, setScorers] = useState<Scorer[]>([]);
   const [stats, setStats] = useState<[Stats, Stats]>([zeroStats(), zeroStats()]);
   const [feed, setFeed] = useState<EventLine[]>([
-    { minute: "INFO", text: "Ajax – NEC · Eredivisie. Druk op Start om af te trappen.", kind: "system" },
+    { minute: "INFO", text: "Selecteer teams uit de centrale CM 01/02-database. De wedstrijd start zodra beide selecties geladen zijn.", kind: "system" },
   ]);
   const [activeScreen, setActiveScreen] = useState("Overzicht");
   const screenOrder = ["Overzicht", "Wedstrijd", "Selectie", "Tactiek", "Competitie", "Europees", "Kalender", "Transfers", "Faciliteiten", "Database", "Loopbaan"];
@@ -126,8 +124,8 @@ export default function Home() {
   const [selectedAwayId, setSelectedAwayId] = useState("nec");
   const databaseHome = databaseTeams.find(t => t.id === selectedHomeId);
   const databaseAway = databaseTeams.find(t => t.id === selectedAwayId);
-  const homeTeam: Team = databaseHome ? { name: databaseHome.name, city: databaseHome.city, rating: databaseHome.teamStrength, reputation: databaseHome.reputation, keeper: goalkeeperRating(databaseHome.players) } : AJAX;
-  const awayTeam: Team = databaseAway ? { name: databaseAway.name, city: databaseAway.city, rating: databaseAway.teamStrength, reputation: databaseAway.reputation, keeper: goalkeeperRating(databaseAway.players) } : NEC;
+  const homeTeam: Team = databaseHome ? { name: databaseHome.name, city: databaseHome.city, rating: databaseHome.teamStrength, reputation: databaseHome.reputation, keeper: goalkeeperRating(databaseHome.players) } : { name: databaseError ? "Database niet beschikbaar" : "Thuisploeg", city: "", rating: 50, reputation: 50, keeper: 50 };
+  const awayTeam: Team = databaseAway ? { name: databaseAway.name, city: databaseAway.city, rating: databaseAway.teamStrength, reputation: databaseAway.reputation, keeper: goalkeeperRating(databaseAway.players) } : { name: databaseError ? "Database niet beschikbaar" : "Uitploeg", city: "", rating: 50, reputation: 50, keeper: 50 };
   const [speed, setSpeed] = useState("Normaal");
   const [running, setRunning] = useState(false);
   const [matchPhase, setMatchPhase] = useState<"pre-match"|"first-half"|"half-time"|"second-half"|"extra-time"|"finished">("pre-match");
