@@ -37,6 +37,9 @@ SELECT
 FROM public.legacy_players old
 ON CONFLICT (id) DO NOTHING;
 
+UPDATE public.players SET preferred_foot=NULL WHERE preferred_foot='unknown';
+ALTER TABLE public.players ADD CONSTRAINT players_preferred_foot_check CHECK (preferred_foot IS NULL OR preferred_foot = ANY (ARRAY['left','right','both']::text[]));
+
 ALTER TABLE public.legacy_players DROP CONSTRAINT IF EXISTS players_team_id_full_name_key;
 CREATE UNIQUE INDEX IF NOT EXISTS players_team_id_full_name_non_cm_uq
   ON public.players(team_id,full_name) WHERE source_cm_player_id IS NULL;
