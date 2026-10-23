@@ -10,16 +10,6 @@ type Scorer = { team: 0 | 1; minute: number; name: string; playerId?: string; as
 type Player = { name: string; position: "keeper" | "defender" | "midfielder" | "forward"; rating?: number; id?: string };
 type DatabasePlayer = { id: string; name: string; position: string; overallRating: number; potentialRating: number; sourceUrl: string | null };
 type DatabaseTeam = { id: string; name: string; city: string; division: string; tier: number; reputation: number; teamStrength: number; players: DatabasePlayer[] };
-const AJAX_PLAYERS: Player[] = [
-  { name: "Pasveer", position: "keeper" }, { name: "Hato", position: "defender" }, { name: "Sutalo", position: "defender" }, { name: "Rensch", position: "defender" },
-  { name: "Taylor", position: "midfielder" }, { name: "Klaassen", position: "midfielder" }, { name: "Berghuis", position: "midfielder" },
-  { name: "Godts", position: "forward" }, { name: "Brobbey", position: "forward" }, { name: "Akpom", position: "forward" }
-];
-const NEC_PLAYERS: Player[] = [
-  { name: "Cillessen", position: "keeper" }, { name: "Dasa", position: "defender" }, { name: "Sandler", position: "defender" }, { name: "Nuytinck", position: "defender" },
-  { name: "Proper", position: "midfielder" }, { name: "Sano", position: "midfielder" }, { name: "Chery", position: "midfielder" },
-  { name: "Hansen", position: "forward" }, { name: "Ogawa", position: "forward" }, { name: "González", position: "forward" }
-];
 type Stats = { shots: number; onTarget: number; chances: number; corners: number };
 const AJAX: Team = { name: "Ajax", city: "Amsterdam", rating: 88, reputation: 92, keeper: 78 };
 const NEC: Team = { name: "NEC", city: "Nijmegen", rating: 70, reputation: 68, keeper: 74 };
@@ -331,7 +321,6 @@ export default function Home() {
   function pickPlayer(team: 0 | 1, positions?: Player["position"][]) {
     const selectedId = team === 0 ? selectedHomeId : selectedAwayId;
     const dbTeam = databaseTeams.find(t => t.id === selectedId);
-    const fallback = team === 0 ? AJAX_PLAYERS : NEC_PLAYERS;
     const userIsTeam = Boolean(careerData?.save?.club_id && selectedId === careerData.save.club_id);
     const assignedIds = userIsTeam ? (lineupConfirmed ? matchLineup : Object.values(homeTactics.lineup || {}).filter(Boolean)).filter((id:string)=>!redCardIds.includes(id)&&!injuredIds.includes(id)) : [];
     const assignedPlayers = userIsTeam ? (careerData?.squad || []).filter((p:any) => assignedIds.includes(p.id)) : [];
@@ -341,7 +330,7 @@ export default function Home() {
     })) : dbTeam?.players.length ? dbTeam.players.map(p => ({
       name: p.name,
       position: p.position === "GK" ? "keeper" : ["ST","RW","LW"].includes(p.position) ? "forward" : ["CB","LB","RB","LWB","RWB"].includes(p.position) ? "defender" : "midfielder",
-    })) : fallback;
+    })) : [];
     const pool = positions?.length ? squad.filter(p => positions.includes(p.position)) : squad.filter(p => p.position !== "keeper");
     const weighted=pool.map(p=>({player:p,weight:Math.max(1,Number(p.rating||50))}));const total=weighted.reduce((sum,x)=>sum+x.weight,0);let roll=Math.random()*total;for(const item of weighted){roll-=item.weight;if(roll<=0)return item.player;}return weighted[weighted.length-1]?.player??squad[0];
   }
