@@ -27,13 +27,13 @@ export async function GET(request: Request) {
               p.full_name AS legal_name,
               p.date_of_birth,
               p.source_cm_nationality_id AS nationality_id,
-              p.source_current_ability AS current_ability,
-              p.source_potential_ability AS potential_ability,
-              p.source_positions AS positions,
-              p.source_sides AS sides,
+              p.current_ability AS current_ability,
+              p.potential_ability AS potential_ability,
+              p.positions AS positions,
+              p.sides AS sides,
               p.preferred_foot,
-              p.source_current_ability_stars AS current_ability_stars,
-              p.source_potential_ability_stars AS potential_ability_stars
+              p.current_ability_stars AS current_ability_stars,
+              p.potential_ability_stars AS potential_ability_stars
          FROM public.players p
          LEFT JOIN public.cm0102_player_club_assignments a ON a.cm_player_id = p.source_cm_player_id
         WHERE p.source_cm_player_id IS NOT NULL
