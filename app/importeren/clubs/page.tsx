@@ -32,13 +32,14 @@ function parseCsv(text: string): CsvRow[] {
 
 export default function Cm0102ClubImportPage() {
   const [file, setFile] = useState<File | null>(null);
+  const [importToken, setImportToken] = useState("");
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState(0);
   const [total, setTotal] = useState(0);
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
   async function startImport() {
-    if (!file || busy) return;
+    if (!file || !importToken.trim() || busy) return;
     setBusy(true); setError(""); setStatus("Bestand lezen…"); setProgress(0);
     try {
       const rows = parseCsv(await file.text());
@@ -49,7 +50,7 @@ export default function Cm0102ClubImportPage() {
         for (let attempt = 1; attempt <= 3 && !succeeded; attempt++) {
           try {
             const response = await fetch("/api/import/cm0102-clubs", {
-              method: "POST", headers: { "Content-Type": "application/json" },
+              method: "POST", headers: { "Content-Type": "application/json", "Authorization": "Bearer " + importToken.trim() },
               body: JSON.stringify({ rows: rows.slice(i, i + chunkSize) })
             });
             const body = await response.text();
@@ -84,10 +85,10 @@ export default function Cm0102ClubImportPage() {
       <h1 style={{fontSize:32,margin:"26px 0 8px"}}>CM0102-clubkoppelingen importeren</h1>
       <p style={{color:"#a9b8cc",lineHeight:1.6}}>Upload <strong>cm0102_player_club_mapping.csv</strong>. Dit bestand koppelt iedere speler aan de oorspronkelijke club uit Data.zip. De bestaande spelers en opgeslagen carrières worden niet vervangen.</p>
       <section style={{marginTop:26,padding:24,border:"1px solid #26364d",borderRadius:16,background:"#111c2e"}}>
-        <label htmlFor="mappingfile" style={{display:"block",fontWeight:700,marginBottom:12}}>Kies het koppelbestand</label>
+        <label htmlFor="import-token" style={{display:"block",fontWeight:700,marginBottom:8}}>Importbeveiligingscode</label><input id="import-token" type="password" autoComplete="current-password" value={importToken} disabled={busy} onChange={e=>setImportToken(e.target.value)} placeholder="Voer DATABASE_IMPORT_TOKEN in" style={{display:"block",width:"100%",padding:12,marginBottom:18,background:"#fff",border:"1px solid #96a6b2",color:"#172d40"}}/><p style={{fontSize:12,color:"#a9b8cc",marginBottom:14}}>De code moet overeenkomen met de beveiligingsvariabele in Vercel.</p><label htmlFor="mappingfile" style={{display:"block",fontWeight:700,marginBottom:12}}>Kies het koppelbestand</label>
         <input id="mappingfile" type="file" accept=".csv,text/csv" disabled={busy} onChange={e=>{setFile(e.target.files?.[0] ?? null);setError("");setStatus("");setProgress(0);setTotal(0);}} style={{display:"block",width:"100%",padding:12,background:"#0b1220",border:"1px solid #34465f",borderRadius:8,color:"#e5edf7"}} />
         {file && <p style={{fontSize:14,color:"#a9b8cc"}}>{file.name} · {(file.size / 1024 / 1024).toFixed(1)} MB</p>}
-        <button disabled={!file || busy} onClick={startImport} style={{marginTop:16,padding:"12px 18px",border:0,borderRadius:8,background:busy||!file?"#42516a":"#5be0a0",color:"#07140f",fontWeight:700,cursor:busy||!file?"not-allowed":"pointer"}}>
+        <button disabled={!file || !importToken.trim() || busy} onClick={startImport} style={{marginTop:16,padding:"12px 18px",border:0,borderRadius:8,background:busy||!file?"#42516a":"#5be0a0",color:"#07140f",fontWeight:700,cursor:busy||!file?"not-allowed":"pointer"}}>
           {busy ? "Koppelingen importeren…" : "Clubkoppelingen importeren"}
         </button>
         {status && <div role="status" style={{marginTop:20,lineHeight:1.6}}>{status}</div>}
