@@ -56,6 +56,42 @@ ALTER TABLE public.transfer_offers ADD CONSTRAINT transfer_offers_player_id_fkey
 ALTER TABLE public.youth_squad_players ADD CONSTRAINT youth_squad_players_promoted_player_id_fkey FOREIGN KEY (promoted_player_id) REFERENCES public.players(id) ON DELETE SET NULL;
 ALTER TABLE public.cm0102_player_club_assignments ADD CONSTRAINT cm0102_player_club_assignments_cm_player_id_fkey FOREIGN KEY (cm_player_id) REFERENCES public.players(source_cm_player_id) ON DELETE CASCADE;
 
+CREATE TABLE IF NOT EXISTS public.team_player_memberships (
+  season_id TEXT NOT NULL REFERENCES public.seasons(id) ON DELETE CASCADE,
+  team_id TEXT NOT NULL REFERENCES public.teams(id) ON DELETE CASCADE,
+  player_id TEXT NOT NULL REFERENCES public.players(id) ON DELETE CASCADE,
+  membership_type TEXT NOT NULL CHECK (membership_type IN ('primary','youth-affiliate')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY(season_id,team_id,player_id)
+);
+INSERT INTO public.team_player_memberships(season_id,team_id,player_id,membership_type)
+SELECT d.season_id,p.team_id,p.id,'primary'
+FROM public.players p
+JOIN public.teams t ON t.id=p.team_id
+JOIN public.divisions d ON d.id=t.division_id
+WHERE p.source_cm_player_id IS NOT NULL AND p.is_active=TRUE
+ON CONFLICT(season_id,team_id,player_id) DO UPDATE SET membership_type='primary';
+
+WITH youth_roster AS (
+  SELECT d.season_id,y.id AS youth_team_id,p.id AS player_id,
+         ROW_NUMBER() OVER(PARTITION BY y.id ORDER BY p.date_of_birth DESC NULLS LAST,p.overall_rating DESC,p.potential_rating DESC,p.full_name) AS rn
+  FROM public.teams y
+  JOIN public.divisions yd ON yd.id=y.division_id AND yd.season_id='2026-2027'
+  JOIN public.teams parent ON parent.name=CASE y.name
+    WHEN 'Jong AZ' THEN 'AZ'
+    WHEN 'Jong Ajax' THEN 'Ajax'
+    WHEN 'Jong FC Utrecht' THEN 'FC Utrecht'
+    WHEN 'Jong PSV' THEN 'PSV'
+  END
+  JOIN public.divisions pd ON pd.id=parent.division_id AND pd.season_id=yd.season_id
+  JOIN public.players p ON p.team_id=parent.id AND p.source_cm_player_id IS NOT NULL AND p.is_active=TRUE
+  WHERE y.name IN ('Jong AZ','Jong Ajax','Jong FC Utrecht','Jong PSV')
+)
+INSERT INTO public.team_player_memberships(season_id,team_id,player_id,membership_type)
+SELECT season_id,youth_team_id,player_id,'youth-affiliate'
+FROM youth_roster WHERE rn<=24
+ON CONFLICT(season_id,team_id,player_id) DO NOTHING;
+
 INSERT INTO public.career_player_states(save_id,player_id,club_id,current_rating,potential_rating)
 SELECT s.id,p.id,p.team_id,p.overall_rating,p.potential_rating
 FROM public.career_saves s CROSS JOIN public.players p
