@@ -47,7 +47,7 @@ export async function GET() {
           id, team_id, full_name, position, shirt_number, overall_rating, potential_rating,
           source_url, source_checked_at
         FROM all_players
-        WHERE team_id IS NOT NULL AND is_active = TRUE AND record_source <> 'cm0102'
+        WHERE team_id IS NOT NULL AND is_active = TRUE AND record_source = 'current'
         ORDER BY team_id, lower(full_name), CASE WHEN record_source = 'current' THEN 0 ELSE 1 END, overall_rating DESC
       ) p ON p.team_id = t.id
       WHERE d.season_id = '2026-2027'
