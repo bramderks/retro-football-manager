@@ -161,13 +161,7 @@ export async function POST(request: Request) {
            LEFT JOIN public.cm0102_game_team_mappings m ON m.cm_club_id=a.cm_club_id
            LEFT JOIN public.cm0102_clubs c ON c.cm_club_id=a.cm_club_id
           WHERE p.source_cm_player_id=a.cm_player_id
-            AND p.source_cm_player_id = ANY($1::integer[])
-            AND (m.team_id IS NULL OR NOT EXISTS (
-              SELECT 1 FROM public.players other
-               WHERE other.team_id=m.team_id AND other.id<>p.id
-                 AND other.is_active=TRUE
-                 AND lower(BTRIM(other.full_name))=lower(BTRIM(p.full_name))
-            ))`,
+            AND p.source_cm_player_id = ANY($1::integer[])`,
         [ids]
       );
       await sql.query(
