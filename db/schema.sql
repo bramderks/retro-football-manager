@@ -62,3 +62,14 @@ CREATE TABLE IF NOT EXISTS world_fixture_results (
   away_goals smallint NOT NULL CHECK(away_goals BETWEEN 0 AND 8),
   simulated_at timestamptz NOT NULL DEFAULT now()
 );
+
+
+CREATE TABLE IF NOT EXISTS uefa_club_player_memberships (
+  season_id text NOT NULL REFERENCES seasons(id) ON DELETE CASCADE,
+  club_id text NOT NULL REFERENCES uefa_clubs(id) ON DELETE CASCADE,
+  player_id text NOT NULL REFERENCES players(id) ON DELETE CASCADE,
+  membership_type text NOT NULL DEFAULT 'primary',
+  PRIMARY KEY(season_id,club_id,player_id)
+);
+CREATE INDEX IF NOT EXISTS idx_uefa_club_player_memberships_roster
+  ON uefa_club_player_memberships(season_id,club_id,membership_type);
