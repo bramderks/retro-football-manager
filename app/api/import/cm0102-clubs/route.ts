@@ -82,25 +82,25 @@ export async function POST(request: Request) {
     await sql.query(
       `UPDATE public.players old
           SET team_id=NULL,is_active=FALSE,career_status='inactive'
-        WHERE old.cm_player_id IS NULL
+        WHERE old.source_cm_player_id IS NULL
           AND old.team_id IS NOT NULL
           AND EXISTS (
             SELECT 1 FROM public.players cm
-            JOIN public.cm0102_player_club_assignments a ON a.cm_player_id=cm.cm_player_id
+            JOIN public.cm0102_player_club_assignments a ON a.cm_player_id=cm.source_cm_player_id
             JOIN public.cm0102_game_team_mappings m ON m.cm_club_id=a.cm_club_id
-            WHERE cm.cm_player_id IS NOT NULL AND m.team_id=old.team_id
+            WHERE cm.source_cm_player_id IS NOT NULL AND m.team_id=old.team_id
               AND lower(BTRIM(cm.full_name))=lower(BTRIM(old.full_name))
           )`
     );
     await sql.query(
       `UPDATE public.players cm
-          SET cm_club_id=a.cm_club_id,team_id=m.team_id,club_name=t.name,
-              record_source='cm0102',is_active=TRUE,career_status='active'
+          SET source_cm_club_id=a.cm_club_id,team_id=m.team_id,source_club_name=t.name,
+              source_type='cm0102',is_active=TRUE,career_status='active'
          FROM public.cm0102_player_club_assignments a
          JOIN public.cm0102_game_team_mappings m ON m.cm_club_id=a.cm_club_id
          JOIN public.teams t ON t.id=m.team_id
-        WHERE cm.cm_player_id=a.cm_player_id
-          AND cm.cm_player_id IS NOT NULL
+        WHERE cm.source_cm_player_id=a.cm_player_id
+          AND cm.source_cm_player_id IS NOT NULL
           AND NOT EXISTS (
             SELECT 1 FROM public.players other
              WHERE other.team_id=m.team_id AND other.id<>cm.id
@@ -112,8 +112,8 @@ export async function POST(request: Request) {
       `INSERT INTO public.career_player_states(save_id,player_id,club_id,current_rating,potential_rating)
        SELECT s.id,p.id,p.team_id,p.overall_rating,p.potential_rating
          FROM public.career_saves s CROSS JOIN public.players p
-        WHERE p.cm_player_id IS NOT NULL AND p.team_id IS NOT NULL
-          AND p.cm_club_id IN (SELECT cm_club_id FROM public.cm0102_player_club_assignments)
+        WHERE p.source_cm_player_id IS NOT NULL AND p.team_id IS NOT NULL
+          AND p.source_cm_club_id IN (SELECT cm_club_id FROM public.cm0102_player_club_assignments)
        ON CONFLICT(save_id,player_id) DO NOTHING`
     );
     return NextResponse.json({ success: true, processed: rows.length, clubsProcessed: clubs.length });
