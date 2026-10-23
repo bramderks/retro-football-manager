@@ -282,3 +282,80 @@ tbody tr:hover{background:rgba(131,201,244,.045)}
 .board-profile-row h3{margin:0 0 5px;font-size:17px}
 .board-profile-row p{margin:4px 0;font-size:12px}
 .board-profile-row strong{color:var(--gold,#e7c46a)}
+
+
+/* CM 97/98-inspired light skin: compact, information-dense, classic desktop manager. */
+:root{--bg:#d9e0e5;--panel:#f3f5f6;--panel2:#cbd5dd;--line:#9baab5;--text:#182a3a;--muted:#5b6b78;--gold:#245b86;--green:#277447;--blue:#1d5f9a}
+body{background:#cfd7de;color:#182a3a;font-family:Arial,Helvetica,sans-serif;font-size:13px}
+.app-shell{background:#d9e0e5;max-width:1800px;border-left:1px solid #a5b2bd;border-right:1px solid #a5b2bd}
+.topbar{height:64px;background:#244d70;border-bottom:3px solid #173a58;color:#fff;padding:0 20px}
+.brand-mark{width:38px;height:38px;background:#e7edf1;border:2px solid #fff;color:#244d70;font-size:12px}
+.brand-title{color:#fff;font-size:16px;letter-spacing:.8px}
+.brand-sub{color:#d2e1ec;letter-spacing:1px}
+.live-pill{border:1px solid #8da9bf;background:#1d4263;color:#eaf3f9;padding:7px 10px}
+.nav{background:#e7ecef;border-bottom:1px solid #899aa7;padding:0 10px;gap:2px}
+.nav-button{color:#29465c;padding:12px 13px;border-right:1px solid #c4cfd7;border-bottom:3px solid transparent;font:700 12px Arial,Helvetica,sans-serif}
+.nav-button.active{background:#fff;color:#173f62;border-bottom-color:#2b6595}
+.workspace{background:#d9e0e5;gap:10px;padding:10px;grid-template-columns:260px minmax(0,1fr)}
+.sidebar,.match-area,.career-panel,.career-screen .career-panel,.tactics-panel,.pitch-panel{background:#f5f7f8;border:1px solid #a5b3bd;border-radius:0;box-shadow:0 1px 1px rgba(23,48,67,.08)}
+.side-section{border-bottom:1px solid #c3cdd5;padding:13px}
+.eyebrow{color:#245b86;letter-spacing:.7px;font-weight:800}
+.fixture-title{color:#172f44;font-size:14px}
+.stat-row{color:#506372}.stat-row strong{color:#18354b}
+.tactics select,.speed-label select,.career-screen select,.career-screen input,.transfer-filters input,.transfer-filters select,.transfer-offer-grid input,.transfer-offer-grid select{background:#fff;border:1px solid #96a6b2;border-radius:0;color:#172d40}
+.control-grid button,.role-actions button,.career-screen button:not(.player-profile-link),.match-end-actions button{border-radius:0;box-shadow:none}
+.control-grid button{background:#dce5eb;border:1px solid #9eafbb;color:#1b3e58}
+.control-grid .start-button,.primary-action{background:#2b6595;border:1px solid #1b4f79;color:#fff}
+.match-area{background:#f4f6f7}
+.match-meta{background:#e6ecef;border-bottom:1px solid #a8b6c0;color:#4e6271}
+.scoreboard{background:linear-gradient(#e7edf1,#d1dce4);border-bottom:1px solid #9eafb9}
+.team-name{font-size:18px;color:#19364c}
+.team-meta{color:#4d6575}
+.score{color:#173d5b}
+.clock{color:#245b86}
+.commentary-head{background:#e8edf0;border-bottom:1px solid #aab7c1}
+.commentary-head h2{color:#17364b}
+.status-live,.status-idle{border:1px solid #a4b3bd;background:#f7f9fa;color:#3f5b6f;border-radius:0}
+.commentary{background:#fff;color:#172d40}
+.event{border-bottom:1px solid #e0e6ea}
+.event-text{color:#263d50}
+.event.goal{background:#fff7d9}.event.goal .event-text,.event.goal .event-minute{color:#704d00}
+.event.var{background:#eaf3fa}
+.event.system{background:#f0f3f5}
+.match-footer{background:#e6ecef;border-top:1px solid #a7b5bf;color:#4e6473}
+.career-screen,.tactics-screen{color:#1b3245}
+.career-header{border-bottom:2px solid #9eafba}
+.career-header h1,.career-screen h1{color:#173a55}
+.career-panel{padding:15px}
+.career-table-wrap{border:1px solid #b5c1ca;background:#fff;overflow:auto}
+.career-table{border-collapse:collapse;width:100%;background:#fff;color:#1d3447}
+.career-table thead{background:#dce5eb;color:#193f5b}
+.career-table th{border-bottom:2px solid #94a8b6;font-weight:800}
+.career-table td,.career-table th{padding:8px 9px;border-right:1px solid #e0e6ea;border-bottom:1px solid #d7e0e6}
+.career-table tbody tr:nth-child(even){background:#f0f4f6}
+.career-table tbody tr:hover{background:#e2edf5}
+.career-table .my-club,.career-table .my-fixture{background:#e1edf6}
+.fixture-row,.objective-row,.news-row{border-bottom:1px solid #d4dee5;color:#20394c}
+.fixture-row small,.muted{color:#607382}
+.player-profile-link{color:#205f8f}
+.leaderboard-card{background:#edf2f5;border:1px solid #b4c2cb;border-radius:0}
+.leaderboard-card>small{color:#245b86}
+.profile-modal-backdrop{background:rgba(27,49,67,.5);backdrop-filter:none}
+.profile-modal{background:#f5f7f8;border:1px solid #8398a8;box-shadow:0 8px 30px rgba(20,40,55,.22)}
+.profile-modal-top h2{color:#173a55}
+.profile-kpis>div,.profile-contract-grid>div{background:#fff;border:1px solid #c3cdd5;border-radius:0}
+.profile-kpis small,.profile-contract-grid small{color:#607382}
+.facility-card{background:#fff;border:1px solid #afbdc7;border-radius:0}
+.facility-card button{background:#dfe8ee;border:1px solid #9aadb9;color:#244a65}
+.board-profile-panel{border-color:#a8b7c2}
+.board-avatar{border-radius:0;background:#e0eaf0;border-color:#a5b7c4;color:#245b86}
+.match-end-actions{background:#e6edf1;border:1px solid #a7b7c2;border-radius:0;box-shadow:none}
+.match-end-actions:before{color:#4f6473}
+.discipline-feed{background:#edf2f5;border-bottom:1px solid #b4c0c9}
+.discipline-feed .event-chip{background:#fff;border-color:#c7d2da;color:#263e51}
+.event-feed-label{background:#e4ebf0;color:#245b86;border-bottom:1px solid #bcc9d1}
+.injury-alert-panel{background:#fff4ed;border-color:#d7a78d}
+.injury-alert-row{background:#fff;border-color:#e5c4b2}
+.injury-alert-row strong{color:#723f2b}
+.injury-icon{background:#f8e3d8;color:#9a4d2d;border-radius:0}
+@media(max-width:900px){.workspace{grid-template-columns:1fr}.sidebar{width:100%}.topbar{padding:0 12px}.nav{padding:0 4px}.nav-button{padding:11px 9px}.scoreboard{padding:18px 12px;grid-template-columns:1fr 100px 1fr}.team-name{font-size:14px}.crest{width:42px;height:48px}.score{font-size:38px}}
