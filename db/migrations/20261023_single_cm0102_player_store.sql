@@ -1,8 +1,6 @@
--- Consolidate the CM 01/02 database into the canonical public.players table without duplicating 139k profiles.
--- The existing players table is preserved temporarily as legacy_players so save IDs can be copied and FKs rewired.
+-- Consolidate CM 01/02 records into the canonical public.players table without copying the 139k-row profile store.
 DROP VIEW IF EXISTS public.all_players;
 
--- Save-local tables must be re-pointed to the new canonical players table after the table swap.
 ALTER TABLE public.career_player_contracts DROP CONSTRAINT IF EXISTS career_player_contracts_player_id_fkey;
 ALTER TABLE public.career_player_match_stats DROP CONSTRAINT IF EXISTS career_player_match_stats_player_id_fkey;
 ALTER TABLE public.career_player_states DROP CONSTRAINT IF EXISTS career_player_states_player_id_fkey;
@@ -33,10 +31,9 @@ ALTER TABLE public.cm0102_player_profiles ADD COLUMN IF NOT EXISTS id TEXT;
 UPDATE public.cm0102_player_profiles SET id='cm0102-' || cm_player_id::text WHERE id IS NULL;
 ALTER TABLE public.cm0102_player_profiles ALTER COLUMN id SET NOT NULL;
 ALTER TABLE public.cm0102_player_profiles ADD CONSTRAINT cm0102_profiles_id_key UNIQUE(id);
-ALTER TABLE public.cm0102_player_profiles ADD CONSTRAINT cm0102_profiles_cm_player_id_key UNIQUE(cm_player_id);
 ALTER TABLE public.cm0102_player_profiles RENAME TO players;
 
--- Extend the CM profile table in place. This keeps the 139k source records in one physical player table.
+-- Extend the CM table in place. Keep raw JSON attributes in their original columns to avoid duplicating 238 MB of data.
 ALTER TABLE public.players
   ADD COLUMN IF NOT EXISTS team_id TEXT REFERENCES public.teams(id) ON DELETE CASCADE,
   ADD COLUMN IF NOT EXISTS known_as TEXT,
@@ -65,9 +62,7 @@ ALTER TABLE public.players
   ADD COLUMN IF NOT EXISTS source_pa_resolution_rule TEXT,
   ADD COLUMN IF NOT EXISTS source_club_name TEXT,
   ADD COLUMN IF NOT EXISTS source_positions JSONB NOT NULL DEFAULT '[]'::jsonb,
-  ADD COLUMN IF NOT EXISTS source_sides JSONB NOT NULL DEFAULT '[]'::jsonb,
   ADD COLUMN IF NOT EXISTS source_attributes JSONB NOT NULL DEFAULT '{}'::jsonb,
-  ADD COLUMN IF NOT EXISTS source_foot_attributes JSONB NOT NULL DEFAULT '{}'::jsonb,
   ADD COLUMN IF NOT EXISTS source_current_ability_stars NUMERIC(3,1),
   ADD COLUMN IF NOT EXISTS source_potential_ability_stars NUMERIC(3,1),
   ADD COLUMN IF NOT EXISTS source_randomize_zero_attributes BOOLEAN NOT NULL DEFAULT TRUE,
@@ -86,6 +81,7 @@ ALTER TABLE public.players ADD CONSTRAINT players_preferred_foot_check CHECK (pr
 ALTER TABLE public.players ADD CONSTRAINT players_overall_rating_check CHECK (overall_rating BETWEEN 1 AND 100);
 ALTER TABLE public.players ADD CONSTRAINT players_potential_rating_check CHECK (potential_rating BETWEEN 1 AND 100);
 UPDATE public.players SET preferred_foot=NULL WHERE preferred_foot='unknown';
+
 UPDATE public.players
 SET source_cm_player_id=cm_player_id,
     known_as=NULLIF(BTRIM(common_name),''),
@@ -97,10 +93,6 @@ SET source_cm_player_id=cm_player_id,
     source_cm_nationality_id=nationality_id,
     source_cm_second_nationality_id=second_nationality_id,
     source_pa_resolution_rule=pa_resolution_rule,
-    source_positions=COALESCE(positions,'[]'::jsonb),
-    source_sides=COALESCE(sides,'[]'::jsonb),
-    source_attributes=COALESCE(attributes,'{}'::jsonb),
-    source_foot_attributes=COALESCE(foot_attributes,'{}'::jsonb),
     source_current_ability_stars=current_ability_stars,
     source_potential_ability_stars=potential_ability_stars,
     source_randomize_zero_attributes=COALESCE(randomize_zero_attributes,TRUE),
@@ -122,12 +114,13 @@ SET source_cm_player_id=cm_player_id,
     is_active=TRUE,
     career_status='active';
 
-CREATE UNIQUE INDEX IF NOT EXISTS players_source_cm_player_id_uq
-  ON public.players(source_cm_player_id) WHERE source_cm_player_id IS NOT NULL;
-CREATE INDEX IF NOT EXISTS idx_players_cm_source_name
-  ON public.players(full_name) WHERE source_cm_player_id IS NOT NULL;
+-- Keep CM IDs as source_cm_player_id and allow the old CM-only import ID column to disappear.
+ALTER TABLE public.players ADD CONSTRAINT players_source_cm_player_id_key UNIQUE(source_cm_player_id);
+ALTER TABLE public.players DROP CONSTRAINT IF EXISTS cm0102_profiles_cm_player_id_key;
+ALTER TABLE public.players DROP CONSTRAINT IF EXISTS cm0102_player_profiles_cm_player_id_key;
+ALTER TABLE public.players DROP COLUMN cm_player_id;
 
--- Bring across the small legacy domestic seed roster while keeping CM records as the only active source for mapped clubs.
+-- Copy the small legacy game roster; CM source attributes remain in the existing positions/sides/attributes/foot_attributes columns.
 INSERT INTO public.players (
   id,team_id,full_name,known_as,date_of_birth,nationality,position,shirt_number,preferred_foot,
   overall_rating,potential_rating,source_url,source_checked_at,is_active,created_at,career_status,
@@ -138,7 +131,7 @@ SELECT
   old.id,
   CASE WHEN EXISTS (
     SELECT 1 FROM public.players cm
-    JOIN public.cm0102_player_club_assignments a ON a.cm_player_id=cm.cm_player_id
+    JOIN public.cm0102_player_club_assignments a ON a.cm_player_id=cm.source_cm_player_id
     JOIN public.cm0102_game_team_mappings m ON m.cm_club_id=a.cm_club_id
     WHERE m.team_id=old.team_id AND lower(BTRIM(cm.full_name))=lower(BTRIM(old.full_name))
   ) THEN NULL ELSE old.team_id END,
@@ -146,14 +139,14 @@ SELECT
   old.preferred_foot,old.overall_rating,old.potential_rating,old.source_url,old.source_checked_at,
   CASE WHEN EXISTS (
     SELECT 1 FROM public.players cm
-    JOIN public.cm0102_player_club_assignments a ON a.cm_player_id=cm.cm_player_id
+    JOIN public.cm0102_player_club_assignments a ON a.cm_player_id=cm.source_cm_player_id
     JOIN public.cm0102_game_team_mappings m ON m.cm_club_id=a.cm_club_id
     WHERE m.team_id=old.team_id AND lower(BTRIM(cm.full_name))=lower(BTRIM(old.full_name))
   ) THEN FALSE ELSE old.is_active END,
   old.created_at,
   CASE WHEN EXISTS (
     SELECT 1 FROM public.players cm
-    JOIN public.cm0102_player_club_assignments a ON a.cm_player_id=cm.cm_player_id
+    JOIN public.cm0102_player_club_assignments a ON a.cm_player_id=cm.source_cm_player_id
     JOIN public.cm0102_game_team_mappings m ON m.cm_club_id=a.cm_club_id
     WHERE m.team_id=old.team_id AND lower(BTRIM(cm.full_name))=lower(BTRIM(old.full_name))
   ) THEN 'inactive' ELSE old.career_status END,
@@ -171,14 +164,11 @@ LEFT JOIN public.cm0102_clubs c ON c.cm_club_id=a.cm_club_id
 LEFT JOIN public.cm0102_game_team_mappings m ON m.cm_club_id=a.cm_club_id
 WHERE cm.source_cm_player_id=a.cm_player_id;
 
--- The canonical players table allows identical names when the CM player IDs differ.
 ALTER TABLE public.legacy_players DROP CONSTRAINT IF EXISTS players_team_id_full_name_key;
 CREATE UNIQUE INDEX IF NOT EXISTS players_team_id_full_name_non_cm_uq
   ON public.players(team_id,full_name) WHERE source_cm_player_id IS NULL;
-
 DROP TABLE public.legacy_players;
 
--- Repoint every player FK to the new canonical players table.
 ALTER TABLE public.career_player_contracts ADD CONSTRAINT career_player_contracts_player_id_fkey FOREIGN KEY (player_id) REFERENCES public.players(id) ON DELETE CASCADE;
 ALTER TABLE public.career_player_match_stats ADD CONSTRAINT career_player_match_stats_player_id_fkey FOREIGN KEY (player_id) REFERENCES public.players(id) ON DELETE CASCADE;
 ALTER TABLE public.career_player_states ADD CONSTRAINT career_player_states_player_id_fkey FOREIGN KEY (player_id) REFERENCES public.players(id) ON DELETE CASCADE;
@@ -187,7 +177,7 @@ ALTER TABLE public.player_contracts ADD CONSTRAINT player_contracts_player_id_fk
 ALTER TABLE public.player_history ADD CONSTRAINT player_history_player_id_fkey FOREIGN KEY (player_id) REFERENCES public.players(id) ON DELETE CASCADE;
 ALTER TABLE public.transfer_offers ADD CONSTRAINT transfer_offers_player_id_fkey FOREIGN KEY (player_id) REFERENCES public.players(id);
 ALTER TABLE public.youth_squad_players ADD CONSTRAINT youth_squad_players_promoted_player_id_fkey FOREIGN KEY (promoted_player_id) REFERENCES public.players(id) ON DELETE SET NULL;
-ALTER TABLE public.cm0102_player_club_assignments ADD CONSTRAINT cm0102_player_club_assignments_cm_player_id_fkey FOREIGN KEY (cm_player_id) REFERENCES public.players(cm_player_id) ON DELETE CASCADE;
+ALTER TABLE public.cm0102_player_club_assignments ADD CONSTRAINT cm0102_player_club_assignments_cm_player_id_fkey FOREIGN KEY (cm_player_id) REFERENCES public.players(source_cm_player_id) ON DELETE CASCADE;
 
 INSERT INTO public.career_player_states(save_id,player_id,club_id,current_rating,potential_rating)
 SELECT s.id,p.id,p.team_id,p.overall_rating,p.potential_rating
@@ -201,7 +191,8 @@ SELECT p.id,p.team_id,p.full_name,p.known_as,p.date_of_birth,p.nationality,p.pos
        p.source_checked_at,p.is_active,p.career_status,p.retired_on,p.source_type,
        p.source_cm_player_id,p.source_world_player_id,
        COALESCE(p.source_club_name,t.name) AS club_name,
-       p.source_positions,p.source_attributes,
+       CASE WHEN p.source_type='cm0102' THEN p.positions ELSE p.source_positions END AS source_positions,
+       CASE WHEN p.source_type='cm0102' THEN p.attributes ELSE p.source_attributes END AS source_attributes,
        CASE WHEN p.source_type='world_roster' THEN 'world_roster'
             WHEN p.source_type='cm0102' THEN 'cm0102' ELSE 'current' END AS record_source
 FROM public.players p
