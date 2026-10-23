@@ -12,10 +12,10 @@ export async function GET() {
   try {
     const sql = neon(conn);
     const squads = await sql.query(
-      "SELECT s.id,s.name,s.season_id,t.name AS club_name,COUNT(p.id) FILTER (WHERE p.promoted_at IS NULL)::int AS active_players FROM youth_squads s JOIN teams t ON t.id=s.club_id LEFT JOIN youth_squad_players p ON p.squad_id=s.id GROUP BY s.id,t.name ORDER BY s.name"
+      "SELECT s.id,s.name,s.season_id,t.name AS club_name,COUNT(yp.player_id) FILTER (WHERE yp.promoted_at IS NULL)::int AS active_players FROM youth_squads s JOIN teams t ON t.id=s.club_id LEFT JOIN youth_squad_players yp ON yp.squad_id=s.id GROUP BY s.id,t.name ORDER BY s.name"
     );
     const players = await sql.query(
-      "SELECT p.*, (p.promoted_at IS NOT NULL) AS promoted, t.name AS promoted_to FROM youth_squad_players p LEFT JOIN teams t ON t.id=p.promoted_to_team_id WHERE p.squad_id='ajax-o19' ORDER BY p.promoted_at NULLS FIRST,p.position,p.full_name"
+      "SELECT yp.id,yp.squad_id,yp.age_years,yp.promoted_at,yp.promoted_to_team_id,p.id AS player_id,p.full_name,p.nationality,p.position,p.preferred_foot,p.overall_rating,p.potential_rating,p.source_url,p.source_checked_at,(yp.promoted_at IS NOT NULL) AS promoted,t.name AS promoted_to FROM youth_squad_players yp JOIN players p ON p.id=yp.player_id LEFT JOIN teams t ON t.id=yp.promoted_to_team_id WHERE yp.squad_id='ajax-o19' ORDER BY yp.promoted_at NULLS FIRST,p.position,p.full_name"
     );
     const clubs = await sql.query(
       "SELECT t.id,t.name FROM teams t JOIN divisions d ON d.id=t.division_id WHERE d.season_id='2026-2027' AND t.id IN ('ajax','jong-ajax') ORDER BY CASE WHEN t.id='jong-ajax' THEN 1 ELSE 2 END"
@@ -38,34 +38,37 @@ export async function POST(request: Request) {
     if (!youthId || !["ajax","jong-ajax"].includes(teamId)) return fail("Kies een jeugdspeler en Ajax 1 of Jong Ajax.");
     const sql = neon(conn);
     const rows = await sql.query(
-      "SELECT yp.* FROM youth_squad_players yp WHERE yp.id=$1 AND yp.squad_id='ajax-o19' AND yp.promoted_at IS NULL LIMIT 1",
+      "SELECT yp.id,yp.player_id,p.full_name,p.overall_rating,p.potential_rating FROM youth_squad_players yp JOIN players p ON p.id=yp.player_id WHERE yp.id=$1 AND yp.squad_id='ajax-o19' AND yp.promoted_at IS NULL LIMIT 1",
       [youthId]
     );
     if (!rows.length) return fail("Jeugdspeler niet gevonden of al overgeheveld.", 404);
     const p: any = rows[0];
-    const slug = p.full_name.normalize("NFKD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
-    const existing = await sql.query(
-      "SELECT id FROM players WHERE LOWER(full_name)=LOWER($1) AND team_id IN ('ajax','jong-ajax') ORDER BY CASE WHEN team_id=$2 THEN 0 ELSE 1 END LIMIT 1",
-      [p.full_name, teamId]
-    );
-    let playerId: string;
-    if (existing.length) {
-      playerId = String(existing[0].id);
-      await sql.query(
-        "UPDATE players SET team_id=$2,nationality=COALESCE(nationality,$3),position=$4,overall_rating=$5,potential_rating=GREATEST(potential_rating,$6),source_url=COALESCE(source_url,$7),source_checked_at=CURRENT_DATE,is_active=TRUE,career_status='active' WHERE id=$1",
-        [playerId, teamId, p.nationality, p.position, p.overall_rating, p.potential_rating, p.source_url]
-      );
-    } else {
-      playerId = "ajax-youth-" + slug;
-      const result = await sql.query(
-        "INSERT INTO players(id,team_id,full_name,known_as,date_of_birth,nationality,position,preferred_foot,overall_rating,potential_rating,source_url,source_checked_at,is_active,career_status) VALUES($1,$2,$3,$4,NULL,$5,$6,$7,$8,$9,$10,CURRENT_DATE,TRUE,'active') ON CONFLICT(id) DO UPDATE SET team_id=EXCLUDED.team_id,nationality=COALESCE(players.nationality,EXCLUDED.nationality),position=EXCLUDED.position,overall_rating=EXCLUDED.overall_rating,potential_rating=GREATEST(players.potential_rating,EXCLUDED.potential_rating),is_active=TRUE,career_status='active' RETURNING id",
-        [playerId, teamId, p.full_name, p.full_name.split(" ")[0], p.nationality, p.position, p.preferred_foot, p.overall_rating, p.potential_rating, p.source_url]
-      );
-      playerId = String(result[0].id);
-    }
+    const playerId = String(p.player_id);
+
     await sql.query(
-      "UPDATE youth_squad_players SET promoted_player_id=$2,promoted_to_team_id=$3,promoted_at=NOW() WHERE id=$1",
-      [youthId, playerId, teamId]
+      "UPDATE players SET team_id=$2,is_active=TRUE,career_status='active' WHERE id=$1",
+      [playerId, teamId]
+    );
+    const membershipType = teamId === "jong-ajax" ? "youth-affiliate" : "primary";
+    await sql.query(
+      "INSERT INTO team_player_memberships(season_id,team_id,player_id,membership_type) VALUES('2026-2027',$1,$2,$3) ON CONFLICT(season_id,team_id,player_id) DO UPDATE SET membership_type=EXCLUDED.membership_type",
+      [teamId, playerId, membershipType]
+    );
+    await sql.query(
+      "UPDATE youth_squad_players SET promoted_to_team_id=$2,promoted_at=NOW() WHERE id=$1",
+      [youthId, teamId]
+    );
+    await sql.query(
+      "UPDATE career_player_states cps SET club_id=$2 FROM career_saves s WHERE cps.save_id=s.id AND s.club_id=$2 AND cps.player_id=$1",
+      [playerId, teamId]
+    );
+    await sql.query(
+      "INSERT INTO career_player_states(save_id,player_id,club_id,current_rating,potential_rating) SELECT s.id,p.id,$2,p.overall_rating,p.potential_rating FROM career_saves s JOIN players p ON p.id=$1 WHERE s.club_id=$2 ON CONFLICT(save_id,player_id) DO NOTHING",
+      [playerId, teamId]
+    );
+    await sql.query(
+      "INSERT INTO career_player_contracts(id,save_id,player_id,club_id,start_date,end_date,weekly_wage,squad_status,release_clause) SELECT 'contract-'||s.id||'-'||p.id,s.id,p.id,$2,CURRENT_DATE,'2028-06-30',GREATEST(500,p.overall_rating*p.overall_rating*2),'rotation',GREATEST(100000,p.overall_rating*p.overall_rating*900) FROM career_saves s JOIN players p ON p.id=$1 WHERE s.club_id=$2 ON CONFLICT DO NOTHING",
+      [playerId, teamId]
     );
     return NextResponse.json({ ok: true, playerId, teamId, player: p.full_name });
   } catch (error) {
