@@ -325,11 +325,15 @@ export default function Home() {
     const assignedIds = userIsTeam ? (lineupConfirmed ? matchLineup : Object.values(homeTactics.lineup || {}).filter(Boolean)).filter((id:string)=>!redCardIds.includes(id)&&!injuredIds.includes(id)) : [];
     const assignedPlayers = userIsTeam ? (careerData?.squad || []).filter((p:any) => assignedIds.includes(p.id)) : [];
     const squad: Player[] = userIsTeam && lineupConfirmed ? assignedPlayers.map((p:any) => ({
+      id: p.id,
       name: p.full_name,
-      position: p.position === "GK" ? "keeper" : ["ST","RW","LW"].includes(p.position) ? "forward" : ["CB","LB","RB","LWB","RWB"].includes(p.position) ? "defender" : "midfielder",
+      rating: Number(p.overall_rating || 50),
+      position: p.position === "GK" ? "keeper" : ["SP","ST","LA","RA","AML","AMR","RW","LW"].includes(p.position) ? "forward" : ["CV","CB","LB","RB","LWB","RWB"].includes(p.position) ? "defender" : "midfielder",
     })) : dbTeam?.players.length ? dbTeam.players.map(p => ({
+      id: p.id,
       name: p.name,
-      position: p.position === "GK" ? "keeper" : ["ST","RW","LW"].includes(p.position) ? "forward" : ["CB","LB","RB","LWB","RWB"].includes(p.position) ? "defender" : "midfielder",
+      rating: Number(p.overallRating || 50),
+      position: p.position === "GK" ? "keeper" : ["SP","ST","LA","RA","AML","AMR","RW","LW"].includes(p.position) ? "forward" : ["CV","CB","LB","RB","LWB","RWB"].includes(p.position) ? "defender" : "midfielder",
     })) : [];
     const pool = positions?.length ? squad.filter(p => positions.includes(p.position)) : squad.filter(p => p.position !== "keeper");
     const weighted=pool.map(p=>({player:p,weight:Math.max(1,Number(p.rating||50))}));const total=weighted.reduce((sum,x)=>sum+x.weight,0);let roll=Math.random()*total;for(const item of weighted){roll-=item.weight;if(roll<=0)return item.player;}return weighted[weighted.length-1]?.player??squad[0];
@@ -353,9 +357,23 @@ export default function Home() {
   }
   function playMinute() {
     const m = minute + 1; setMinute(m);
-     const fatigueStep=(homeTactics.tempo==="Snel"?.34:homeTactics.tempo==="Geduldig"?.12:.22)+(homeTactics.pressing?.12:0)+(homeTactics.hardTackles?.08:0);
      const nextFitness={...matchFitness};
-     for(const p of careerData?.squad||[]){if(matchLineup.includes(p.id)&&!redCardIds.includes(p.id)&&!injuredIds.includes(p.id)){nextFitness[p.id]=Math.max(5,(nextFitness[p.id]??Number(p.fitness??100))-fatigueStep);}}
+     const sideLineups: string[][] = [0,1].map(side => {
+       if ((side as 0|1) === userSide && lineupConfirmed) return matchLineup;
+       const ai = aiLineups[side as 0|1] || [];
+       if (ai.length) return ai;
+       const team = databaseTeams.find(t => t.id === (side === 0 ? selectedHomeId : selectedAwayId));
+       return (team?.players || []).slice(0,11).map((p:any) => p.id);
+     });
+     for (const side of [0,1] as const) {
+       const tactic = side === userSide ? homeTactics : awayTactics;
+       const fatigueStep=(tactic.tempo==="Snel"?.34:tactic.tempo==="Geduldig"?.12:.22)+(tactic.pressing?.12:0)+(tactic.hardTackles?.08:0);
+       for (const id of sideLineups[side]) {
+         if (!id || redCardIds.includes(id) || injuredIds.includes(id)) continue;
+         const baseFitness=careerData?.squad?.find((p:any)=>p.id===id)?.fitness ?? 100;
+         nextFitness[id]=Math.max(5,(nextFitness[id]??Number(baseFitness))-fatigueStep);
+       }
+     }
      setMatchFitness(nextFitness);
     if(m>45&&matchPhase==="first-half")setMatchPhase("second-half");
     if(m>90&&extraTime)setMatchPhase("extra-time");
@@ -396,11 +414,14 @@ export default function Home() {
     const configuredHome = userIsHome ? homeTactics : awayTactics; const configuredAway = userIsHome ? awayTactics : homeTactics;
     const effectiveHomeTactics: Tactics = homeLeadNow >= 3 ? { ...configuredHome, mentality: "Verdedigend", pressing: false, counter: true } : homeLeadNow <= -2 ? { ...configuredHome, mentality: "Aanvallend", pressing: true } : configuredHome;
     const effectiveAwayTactics: Tactics = goals[1] - goals[0] >= 3 ? { ...configuredAway, mentality: "Verdedigend", pressing: false, counter: true } : goals[1] - goals[0] <= -2 ? { ...configuredAway, mentality: "Aanvallend", pressing: true } : configuredAway;
-    const playerFatigue=Object.entries(matchFitness).filter(([id])=>matchLineup.includes(id)).reduce((n,[,v])=>n+Math.max(0,65-v)*.09,0);
-     const homeFatigue=userSide===0?playerFatigue:m*((awayTactics.tempo==="Snel"?.035:.02)+(awayTactics.pressing?.01:0));
-     const homeRating = teamStrength(homeTeam, effectiveHomeTactics)-redCardsByTeam[0]*13-injuriesByTeam[0]*7+aiSubstitutions[0]*.7-homeFatigue;
-    const awayFatigue=userSide===1?playerFatigue:m*((homeTactics.tempo==="Snel"?.035:.02)+(homeTactics.pressing?.01:0));
-     const awayRating = teamStrength(awayTeam, effectiveAwayTactics)-redCardsByTeam[1]*13-injuriesByTeam[1]*7+aiSubstitutions[1]*.7-awayFatigue;
+    const fatigueForSide=(side:0|1)=>{
+      const ids=side===userSide&&lineupConfirmed?matchLineup:(aiLineups[side]?.length?aiLineups[side]:(databaseTeams.find(t=>t.id===(side===0?selectedHomeId:selectedAwayId))?.players||[]).slice(0,11).map((p:any)=>p.id));
+      return ids.reduce((total:number,id:string)=>total+Math.max(0,65-Number(matchFitness[id]??(careerData?.squad?.find((p:any)=>p.id===id)?.fitness??100)))*.09,0);
+    };
+    const homeFatigue=fatigueForSide(0);
+    const awayFatigue=fatigueForSide(1);
+    const homeRating = teamStrength(homeTeam, effectiveHomeTactics)-redCardsByTeam[0]*13-injuriesByTeam[0]*7+aiSubstitutions[0]*.7-homeFatigue;
+    const awayRating = teamStrength(awayTeam, effectiveAwayTactics)-redCardsByTeam[1]*13-injuriesByTeam[1]*7+aiSubstitutions[1]*.7-awayFatigue;
     const homeShare = Math.max(.24, Math.min(.82, .5 + (homeRating - awayRating) * .012));
     const home = Math.random() < homeShare;
     const team = home ? homeTeam.name : awayTeam.name; const other = home ? awayTeam.name : homeTeam.name;
@@ -443,7 +464,7 @@ export default function Home() {
           if (Math.random() < Math.max(.025, Math.min(.42, (.17 + (scorerQuality - keeper) * .0055) * gameStateFactor))) {
             addEvent({ minute: "VAR", text: "VAR controleert het doelpunt op buitenspel of een overtreding.", kind: "var" });
             if (Math.random() < .10) addEvent({ minute: "VAR", text: "Doelpunt afgekeurd na VAR-check: buitenspel in de aanloop.", kind: "var" });
-            else { const scorer = pickPlayer(ownIndex as 0 | 1, ["forward", "midfielder"]); const assist = Math.random() < .72 ? pickPlayer(ownIndex as 0 | 1, ["midfielder", "forward", "defender"]).name : undefined; setGoals(prev => home ? [prev[0] + 1, prev[1]] : [prev[0], prev[1] + 1]); setScorers(prev => [...prev, { team: ownIndex as 0 | 1, minute: m, name: scorer.name, playerId:resolvePlayerId(ownIndex as 0|1,scorer.name), assist, assistId:assist?resolvePlayerId(ownIndex as 0|1,assist):undefined }]); addEvent({ minute: "GOAL", text: scorer.name + " scoort een prachtige goal voor " + team + (assist ? ", op aangeven van " + assist : "") + "! De bal vliegt onhoudbaar in het doel.", kind: "goal" }); }
+            else { const scorer = pickPlayer(ownIndex as 0 | 1, ["forward", "midfielder"]); const assistPlayer = Math.random() < .72 ? pickPlayer(ownIndex as 0 | 1, ["midfielder", "forward", "defender"]) : undefined; const assist = assistPlayer?.name; setGoals(prev => home ? [prev[0] + 1, prev[1]] : [prev[0], prev[1] + 1]); setScorers(prev => [...prev, { team: ownIndex as 0 | 1, minute: m, name: scorer.name, playerId:scorer.id||resolvePlayerId(ownIndex as 0|1,scorer.name), assist, assistId:assistPlayer?(assistPlayer.id||resolvePlayerId(ownIndex as 0|1,assistPlayer.name)):undefined }]); addEvent({ minute: "GOAL", text: scorer.name + " scoort een prachtige goal voor " + team + (assist ? ", op aangeven van " + assist : "") + "! De bal vliegt onhoudbaar in het doel.", kind: "goal" }); }
           } else { const keeper = pickPlayer((home ? 1 : 0) as 0 | 1, ["keeper"]); addEvent({ minute: "SAVE", text: keeper.name + " redt knap op de inzet van " + shooter.name + " en houdt " + other + " op de been." }); }
         } else addEvent({ minute: "SCHOT", text: shooter.name + " haalt uit, maar de bal vliegt net over of naast." });
       } else if (Math.random() < .35) { own.corners++; const defender = pickPlayer((home ? 1 : 0) as 0 | 1, ["defender"]); addEvent({ minute: "COR", text: defender.name + " werkt de voorzet weg. Corner voor " + team + "." }); }
@@ -459,7 +480,7 @@ export default function Home() {
         if (Math.random() < .45) {
           addEvent({ minute: "VAR", text: "De VAR grijpt in: de scheidsrechter kent alsnog een strafschop toe!", kind: "var" });
           own.chances++;
-          if (Math.random() < (home ? .76 : .68)) { const scorer = pickPlayer(ownIndex as 0 | 1, ["forward", "midfielder"]); setGoals(prev => home ? [prev[0] + 1, prev[1]] : [prev[0], prev[1] + 1]); setScorers(prev => [...prev, { team: ownIndex as 0 | 1, minute: m, name: scorer.name, playerId:resolvePlayerId(ownIndex as 0|1,scorer.name), penalty: true }]); addEvent({ minute: "PEN", text: scorer.name + " blijft koel vanaf elf meter en schiet de penalty binnen voor " + team + "!", kind: "goal" }); }
+          if (Math.random() < (home ? .76 : .68)) { const scorer = pickPlayer(ownIndex as 0 | 1, ["forward", "midfielder"]); setGoals(prev => home ? [prev[0] + 1, prev[1]] : [prev[0], prev[1] + 1]); setScorers(prev => [...prev, { team: ownIndex as 0 | 1, minute: m, name: scorer.name, playerId:scorer.id||resolvePlayerId(ownIndex as 0|1,scorer.name), penalty: true }]); addEvent({ minute: "PEN", text: scorer.name + " blijft koel vanaf elf meter en schiet de penalty binnen voor " + team + "!", kind: "goal" }); }
           else { const keeper = pickPlayer((home ? 1 : 0) as 0 | 1, ["keeper"]); const taker = pickPlayer(ownIndex as 0 | 1, ["forward", "midfielder"]); addEvent({ minute: "PEN", text: "GEMISTE STRAFSCHOP! " + taker.name + " ziet zijn penalty gekeerd door " + keeper.name + " van " + other + ".", kind: "var" }); }
         } else addEvent({ minute: "VAR", text: "De scheidsrechter draait zijn beslissing terug na de VAR-check: geen penalty.", kind: "var" });
       }
