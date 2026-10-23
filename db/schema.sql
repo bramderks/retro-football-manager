@@ -53,3 +53,12 @@ INSERT INTO divisions (id, season_id, name, tier) VALUES
 ('eredivisie-2026-2027','2026-2027','VriendenLoterij Eredivisie',1),
 ('kkd-2026-2027','2026-2027','Keuken Kampioen Divisie',2)
 ON CONFLICT (id) DO NOTHING;
+
+
+CREATE TABLE IF NOT EXISTS world_fixture_results (
+  fixture_id text PRIMARY KEY REFERENCES fixtures(id) ON DELETE CASCADE,
+  season_id text NOT NULL,
+  home_goals smallint NOT NULL CHECK(home_goals BETWEEN 0 AND 8),
+  away_goals smallint NOT NULL CHECK(away_goals BETWEEN 0 AND 8),
+  simulated_at timestamptz NOT NULL DEFAULT now()
+);
