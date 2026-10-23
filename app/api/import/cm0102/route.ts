@@ -142,13 +142,13 @@ export async function POST(request: Request) {
       const ids = batch.map(p => Number(p.cmPlayerId));
       await sql.query(
         `UPDATE public.players p
-            SET cm_club_id=a.cm_club_id, team_id=m.team_id, club_name=t.name,
-                record_source='cm0102', is_active=TRUE, career_status='active'
+            SET source_cm_club_id=a.cm_club_id, team_id=m.team_id, source_club_name=t.name,
+                source_type='cm0102', is_active=TRUE, career_status='active'
            FROM public.cm0102_player_club_assignments a
            JOIN public.cm0102_game_team_mappings m ON m.cm_club_id=a.cm_club_id
            JOIN public.teams t ON t.id=m.team_id
           WHERE p.source_cm_player_id=a.cm_player_id
-            AND p.cm_player_id = ANY($1::bigint[])
+            AND p.source_cm_player_id = ANY($1::integer[])
             AND NOT EXISTS (
               SELECT 1 FROM public.players other
                WHERE other.team_id=m.team_id AND other.id<>p.id
