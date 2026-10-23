@@ -17,18 +17,21 @@ CREATE TABLE IF NOT EXISTS public.cm0102_game_team_mappings (
   mapping_method TEXT NOT NULL DEFAULT 'manual',
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-INSERT INTO public.cm0102_game_team_mappings(cm_club_id, team_id, mapping_method)
-SELECT c.cm_club_id, t.id, 'exact-normalized-name'
-FROM public.cm0102_clubs c
-JOIN public.teams t
-  ON regexp_replace(lower(c.club_name), '[^a-z0-9]', '', 'g')
-   = regexp_replace(lower(t.name), '[^a-z0-9]', '', 'g')
-JOIN public.divisions d ON d.id=t.division_id AND d.season_id='2026-2027'
+WITH exact_candidates AS (
+  SELECT c.cm_club_id,t.id AS team_id,
+         ROW_NUMBER() OVER(PARTITION BY c.cm_club_id ORDER BY d.tier ASC,t.id) AS rn
+  FROM public.cm0102_clubs c
+  JOIN public.teams t
+    ON regexp_replace(lower(c.club_name), '[^a-z0-9]', '', 'g')
+     = regexp_replace(lower(t.name), '[^a-z0-9]', '', 'g')
+  JOIN public.divisions d ON d.id=t.division_id AND d.season_id='2026-2027'
+)
+INSERT INTO public.cm0102_game_team_mappings(cm_club_id,team_id,mapping_method)
+SELECT cm_club_id,team_id,'exact-normalized-name'
+FROM exact_candidates WHERE rn=1
 ON CONFLICT (cm_club_id) DO NOTHING;
 -- Known historical/modern Dutch club-name aliases for the 2026/27 league data.
-INSERT INTO public.cm0102_game_team_mappings(cm_club_id,team_id,mapping_method)
-SELECT c.cm_club_id,t.id,'manual-alias'
-FROM (VALUES
+WITH aliases(team_name,cm_club_name) AS (VALUES
   ('Excelsior Rotterdam','Excelsior'),
   ('PEC Zwolle','FC Zwolle'),
   ('SC Cambuur','Cambuur Leeuwarden'),
@@ -93,10 +96,16 @@ FROM (VALUES
   ('Palermo','Città di Palermo'),
   ('Spezia','Spezia 1906'),
   ('Sudtirol','F.C. Sudtirol Alto Adige')
-) AS aliases(team_name,cm_club_name)
-JOIN public.teams t ON t.name=aliases.team_name
-JOIN public.divisions d ON d.id=t.division_id AND d.season_id='2026-2027'
-JOIN public.cm0102_clubs c ON lower(c.club_name)=lower(aliases.cm_club_name)
+) , alias_candidates AS (
+  SELECT c.cm_club_id,t.id AS team_id,
+         ROW_NUMBER() OVER(PARTITION BY c.cm_club_id ORDER BY d.tier ASC,t.id) AS rn
+  FROM aliases a
+  JOIN public.teams t ON t.name=a.team_name
+  JOIN public.divisions d ON d.id=t.division_id AND d.season_id='2026-2027'
+  JOIN public.cm0102_clubs c ON lower(c.club_name)=lower(a.cm_club_name)
+)
+INSERT INTO public.cm0102_game_team_mappings(cm_club_id,team_id,mapping_method)
+SELECT cm_club_id,team_id,'manual-alias' FROM alias_candidates WHERE rn=1
 ON CONFLICT DO NOTHING;
 
 ALTER TABLE public.players RENAME TO legacy_players;
