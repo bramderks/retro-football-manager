@@ -24,6 +24,27 @@ JOIN public.teams t
   ON regexp_replace(lower(c.club_name), '[^a-z0-9]', '', 'g')
    = regexp_replace(lower(t.name), '[^a-z0-9]', '', 'g')
 ON CONFLICT (cm_club_id) DO NOTHING;
+-- Known historical/modern Dutch club-name aliases for the 2026/27 league data.
+INSERT INTO public.cm0102_game_team_mappings(cm_club_id,team_id,mapping_method)
+SELECT c.cm_club_id,t.id,'manual-alias'
+FROM (VALUES
+  ('Excelsior Rotterdam','Excelsior'),
+  ('PEC Zwolle','FC Zwolle'),
+  ('SC Cambuur','Cambuur Leeuwarden'),
+  ('Sparta Rotterdam','Sparta'),
+  ('Telstar','Stormvogels Telstar Combinatie'),
+  ('FC Dordrecht','Dordrecht ´90'),
+  ('FC Eindhoven','EVV Eindhoven'),
+  ('FC Emmen','Emmen'),
+  ('MVV Maastricht','MVV'),
+  ('NAC Breda','NAC'),
+  ('Roda JC Kerkrade','Roda JC'),
+  ('VVV-Venlo','VVV'),
+  ('Almere City FC','FC Omniworld')
+) AS aliases(team_name,cm_club_name)
+JOIN public.teams t ON t.name=aliases.team_name
+JOIN public.cm0102_clubs c ON lower(c.club_name)=lower(aliases.cm_club_name)
+ON CONFLICT DO NOTHING;
 
 ALTER TABLE public.players RENAME TO legacy_players;
 ALTER TABLE public.cm0102_player_profiles DROP CONSTRAINT IF EXISTS cm0102_player_profiles_pkey;
