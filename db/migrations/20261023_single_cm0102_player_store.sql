@@ -72,6 +72,5 @@ ALTER TABLE public.players DROP CONSTRAINT IF EXISTS players_potential_rating_ch
 ALTER TABLE public.players ADD CONSTRAINT players_position_check CHECK (position = ANY (ARRAY[
   'GK','LB','CV','RB','VM','CM','LM','RM','AM','AML','AMR','LA','RA','SP','CB','DM','LWB','RWB','LW','RW','ST'
 ]::text[]));
-ALTER TABLE public.players ADD CONSTRAINT players_preferred_foot_check CHECK (preferred_foot IS NULL OR preferred_foot = ANY (ARRAY['left','right','both']::text[]));
 ALTER TABLE public.players ADD CONSTRAINT players_overall_rating_check CHECK (overall_rating BETWEEN 1 AND 100);
 ALTER TABLE public.players ADD CONSTRAINT players_potential_rating_check CHECK (potential_rating BETWEEN 1 AND 100);
