@@ -150,6 +150,14 @@ export async function POST(request: Request) {
           AND cm.source_cm_player_id IS NOT NULL`
     );
     await sql.query(
+      `DELETE FROM public.team_player_memberships tm
+        USING public.players p
+        WHERE tm.player_id=p.id AND tm.season_id='2026-2027'
+          AND tm.membership_type='primary'
+          AND p.source_cm_player_id IS NOT NULL
+          AND (p.team_id IS NULL OR tm.team_id<>p.team_id)`
+    );
+    await sql.query(
       `INSERT INTO public.team_player_memberships(season_id,team_id,player_id,membership_type)
        SELECT d.season_id,p.team_id,p.id,'primary'
          FROM public.players p JOIN public.teams t ON t.id=p.team_id
@@ -167,7 +175,7 @@ export async function POST(request: Request) {
          LEFT JOIN public.team_player_memberships tmYouth ON tmYouth.player_id=p.id AND tmYouth.membership_type='youth-affiliate' AND tmYouth.season_id=s.season_id
         WHERE p.source_cm_player_id IS NOT NULL
           AND COALESCE(tmSelected.team_id,tmPrimary.team_id,tmYouth.team_id,p.team_id) IS NOT NULL AND p.is_active=TRUE
-       ON CONFLICT(save_id,player_id) DO UPDATE SET club_id=EXCLUDED.club_id,current_rating=EXCLUDED.current_rating,potential_rating=EXCLUDED.potential_rating`
+       ON CONFLICT(save_id,player_id) DO NOTHING`
     );
     return NextResponse.json({ success: true, processed: rows.length, clubsProcessed: clubs.length });
   } catch (error) {
