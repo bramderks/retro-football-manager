@@ -93,9 +93,10 @@ FROM youth_roster WHERE rn<=24
 ON CONFLICT(season_id,team_id,player_id) DO NOTHING;
 
 INSERT INTO public.career_player_states(save_id,player_id,club_id,current_rating,potential_rating)
-SELECT s.id,p.id,p.team_id,p.overall_rating,p.potential_rating
+SELECT s.id,p.id,COALESCE(tm.team_id,p.team_id),p.overall_rating,p.potential_rating
 FROM public.career_saves s CROSS JOIN public.players p
-WHERE p.source_cm_player_id IS NOT NULL AND p.team_id IS NOT NULL
+LEFT JOIN public.team_player_memberships tm ON tm.player_id=p.id AND tm.team_id=s.club_id AND tm.season_id=s.season_id
+WHERE p.source_cm_player_id IS NOT NULL AND COALESCE(tm.team_id,p.team_id) IS NOT NULL AND p.is_active=TRUE
 ON CONFLICT(save_id,player_id) DO NOTHING;
 
 CREATE OR REPLACE VIEW public.all_players AS
