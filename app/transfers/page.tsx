@@ -13,6 +13,14 @@ type Player = {
   positions: unknown;
 };
 
+function formatDate(value: string | null): string {
+  if (!value) return "—";
+  const raw=String(value);
+  const match=raw.match(/^(\\d{4})-(\\d{2})-(\\d{2})/);
+  const date=match ? new Date(Number(match[1]),Number(match[2])-1,Number(match[3]),12) : new Date(raw);
+  return Number.isNaN(date.getTime()) ? "—" : date.toLocaleDateString("nl-NL");
+}
+
 export default function FreeTransfersPage() {
   const [players, setPlayers] = useState<Player[]>([]);
   const [query, setQuery] = useState("");
@@ -60,7 +68,7 @@ export default function FreeTransfersPage() {
             <tbody>
               {players.map((p) => <tr key={p.id}>
                 <td style={{ padding: 11, borderBottom: "1px solid #333", fontWeight: 700, whiteSpace: "nowrap" }}>{p.full_name}</td>
-                <td style={{ padding: 11, borderBottom: "1px solid #333", whiteSpace: "nowrap" }}>{p.date_of_birth ? new Date(p.date_of_birth).toLocaleDateString("nl-NL") : "—"}</td>
+                <td style={{ padding: 11, borderBottom: "1px solid #333", whiteSpace: "nowrap" }}>{formatDate(p.date_of_birth)}</td>
                 <td style={{ padding: 11, borderBottom: "1px solid #333" }}>{Array.isArray(p.positions) ? p.positions.join(", ") : "—"}</td>
                 <td style={{ padding: 11, borderBottom: "1px solid #333" }}>{p.current_ability ?? "—"}</td>
                 <td style={{ padding: 11, borderBottom: "1px solid #333" }}>{p.potential_ability ?? "—"}</td>
