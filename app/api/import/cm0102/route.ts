@@ -35,6 +35,15 @@ function jsonValue(value: unknown, fallback: unknown) {
   return value ?? fallback;
 }
 function primaryPosition(positions: unknown): string {
+  if (positions && typeof positions === "object" && !Array.isArray(positions)) {
+    const keys = Object.keys(positions as Record<string, unknown>);
+    const categoryMap: Array<[string, string]> = [
+      ["goalkeeper", "GK"], ["left_back", "LB"], ["right_back", "RB"], ["defender", "CV"],
+      ["defensive_midfielder", "VM"], ["attacking_midfielder", "AM"],
+      ["left_wing", "AML"], ["right_wing", "AMR"], ["striker", "SP"], ["attacker", "SP"]
+    ];
+    for (const [key, position] of categoryMap) if (keys.includes(key)) return position;
+  }
   const list = Array.isArray(positions) ? positions : [positions];
   for (const entry of list) {
     const raw = typeof entry === "string" ? entry :
@@ -44,7 +53,7 @@ function primaryPosition(positions: unknown): string {
     const mapped = POSITION_MAP[raw.trim().toUpperCase()];
     if (mapped) return mapped;
   }
-  return "SP";
+  return "CM";
 }
 function clean(row: ImportRow) {
   const cmPlayerId = num(row.cm_player_id);
@@ -98,33 +107,35 @@ export async function POST(request: Request) {
       const columns = [
         "id","team_id","full_name","known_as","date_of_birth","nationality","position",
         "preferred_foot","overall_rating","potential_rating","source_url","source_checked_at",
-        "is_active","career_status","record_source","cm_player_id","cm_staff_id","cm_nationality_id",
-        "cm_second_nationality_id","cm_current_ability","cm_potential_ability","cm_source_potential_ability",
-        "cm_pa_resolution_rule","cm_positions","cm_sides","cm_attributes","cm_foot_attributes",
-        "cm_current_ability_stars","cm_potential_ability_stars","cm_randomize_zero_attributes","source_version"
+        "is_active","career_status","source_type","source_cm_player_id","source_cm_staff_id",
+        "source_cm_club_id","source_cm_nationality_id","source_cm_second_nationality_id",
+        "source_current_ability","source_potential_ability","source_original_potential_ability",
+        "source_pa_resolution_rule","source_club_name","source_positions","source_attributes",
+        "source_foot_attributes","source_current_ability_stars","source_potential_ability_stars",
+        "source_randomize_zero_attributes","source_version"
       ];
       const params: unknown[] = [];
       const values = batch.map((p) => {
         const vals = [
           "cm0102-" + p.cmPlayerId, null, p.fullName, p.commonName, p.dob, null, p.position,
-          p.preferredFoot, Math.max(1, Math.min(100, Math.round(p.ca / 2))),
-          Math.max(1, Math.min(100, Math.round(p.pa / 2))), null, null, true, "active", "cm0102",
-          p.cmPlayerId, p.cmStaffId, p.nationalityId, p.secondNationalityId, p.ca, p.pa,
-          p.sourcePa, p.paRule, JSON.stringify(p.positions), JSON.stringify(p.sides),
-          JSON.stringify(p.attributes), JSON.stringify(p.footAttributes), p.caStars, p.paStars,
-          p.randomizeZeroAttributes, "CM0102 May 2026 Data Update"
+          p.preferredFoot, Math.max(1, Math.min(100, Math.round(30 + p.ca * 0.345))),
+          Math.max(1, Math.min(100, Math.round(30 + p.pa * 0.345))), null, null, true, "active", "cm0102",
+          p.cmPlayerId, p.cmStaffId, null, p.nationalityId, p.secondNationalityId, p.ca, p.pa,
+          p.sourcePa, p.paRule, null, JSON.stringify(p.positions), JSON.stringify(p.attributes),
+          JSON.stringify(p.footAttributes), p.caStars, p.paStars, p.randomizeZeroAttributes,
+          "CM0102 May 2026 Data Update"
         ];
         const start = params.length;
         params.push(...vals);
         return "(" + vals.map((_, j) => "$" + (start + j + 1)).join(",") + ")";
       });
-      const updateColumns = columns.filter(c => !["id","cm_player_id","team_id","cm_club_id"].includes(c));
+      const updateColumns = columns.filter(c => !["id","source_cm_player_id","team_id","source_cm_club_id"].includes(c));
       const query = `INSERT INTO public.players (${columns.join(",")}) VALUES ${values.join(",")}
-        ON CONFLICT (cm_player_id) WHERE cm_player_id IS NOT NULL DO UPDATE SET
+        ON CONFLICT (source_cm_player_id) WHERE source_cm_player_id IS NOT NULL DO UPDATE SET
         ${updateColumns.map(c => `${c}=EXCLUDED.${c}`).join(",")},
         team_id=COALESCE(public.players.team_id, EXCLUDED.team_id),
-        cm_club_id=public.players.cm_club_id,
-        club_name=public.players.club_name`;
+        source_cm_club_id=COALESCE(public.players.source_cm_club_id, EXCLUDED.source_cm_club_id),
+        source_club_name=COALESCE(public.players.source_club_name, EXCLUDED.source_club_name)`;
       await sql.query(query, params as any[]);
 
       // If club assignments were imported first, immediately attach the canonical player records.
@@ -136,7 +147,7 @@ export async function POST(request: Request) {
            FROM public.cm0102_player_club_assignments a
            JOIN public.cm0102_game_team_mappings m ON m.cm_club_id=a.cm_club_id
            JOIN public.teams t ON t.id=m.team_id
-          WHERE p.cm_player_id=a.cm_player_id
+          WHERE p.source_cm_player_id=a.cm_player_id
             AND p.cm_player_id = ANY($1::bigint[])
             AND NOT EXISTS (
               SELECT 1 FROM public.players other
@@ -150,7 +161,7 @@ export async function POST(request: Request) {
         `INSERT INTO public.career_player_states(save_id,player_id,club_id,current_rating,potential_rating)
          SELECT s.id,p.id,p.team_id,p.overall_rating,p.potential_rating
            FROM public.career_saves s CROSS JOIN public.players p
-          WHERE p.cm_player_id = ANY($1::bigint[]) AND p.team_id IS NOT NULL
+          WHERE p.source_cm_player_id = ANY($1::integer[]) AND p.team_id IS NOT NULL
          ON CONFLICT(save_id,player_id) DO NOTHING`,
         [ids]
       );
