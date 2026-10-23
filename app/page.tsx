@@ -7,8 +7,8 @@ type Team = { name: string; city?: string; rating: number; reputation: number; k
 type Tactics = { mentality: string; passing: string; tempo?: string; pressing: boolean; offside: boolean; counter: boolean; hardTackles: boolean; formation: string; lineup?: Record<string,string>; runLines?: Record<string,number> };
 type EventLine = { minute: number | string; text: string; kind?: "goal" | "var" | "system" };
 type Scorer = { team: 0 | 1; minute: number; name: string; playerId?: string; assist?: string; assistId?: string; penalty?: boolean };
-type Player = { name: string; position: "keeper" | "defender" | "midfielder" | "forward"; rating?: number; id?: string };
-type DatabasePlayer = { id: string; name: string; position: string; overallRating: number; potentialRating: number; sourceUrl: string | null };
+type Player = { name: string; position: "keeper" | "defender" | "midfielder" | "forward"; rating?: number; id?: string; skills?: Record<string, number | null> };
+type DatabasePlayer = { id: string; name: string; position: string; overallRating: number; potentialRating: number; sourceUrl: string | null; skills?: Record<string, number | null> };
 type DatabaseTeam = { id: string; name: string; city: string; division: string; tier: number; reputation: number; teamStrength: number; players: DatabasePlayer[] };
 type Stats = { shots: number; onTarget: number; chances: number; corners: number };
 const AJAX: Team = { name: "Ajax", city: "Amsterdam", rating: 88, reputation: 92, keeper: 78 };
@@ -24,6 +24,17 @@ function formationSlots(formation: string): FormationSlot[] {
     "5-3-2": [["GK","K",50,91],["LB","LV",12,72],["CB1","CV",31,78],["CB2","CV",50,80],["CB3","CV",69,78],["RB","RV",88,72],["CM1","CM",32,52],["CM2","CM",50,57],["CM3","CM",68,52],["ST1","SP",39,24],["ST2","SP",61,24]]
   };
   return (rows[formation] || rows["4-3-3"]).map(([key,role,x,y])=>({key,role,x,y}));
+}
+function goalkeeperRating(players: DatabasePlayer[]): number {
+  const keepers = players.filter(p => p.position === "GK");
+  if (!keepers.length) return 50;
+  return Math.max(...keepers.map(p => {
+    const s = p.skills || {};
+    return Number(p.overallRating || 50) * .25
+      + Number(s.reflexes ?? 10) * 2
+      + Number(s.handling ?? 10) * 1.5
+      + Number(s.one_on_ones ?? 10) * 1.5;
+  }));
 }
 function ratingStars(value:number){const v=Number(value||50);return Math.max(1,Math.min(5,v>=95?5:v>=85?4:v>=75?3:v>=66?2:1));}
 function starLabel(value:number){const stars=ratingStars(value);return "★".repeat(stars)+"☆".repeat(5-stars);}
@@ -108,8 +119,8 @@ export default function Home() {
   const [selectedAwayId, setSelectedAwayId] = useState("nec");
   const databaseHome = databaseTeams.find(t => t.id === selectedHomeId);
   const databaseAway = databaseTeams.find(t => t.id === selectedAwayId);
-  const homeTeam: Team = databaseHome ? { name: databaseHome.name, city: databaseHome.city, rating: databaseHome.teamStrength, reputation: databaseHome.reputation, keeper: databaseHome.players.find(p => p.position === "GK")?.overallRating ?? 56 } : AJAX;
-  const awayTeam: Team = databaseAway ? { name: databaseAway.name, city: databaseAway.city, rating: databaseAway.teamStrength, reputation: databaseAway.reputation, keeper: databaseAway.players.find(p => p.position === "GK")?.overallRating ?? 56 } : NEC;
+  const homeTeam: Team = databaseHome ? { name: databaseHome.name, city: databaseHome.city, rating: databaseHome.teamStrength, reputation: databaseHome.reputation, keeper: goalkeeperRating(databaseHome.players) } : AJAX;
+  const awayTeam: Team = databaseAway ? { name: databaseAway.name, city: databaseAway.city, rating: databaseAway.teamStrength, reputation: databaseAway.reputation, keeper: goalkeeperRating(databaseAway.players) } : NEC;
   const [speed, setSpeed] = useState("Normaal");
   const [running, setRunning] = useState(false);
   const [matchPhase, setMatchPhase] = useState<"pre-match"|"first-half"|"half-time"|"second-half"|"extra-time"|"finished">("pre-match");
@@ -335,15 +346,17 @@ export default function Home() {
       id: p.id,
       name: p.full_name,
       rating: Number(p.overall_rating || 50),
+      skills: databaseTeams.flatMap(t=>t.players).find(x=>x.id===p.id)?.skills,
       position: p.position === "GK" ? "keeper" : ["SP","ST","LA","RA","AML","AMR","RW","LW"].includes(p.position) ? "forward" : ["CV","CB","LB","RB","LWB","RWB"].includes(p.position) ? "defender" : "midfielder",
     })) : dbTeam?.players.length ? dbTeam.players.map(p => ({
       id: p.id,
       name: p.name,
       rating: Number(p.overallRating || 50),
+      skills: p.skills,
       position: p.position === "GK" ? "keeper" : ["SP","ST","LA","RA","AML","AMR","RW","LW"].includes(p.position) ? "forward" : ["CV","CB","LB","RB","LWB","RWB"].includes(p.position) ? "defender" : "midfielder",
     })) : [];
     const pool = positions?.length ? squad.filter(p => positions.includes(p.position)) : squad.filter(p => p.position !== "keeper");
-    const weighted=pool.map(p=>({player:p,weight:Math.max(1,Number(p.rating||50))}));const total=weighted.reduce((sum,x)=>sum+x.weight,0);let roll=Math.random()*total;for(const item of weighted){roll-=item.weight;if(roll<=0)return item.player;}return weighted[weighted.length-1]?.player??squad[0];
+    const weighted=pool.map(p=>{const keys=p.position==="forward"?["finishing","pace","acceleration","dribbling","heading"]:p.position==="defender"?["tackling","marking","positioning","anticipation","strength"]:p.position==="keeper"?["reflexes","handling","one_on_ones","positioning","anticipation"]:["passing","vision","decisions","technique","teamwork"];const vals=keys.map(k=>Number(p.skills?.[k]??10));const skillAverage=vals.reduce((a,b)=>a+b,0)/Math.max(1,vals.length);return {player:p,weight:Math.max(1,Number(p.rating||50))*(.45+skillAverage/20*1.1)};});const total=weighted.reduce((sum,x)=>sum+x.weight,0);let roll=Math.random()*total;for(const item of weighted){roll-=item.weight;if(roll<=0)return item.player;}return weighted[weighted.length-1]?.player??squad[0];
   }
   const userSide:0|1 = careerData?.save?.club_id && selectedAwayId===careerData.save.club_id ? 1 : 0;
   function matchPlayer(side:0|1){
@@ -467,11 +480,11 @@ export default function Home() {
         own.chances++; own.shots++;
         const shooter = pickPlayer(ownIndex as 0 | 1, ["forward", "midfielder"]);
         addEvent({ minute: "KANS", text: shooter.name + " krijgt ruimte in het strafschopgebied en haalt uit!" });
-        if (Math.random() < Math.max(.25,Math.min(.94,({Kort:.82,Direct:.56,Lang:.48}[t.passing] ?? .62)+({Geduldig:.20,Normaal:0,Snel:-.18}[tempo]??0)))) {
+        if (Math.random() < Math.max(.25,Math.min(.94,({Kort:.82,Direct:.56,Lang:.48}[t.passing] ?? .62)+({Geduldig:.20,Normaal:0,Snel:-.18}[tempo]??0)+(Number(shooter.skills?.finishing??10)-10)*.012))) {
           own.onTarget++;
           const keeper = home ? awayTeam.keeper : homeTeam.keeper;
           const scorerQuality = home ? homeTeam.rating : awayTeam.rating;
-          if (Math.random() < Math.max(.025, Math.min(.42, (.17 + (scorerQuality - keeper) * .0055) * gameStateFactor))) {
+          if (Math.random() < Math.max(.025, Math.min(.42, (.17 + (scorerQuality - keeper) * .0055 + (Number(shooter.skills?.finishing??10)-10)*.008) * gameStateFactor))) {
             addEvent({ minute: "VAR", text: "VAR controleert het doelpunt op buitenspel of een overtreding.", kind: "var" });
             if (Math.random() < .10) addEvent({ minute: "VAR", text: "Doelpunt afgekeurd na VAR-check: buitenspel in de aanloop.", kind: "var" });
             else { const scorer = pickPlayer(ownIndex as 0 | 1, ["forward", "midfielder"]); const assistPlayer = Math.random() < .72 ? pickPlayer(ownIndex as 0 | 1, ["midfielder", "forward", "defender"]) : undefined; const assist = assistPlayer?.name; setGoals(prev => home ? [prev[0] + 1, prev[1]] : [prev[0], prev[1] + 1]); setScorers(prev => [...prev, { team: ownIndex as 0 | 1, minute: m, name: scorer.name, playerId:scorer.id||resolvePlayerId(ownIndex as 0|1,scorer.name), assist, assistId:assistPlayer?(assistPlayer.id||resolvePlayerId(ownIndex as 0|1,assistPlayer.name)):undefined }]); addEvent({ minute: "GOAL", text: scorer.name + " scoort een prachtige goal voor " + team + (assist ? ", op aangeven van " + assist : "") + "! De bal vliegt onhoudbaar in het doel.", kind: "goal" }); }
