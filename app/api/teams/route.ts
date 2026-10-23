@@ -14,12 +14,10 @@ type Row = {
   reputation: number;
   team_strength: number;
   player_id: string | null;
-  full_name: string | null;
+  player_name: string | null;
   position: string | null;
-  shirt_number: number | null;
   overall_rating: number | null;
   potential_rating: number | null;
-  player_source_url: string | null;
   source_checked_at: string | null;
 };
 
@@ -36,20 +34,16 @@ export async function GET() {
         t.id, t.name, t.city, t.division_id,
         d.name AS division_name, d.tier,
         t.reputation, t.team_strength,
-        p.id AS player_id, p.full_name, p.position, p.shirt_number,
-        p.overall_rating, p.potential_rating,
-        p.source_url AS player_source_url,
-        p.source_checked_at
+        p.id AS player_id,
+        COALESCE(NULLIF(BTRIM(p.known_as), ''), p.full_name) AS player_name,
+        p.position, p.overall_rating, p.potential_rating, p.source_checked_at
       FROM teams t
       JOIN divisions d ON d.id = t.division_id
-      LEFT JOIN (
-        SELECT DISTINCT ON (team_id, lower(full_name))
-          id, team_id, full_name, position, shirt_number, overall_rating, potential_rating,
-          source_url, source_checked_at
-        FROM all_players
-        WHERE team_id IS NOT NULL AND is_active = TRUE AND record_source = 'current'
-        ORDER BY team_id, lower(full_name), CASE WHEN record_source = 'current' THEN 0 ELSE 1 END, overall_rating DESC
-      ) p ON p.team_id = t.id
+      LEFT JOIN players p
+        ON p.team_id = t.id
+       AND p.cm_player_id IS NOT NULL
+       AND p.is_active = TRUE
+       AND p.record_source = 'cm0102'
       WHERE d.season_id = '2026-2027'
       ORDER BY d.tier, t.name, p.position, p.full_name
     `;
@@ -74,15 +68,15 @@ export async function GET() {
           players: [],
         });
       }
-      if (row.player_id && row.full_name && row.position) {
+      if (row.player_id && row.player_name && row.position) {
         teams.get(row.id)!.players.push({
           id: row.player_id,
-          name: row.full_name,
+          name: row.player_name,
           position: row.position,
-          shirtNumber: row.shirt_number,
-          overallRating: row.overall_rating ?? 55,
+          shirtNumber: null,
+          overallRating: row.overall_rating ?? 50,
           potentialRating: row.potential_rating ?? 60,
-          sourceUrl: row.player_source_url,
+          sourceUrl: null,
           sourceCheckedAt: row.source_checked_at,
         });
       }
@@ -98,6 +92,7 @@ export async function GET() {
       totals: {
         teams: teamList.length,
         players: teamList.reduce((sum, team) => sum + team.players.length, 0),
+        source: "CM0102",
       },
       teams: teamList,
     }, {
