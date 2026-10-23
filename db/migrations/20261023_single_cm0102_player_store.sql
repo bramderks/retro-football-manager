@@ -29,7 +29,7 @@ WITH exact_candidates AS (
 INSERT INTO public.cm0102_game_team_mappings(cm_club_id,team_id,mapping_method)
 SELECT cm_club_id,team_id,'exact-normalized-name'
 FROM exact_candidates WHERE rn=1
-ON CONFLICT (cm_club_id) DO NOTHING;
+ON CONFLICT DO NOTHING;
 -- Known historical/modern Dutch club-name aliases for the 2026/27 league data.
 WITH aliases(team_name,cm_club_name) AS (VALUES
   ('Excelsior Rotterdam','Excelsior'),
