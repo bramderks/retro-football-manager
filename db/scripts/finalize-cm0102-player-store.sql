@@ -106,6 +106,9 @@ LEFT JOIN public.team_player_memberships tm ON tm.player_id=p.id AND tm.team_id=
 WHERE p.source_cm_player_id IS NOT NULL AND COALESCE(tm.team_id,p.team_id) IS NOT NULL AND p.is_active=TRUE
 ON CONFLICT(save_id,player_id) DO NOTHING;
 
+ALTER TABLE public.players ALTER COLUMN source_type SET DEFAULT 'regen';
+DROP TABLE IF EXISTS public.world_roster_players;
+
 CREATE OR REPLACE VIEW public.all_players AS
 SELECT p.id,p.team_id,p.full_name,p.known_as,p.date_of_birth,p.nationality,p.position,
        p.shirt_number,p.preferred_foot,p.overall_rating,p.potential_rating,p.source_url,
