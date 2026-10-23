@@ -73,7 +73,7 @@ WHERE p.source_cm_player_id IS NOT NULL AND p.is_active=TRUE
 ON CONFLICT(season_id,team_id,player_id) DO UPDATE SET membership_type='primary';
 
 WITH youth_roster AS (
-  SELECT d.season_id,y.id AS youth_team_id,p.id AS player_id,
+  SELECT yd.season_id,y.id AS youth_team_id,p.id AS player_id,
          ROW_NUMBER() OVER(PARTITION BY y.id ORDER BY p.date_of_birth DESC NULLS LAST,p.overall_rating DESC,p.potential_rating DESC,p.full_name) AS rn
   FROM public.teams y
   JOIN public.divisions yd ON yd.id=y.division_id AND yd.season_id='2026-2027'
