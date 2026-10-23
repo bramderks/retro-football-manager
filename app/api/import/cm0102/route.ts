@@ -169,10 +169,24 @@ export async function POST(request: Request) {
         [ids]
       );
       await sql.query(
+        `INSERT INTO public.team_player_memberships(season_id,team_id,player_id,membership_type)
+         SELECT d.season_id,p.team_id,p.id,'primary'
+           FROM public.players p
+           JOIN public.teams t ON t.id=p.team_id
+           JOIN public.divisions d ON d.id=t.division_id
+          WHERE p.source_cm_player_id = ANY($1::integer[])
+            AND p.team_id IS NOT NULL AND p.is_active=TRUE
+         ON CONFLICT(season_id,team_id,player_id) DO UPDATE SET membership_type='primary'`,
+        [ids]
+      );
+      await sql.query(
         `INSERT INTO public.career_player_states(save_id,player_id,club_id,current_rating,potential_rating)
-         SELECT s.id,p.id,p.team_id,p.overall_rating,p.potential_rating
+         SELECT s.id,p.id,COALESCE(tm.team_id,p.team_id),p.overall_rating,p.potential_rating
            FROM public.career_saves s CROSS JOIN public.players p
-          WHERE p.source_cm_player_id = ANY($1::integer[]) AND p.team_id IS NOT NULL
+           LEFT JOIN public.team_player_memberships tm
+             ON tm.player_id=p.id AND tm.team_id=s.club_id AND tm.season_id=s.season_id
+          WHERE p.source_cm_player_id = ANY($1::integer[])
+            AND COALESCE(tm.team_id,p.team_id) IS NOT NULL AND p.is_active=TRUE
          ON CONFLICT(save_id,player_id) DO NOTHING`,
         [ids]
       );
