@@ -44,7 +44,7 @@ WHERE old.source_cm_player_id IS NULL
     JOIN public.cm0102_player_club_assignments a ON a.cm_player_id = cp.cm_player_id
     JOIN public.cm0102_game_team_mappings m ON m.cm_club_id = a.cm_club_id
     WHERE m.team_id = old.team_id
-      AND lower(BTRIM(COALESCE(NULLIF(cp.common_name, ''), cp.full_name))) = lower(BTRIM(old.full_name))
+      AND lower(BTRIM(cp.full_name)) = lower(BTRIM(old.full_name))
   );
 
 -- Move all imported profiles into players, preserving raw CM attributes and CA/PA.
@@ -63,7 +63,7 @@ SELECT
   CASE WHEN m.team_id IS NOT NULL AND NOT EXISTS (
     SELECT 1 FROM public.players existing
     WHERE existing.team_id = m.team_id
-      AND lower(BTRIM(existing.full_name)) = lower(BTRIM(COALESCE(NULLIF(cp.common_name, ''), cp.full_name)))
+      AND lower(BTRIM(existing.full_name)) = lower(BTRIM(cp.full_name))
       AND existing.source_cm_player_id IS NULL AND existing.is_active = TRUE
   ) THEN m.team_id ELSE NULL END,
   cp.full_name, NULLIF(BTRIM(cp.common_name), ''), cp.date_of_birth, NULL,
