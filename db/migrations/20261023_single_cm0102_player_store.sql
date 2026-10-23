@@ -73,7 +73,7 @@ ALTER TABLE public.players DROP CONSTRAINT IF EXISTS players_position_check;
 ALTER TABLE public.players DROP CONSTRAINT IF EXISTS players_preferred_foot_check;
 ALTER TABLE public.players DROP CONSTRAINT IF EXISTS players_overall_rating_check;
 ALTER TABLE public.players DROP CONSTRAINT IF EXISTS players_potential_rating_check;
-ALTER TABLE public.players ADD CONSTRAINT players_pkey PRIMARY KEY(id);
+ALTER TABLE public.players ADD CONSTRAINT canonical_players_pkey PRIMARY KEY(id);
 ALTER TABLE public.players ADD CONSTRAINT players_position_check CHECK (position = ANY (ARRAY[
   'GK','LB','CV','RB','VM','CM','LM','RM','AM','AML','AMR','LA','RA','SP','CB','DM','LWB','RWB','LW','RW','ST'
 ]::text[]));
