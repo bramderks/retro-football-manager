@@ -100,13 +100,7 @@ export async function POST(request: Request) {
          JOIN public.cm0102_game_team_mappings m ON m.cm_club_id=a.cm_club_id
          JOIN public.teams t ON t.id=m.team_id
         WHERE cm.source_cm_player_id=a.cm_player_id
-          AND cm.source_cm_player_id IS NOT NULL
-          AND NOT EXISTS (
-            SELECT 1 FROM public.players other
-             WHERE other.team_id=m.team_id AND other.id<>cm.id
-               AND other.is_active=TRUE
-               AND lower(BTRIM(other.full_name))=lower(BTRIM(cm.full_name))
-          )`
+          AND cm.source_cm_player_id IS NOT NULL`
     );
     await sql.query(
       `INSERT INTO public.career_player_states(save_id,player_id,club_id,current_rating,potential_rating)
