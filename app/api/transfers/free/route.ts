@@ -22,21 +22,21 @@ export async function GET(request: Request) {
       );
     }
     const rows = await sql.query(
-      `SELECT p.cm_player_id AS id,
+      `SELECT p.source_cm_player_id AS id,
               COALESCE(NULLIF(BTRIM(p.known_as), ''), NULLIF(BTRIM(p.full_name), '')) AS full_name,
               p.full_name AS legal_name,
               p.date_of_birth,
-              p.cm_nationality_id AS nationality_id,
-              p.cm_current_ability AS current_ability,
-              p.cm_potential_ability AS potential_ability,
-              p.cm_positions AS positions,
+              p.source_cm_nationality_id AS nationality_id,
+              p.source_current_ability AS current_ability,
+              p.source_potential_ability AS potential_ability,
+              p.source_positions AS positions,
               p.cm_sides AS sides,
               p.preferred_foot,
-              p.cm_current_ability_stars AS current_ability_stars,
-              p.cm_potential_ability_stars AS potential_ability_stars
+              p.source_current_ability_stars AS current_ability_stars,
+              p.source_potential_ability_stars AS potential_ability_stars
          FROM public.players p
-         LEFT JOIN public.cm0102_player_club_assignments a ON a.cm_player_id = p.cm_player_id
-        WHERE p.cm_player_id IS NOT NULL
+         LEFT JOIN public.cm0102_player_club_assignments a ON a.cm_player_id = p.source_cm_player_id
+        WHERE p.source_cm_player_id IS NOT NULL
           AND p.is_active = TRUE
           AND a.cm_player_id IS NULL
           AND COALESCE(p.full_name, '') <> ''
