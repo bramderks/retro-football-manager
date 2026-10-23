@@ -174,7 +174,7 @@ WITH roster_counts AS (
   SELECT t.id,t.name,t.team_strength,COUNT(p.id) FILTER (WHERE p.is_active=TRUE AND p.career_status='active')::int AS roster_count
   FROM public.teams t
   JOIN public.divisions d ON d.id=t.division_id AND d.season_id='2026-2027'
-  LEFT JOIN public.team_player_memberships tm ON tm.team_id=t.id AND tm.season_id=d.season_id
+  LEFT JOIN public.team_player_memberships tm ON tm.team_id=t.id AND tm.season_id=d.season_id AND tm.membership_type='primary'
   LEFT JOIN public.players p ON p.id=tm.player_id
   GROUP BY t.id,t.name,t.team_strength
 ), missing AS (
