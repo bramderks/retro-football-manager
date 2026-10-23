@@ -110,7 +110,7 @@ export async function POST(request: Request) {
         "is_active","career_status","source_type","source_cm_player_id","source_cm_staff_id",
         "source_cm_club_id","source_cm_nationality_id","source_cm_second_nationality_id",
         "source_current_ability","source_potential_ability","source_original_potential_ability",
-        "source_pa_resolution_rule","source_club_name","source_positions","source_attributes",
+        "source_pa_resolution_rule","source_club_name","source_positions","source_sides","source_attributes",
         "source_foot_attributes","source_current_ability_stars","source_potential_ability_stars",
         "source_randomize_zero_attributes","source_version"
       ];
@@ -121,7 +121,7 @@ export async function POST(request: Request) {
           p.preferredFoot, Math.max(1, Math.min(100, Math.round(30 + p.ca * 0.345))),
           Math.max(1, Math.min(100, Math.round(30 + p.pa * 0.345))), null, null, true, "active", "cm0102",
           p.cmPlayerId, p.cmStaffId, null, p.nationalityId, p.secondNationalityId, p.ca, p.pa,
-          p.sourcePa, p.paRule, null, JSON.stringify(p.positions), JSON.stringify(p.attributes),
+          p.sourcePa, p.paRule, null, JSON.stringify(p.positions), JSON.stringify(p.sides), JSON.stringify(p.attributes),
           JSON.stringify(p.footAttributes), p.caStars, p.paStars, p.randomizeZeroAttributes,
           "CM0102 May 2026 Data Update"
         ];
@@ -138,23 +138,36 @@ export async function POST(request: Request) {
         source_club_name=COALESCE(public.players.source_club_name, EXCLUDED.source_club_name)`;
       await sql.query(query, params as any[]);
 
-      // If club assignments were imported first, immediately attach the canonical player records.
+      // Retire duplicate non-CM seed rows before assigning canonical CM players to the same team/name slot.
       const ids = batch.map(p => Number(p.cmPlayerId));
       await sql.query(
+        `UPDATE public.players old
+            SET team_id=NULL,is_active=FALSE,career_status='inactive'
+          WHERE old.source_cm_player_id IS NULL AND old.team_id IS NOT NULL
+            AND EXISTS (
+              SELECT 1 FROM public.cm0102_player_club_assignments a
+              JOIN public.cm0102_game_team_mappings m ON m.cm_club_id=a.cm_club_id
+              JOIN public.players cm ON cm.source_cm_player_id=a.cm_player_id
+              WHERE cm.source_cm_player_id=ANY($1::integer[]) AND m.team_id=old.team_id
+                AND lower(BTRIM(old.full_name))=lower(BTRIM(cm.full_name))
+            )`,
+        [ids]
+      );
+      await sql.query(
         `UPDATE public.players p
-            SET source_cm_club_id=a.cm_club_id, team_id=m.team_id, source_club_name=t.name,
+            SET source_cm_club_id=a.cm_club_id, team_id=m.team_id, source_club_name=c.club_name,
                 source_type='cm0102', is_active=TRUE, career_status='active'
            FROM public.cm0102_player_club_assignments a
-           JOIN public.cm0102_game_team_mappings m ON m.cm_club_id=a.cm_club_id
-           JOIN public.teams t ON t.id=m.team_id
+           LEFT JOIN public.cm0102_game_team_mappings m ON m.cm_club_id=a.cm_club_id
+           LEFT JOIN public.cm0102_clubs c ON c.cm_club_id=a.cm_club_id
           WHERE p.source_cm_player_id=a.cm_player_id
             AND p.source_cm_player_id = ANY($1::integer[])
-            AND NOT EXISTS (
+            AND (m.team_id IS NULL OR NOT EXISTS (
               SELECT 1 FROM public.players other
                WHERE other.team_id=m.team_id AND other.id<>p.id
                  AND other.is_active=TRUE
                  AND lower(BTRIM(other.full_name))=lower(BTRIM(p.full_name))
-            )`,
+            ))`,
         [ids]
       );
       await sql.query(
