@@ -150,17 +150,19 @@ export async function POST(request: Request) {
          FROM public.players p JOIN public.teams t ON t.id=p.team_id
          JOIN public.divisions d ON d.id=t.division_id
         WHERE d.season_id='2026-2027' AND p.source_cm_player_id IS NOT NULL AND p.team_id IS NOT NULL AND p.is_active=TRUE
+         AND NOT EXISTS (SELECT 1 FROM public.team_player_memberships y WHERE y.season_id=d.season_id AND y.player_id=p.id AND y.membership_type='youth-affiliate')
        ON CONFLICT(season_id,team_id,player_id) DO UPDATE SET membership_type='primary'`
     );
     await sql.query(
       `INSERT INTO public.career_player_states(save_id,player_id,club_id,current_rating,potential_rating)
-       SELECT s.id,p.id,COALESCE(tm.team_id,p.team_id),p.overall_rating,p.potential_rating
+       SELECT s.id,p.id,COALESCE(tmSelected.team_id,tmPrimary.team_id,tmYouth.team_id,p.team_id),p.overall_rating,p.potential_rating
          FROM public.career_saves s CROSS JOIN public.players p
-         LEFT JOIN public.team_player_memberships tm
-           ON tm.player_id=p.id AND tm.team_id=s.club_id AND tm.season_id=s.season_id
+         LEFT JOIN public.team_player_memberships tmSelected ON tmSelected.player_id=p.id AND tmSelected.team_id=s.club_id AND tmSelected.season_id=s.season_id
+         LEFT JOIN public.team_player_memberships tmPrimary ON tmPrimary.player_id=p.id AND tmPrimary.membership_type='primary' AND tmPrimary.season_id=s.season_id
+         LEFT JOIN public.team_player_memberships tmYouth ON tmYouth.player_id=p.id AND tmYouth.membership_type='youth-affiliate' AND tmYouth.season_id=s.season_id
         WHERE p.source_cm_player_id IS NOT NULL
-          AND COALESCE(tm.team_id,p.team_id) IS NOT NULL AND p.is_active=TRUE
-       ON CONFLICT(save_id,player_id) DO NOTHING`
+          AND COALESCE(tmSelected.team_id,tmPrimary.team_id,tmYouth.team_id,p.team_id) IS NOT NULL AND p.is_active=TRUE
+       ON CONFLICT(save_id,player_id) DO UPDATE SET club_id=EXCLUDED.club_id,current_rating=EXCLUDED.current_rating,potential_rating=EXCLUDED.potential_rating`
     );
     return NextResponse.json({ success: true, processed: rows.length, clubsProcessed: clubs.length });
   } catch (error) {
