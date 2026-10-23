@@ -1,6 +1,9 @@
 -- Consolidate CM 01/02 records into the existing canonical public.players table.
 -- Existing save-local state/contracts/statistics keep referencing players.id.
 ALTER TABLE public.players ALTER COLUMN team_id DROP NOT NULL;
+ALTER TABLE public.players DROP CONSTRAINT IF EXISTS players_team_id_full_name_key;
+CREATE UNIQUE INDEX IF NOT EXISTS players_team_id_full_name_non_cm_uq
+  ON public.players(team_id, full_name) WHERE source_cm_player_id IS NULL;
 ALTER TABLE public.players
   ADD COLUMN IF NOT EXISTS source_cm_staff_id INTEGER,
   ADD COLUMN IF NOT EXISTS source_cm_club_id INTEGER,
@@ -60,12 +63,7 @@ INSERT INTO public.players (
 )
 SELECT
   'cm0102-' || cp.cm_player_id::text,
-  CASE WHEN m.team_id IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM public.players existing
-    WHERE existing.team_id = m.team_id
-      AND lower(BTRIM(existing.full_name)) = lower(BTRIM(cp.full_name))
-      AND existing.source_cm_player_id IS NULL AND existing.is_active = TRUE
-  ) THEN m.team_id ELSE NULL END,
+  m.team_id,
   cp.full_name, NULLIF(BTRIM(cp.common_name), ''), cp.date_of_birth, NULL,
   CASE
     WHEN cp.positions ? 'goalkeeper' THEN 'GK'
@@ -129,13 +127,7 @@ SET team_id=m.team_id, source_cm_club_id=a.cm_club_id, source_club_name=t.name,
 FROM public.cm0102_player_club_assignments a
 JOIN public.cm0102_game_team_mappings m ON m.cm_club_id=a.cm_club_id
 JOIN public.teams t ON t.id=m.team_id
-WHERE cm.source_cm_player_id=a.cm_player_id
-  AND NOT EXISTS (
-    SELECT 1 FROM public.players other
-    WHERE other.team_id=m.team_id AND other.id<>cm.id
-      AND other.is_active=TRUE
-      AND lower(BTRIM(other.full_name))=lower(BTRIM(cm.full_name))
-  );
+WHERE cm.source_cm_player_id=a.cm_player_id;
 
 INSERT INTO public.career_player_states(save_id,player_id,club_id,current_rating,potential_rating)
 SELECT s.id,p.id,p.team_id,p.overall_rating,p.potential_rating
