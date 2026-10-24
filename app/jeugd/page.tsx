@@ -1,5 +1,7 @@
 "use client";
 
+
+import AppSidebar from "../components/AppSidebar";
 import { useCallback, useEffect, useState } from "react";
 
 type YouthPlayer = {
@@ -39,7 +41,8 @@ export default function JeugdPage() {
     finally { setBusy(null); }
   }
   const active = players.filter(p=>!p.promoted);
-  return <main className="min-h-screen bg-slate-950 text-slate-100 px-4 py-8 md:px-8">
+  return <AppSidebar />
+    <main className="min-h-screen bg-slate-950 text-slate-100 px-4 py-8 md:px-8">
     <div className="mx-auto max-w-6xl space-y-6">
       <header><p className="text-sm uppercase tracking-[.25em] text-cyan-300">Ajax academy</p><h1 className="mt-2 text-3xl font-bold">Ajax O19</h1><p className="mt-2 text-slate-400">Jeugdselectie buiten de competitie-indeling, met doorstroom naar Jong Ajax en Ajax 1.</p></header>
       {message && <div role="status" className="rounded-lg border border-slate-700 bg-slate-900 p-3 text-sm">{message}</div>}
