@@ -65,11 +65,15 @@ async function ensureYouthSquads(sql: any, seasonId: string) {
       const month = 1 + (seed2 % 12);
       const day = 1 + (seed % 27);
       const dob = year + "-" + String(month).padStart(2, "0") + "-" + String(day).padStart(2, "0");
-      const currentAbility = clamp(Math.round(13 + reputation * 0.37 + (seed % 23) - 11), 8, 65);
-      // CA/PA deliberately varies across the full academy, not just a collection of wonderkids.
-      // Club reputation lifts the average ceiling; high-end potential is uncommon and deterministic.
-      const growth = 3 + (seed2 % 25) + Math.floor((reputation - 50) / 10) + (seed2 % 17 === 0 ? 10 : 0);
-      const potentialAbility = clamp(currentAbility + growth, currentAbility, 95);
+      // Keep academy squad averages monotonic with club reputation. Individual players vary,
+      // but the balanced variation pattern has a zero mean across the 18-player squad.
+      const variation = [-6,-5,-4,-3,-2,-1,0,0,0,0,0,1,2,3,4,5,6,0][i - 1] ?? 0;
+      const currentAbility = clamp(Math.round(12 + reputation * 0.42 + variation), 8, 70);
+      const potentialAbility = clamp(
+        Math.max(currentAbility + 8, Math.round(25 + reputation * 0.55 + variation)),
+        currentAbility + 8,
+        95
+      );
       const firstName = FIRST[seed % FIRST.length];
       const lastName = LAST[Math.floor(seed / 7) % LAST.length];
       const fullName = firstName + " " + lastName;
@@ -78,7 +82,7 @@ async function ensureYouthSquads(sql: any, seasonId: string) {
       const position = POSITIONS[(seed + i) % POSITIONS.length];
       playerRows.push([
         playerId, fullName, firstName, dob, "Fictief", position, currentAbility, potentialAbility,
-        seed % 9 - 4, String(team.name)
+        seed % 9 - 4, String(team.name), currentAbility * 2, potentialAbility * 2
       ]);
       membershipRows.push([youthPlayerId, squad.id, playerId, age]);
     }
@@ -89,10 +93,10 @@ async function ensureYouthSquads(sql: any, seasonId: string) {
     const rows = batch.map((item) => {
       const start = params.length;
       params.push(...item);
-      return "(" + Array.from({ length: 10 }, (_, i) => "$" + (start + i + 1)).join(",") + ")";
+      return "(" + Array.from({ length: 12 }, (_, i) => "$" + (start + i + 1)).join(",") + ")";
     }).join(",");
     await sql.query(
-      "INSERT INTO players(id,full_name,known_as,date_of_birth,nationality,position,overall_rating,potential_rating,development_bias,source_club_name) VALUES " + rows +
+      "INSERT INTO players(id,full_name,known_as,date_of_birth,nationality,position,overall_rating,potential_rating,development_bias,source_club_name,current_ability,potential_ability) VALUES " + rows +
       " ON CONFLICT(id) DO NOTHING",
       params
     );
