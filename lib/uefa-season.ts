@@ -210,13 +210,18 @@ export async function buildUefaSeason(sql:Sql,from:string,season:string){
   const rule:any=ruleByCountry.get(String(t.country_code))||{rule_code:"UEFA_FSR",rule_name:"UEFA financial sustainability",squad_cost_limit_pct:70,allowed_loss_eur:60000000,monitoring_years:3,requires_licence:true};
   const squadCost=Math.round(Number(t.annual_wage_bill||0)+Number(t.season_budget||0)*.35);
   const ratio=squadCost/revenue*100;
-  const limit=Number(rule.squad_cost_limit_pct||70);
+  const europeanEntry=await sql.query("SELECT 1 FROM uefa_participants p JOIN uefa_competitions c ON c.id=p.competition_id JOIN uefa_clubs u ON u.id=p.club_id WHERE c.season_id=$1 AND u.domestic_team_id=$2 LIMIT 1",[season,t.id]);
+  const nationalLimit=Number(rule.squad_cost_limit_pct||100);
+  const limit=europeanEntry.length?Math.min(70,nationalLimit):nationalLimit;
   const sanctions:any[]=[];
-  if(ratio>limit)sanctions.push({type:"squad_cost_ratio",severity:ratio>limit+10?"major":"warning",ratio:Number(ratio.toFixed(2)),ceiling:limit,rule:rule.rule_code});
+  if(ratio>limit)sanctions.push({type:europeanEntry.length?"uefa_squad_cost_rule":"national_budget_control",severity:ratio>limit+10?"major":"warning",ratio:Number(ratio.toFixed(2)),ceiling:limit,rule:europeanEntry.length?"UEFA_FSR":rule.rule_code});
+  const estimatedOperatingDeficit=Math.max(0,squadCost-revenue);
+  const annualLossAllowance=Number(rule.allowed_loss_eur||60000000)/Math.max(1,Number(rule.monitoring_years||3));
+  if(estimatedOperatingDeficit>annualLossAllowance)sanctions.push({type:"football_earnings_estimate",severity:estimatedOperatingDeficit>annualLossAllowance*2?"major":"warning",estimated_deficit:estimatedOperatingDeficit,annual_allowance:annualLossAllowance,monitoring_years:Number(rule.monitoring_years||3)});
   const debt=Number(t.debt||0);
   const debtToRevenue=debt/revenue;
   if(debtToRevenue>1.5)sanctions.push({type:"debt_sustainability_review",debt_to_revenue:Number(debtToRevenue.toFixed(2)),threshold:1.5});
-  // Debt is not the same as an overdue payable or a football-earnings loss; those stay unasserted until separate ledger data exists.
+  // Debt is not the same as an overdue payable; those stay unasserted until a separate payment ledger exists.
   const overdueClub=0;
   const status=sanctions.some((x:any)=>x.severity==="major")?"breach":sanctions.length?"review":"compliant";
   await sql.query("INSERT INTO club_financial_monitoring(team_id,season_id,relevant_revenue,squad_cost,squad_cost_ratio,overdue_club_payables,compliance_status,sanctions) VALUES($1,$2,$3,$4,$5,$6,$7,$8::jsonb) ON CONFLICT(team_id,season_id) DO UPDATE SET relevant_revenue=EXCLUDED.relevant_revenue,squad_cost=EXCLUDED.squad_cost,squad_cost_ratio=EXCLUDED.squad_cost_ratio,overdue_club_payables=EXCLUDED.overdue_club_payables,compliance_status=EXCLUDED.compliance_status,sanctions=EXCLUDED.sanctions,reviewed_at=now()",[t.id,season,revenue,squadCost,ratio.toFixed(2),overdueClub,status,JSON.stringify([{national_rule:rule.rule_code,national_rule_name:rule.rule_name,licence_required:rule.requires_licence},...sanctions])]);
