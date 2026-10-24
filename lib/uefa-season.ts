@@ -44,10 +44,14 @@ async function finishPreviousSeason(sql:Sql,from:string){
  const competitions=await sql.query("SELECT id,code,matches_per_club FROM uefa_competitions WHERE season_id=$1 ORDER BY code",[from]);
  const matchDate=(comp:any,stage:string,matchday:number)=>{
   const y=seasonYear(from),date=(month:number,day:number,next=false)=>new Date(Date.UTC(y+(next?1:0),month-1,day,12)).toISOString().slice(0,10);
-  const calendars:Record<string,string[]>={UCL:[date(9,8),date(9,29),date(10,20),date(11,3),date(11,24),date(12,8),date(1,19,true),date(1,28,true)],UEL:[date(9,17),date(10,1),date(10,22),date(11,5),date(11,26),date(12,10),date(1,21,true),date(1,28,true)],UECL:[date(9,17),date(10,1),date(10,22),date(11,5),date(11,26),date(12,10)]};
+  const calendars:Record<string,string[]>={UCL:[date(9,8),date(10,13),date(10,20),date(11,3),date(11,24),date(12,8),date(1,19,true),date(1,27,true)],UEL:[date(9,16),date(10,15),date(10,22),date(11,5),date(11,26),date(12,10),date(1,21,true),date(1,28,true)],UECL:[date(10,15),date(10,22),date(11,5),date(11,26),date(12,10),date(12,17)]};
   if(stage==="league_phase")return calendars[String(comp.code)]?.[matchday-1]||date(9,8);
-  const knockout:Record<number,string>={9:date(2,16,true),10:date(2,23,true),11:date(3,9,true),12:date(3,16,true),13:date(4,6,true),14:date(4,13,true),15:date(4,27,true),16:date(5,4,true),17:date(5,28,true)};
-  return knockout[matchday]||date(5,28,true);
+  const knockout:Record<string,Record<number,string>>={
+   UCL:{9:date(2,16,true),10:date(2,23,true),11:date(3,9,true),12:date(3,16,true),13:date(4,6,true),14:date(4,13,true),15:date(4,27,true),16:date(5,4,true),17:date(6,5,true)},
+   UEL:{9:date(2,18,true),10:date(2,25,true),11:date(3,11,true),12:date(3,18,true),13:date(4,8,true),14:date(4,15,true),15:date(4,29,true),16:date(5,6,true),17:date(5,26,true)},
+   UECL:{9:date(2,18,true),10:date(2,25,true),11:date(3,11,true),12:date(3,18,true),13:date(4,8,true),14:date(4,15,true),15:date(4,29,true),16:date(5,6,true),17:date(6,2,true)}
+  };
+  return knockout[String(comp.code)]?.[matchday]||date(6,5,true);
  };
  const playMatch=async(comp:any,matchday:number,home:any,away:any,stage:string)=>{
   const id=String(comp.id)+"-"+stage+"-"+matchday+"-"+home.id+"-"+away.id;
@@ -193,8 +197,14 @@ export async function advanceUefaDay(sql:Sql,day:string){
   return out;
  };
  const scheduleTies=async(comp:any,stage:string,firstMatchday:number,pairs:any[],twoLegs=true)=>{
-  const offset=stage==="knockout_playoff"?19:stage==="round_of_16"?14:stage==="quarter_final"?21:stage==="semi_final"?14:24;
-  const firstDate=addDays(offset),secondDate=addDays(offset+7);
+  const y=seasonYear(season),dateOf=(month:number,day:number)=>new Date(Date.UTC(y+(month<=6?1:0),month-1,day,12)).toISOString().slice(0,10);
+  const calendar:Record<string,Record<string,string[]>>={
+   UCL:{knockout_playoff:[dateOf(2,16),dateOf(2,23)],round_of_16:[dateOf(3,9),dateOf(3,16)],quarter_final:[dateOf(4,6),dateOf(4,13)],semi_final:[dateOf(4,27),dateOf(5,4)],final:[dateOf(6,5)]},
+   UEL:{knockout_playoff:[dateOf(2,18),dateOf(2,25)],round_of_16:[dateOf(3,11),dateOf(3,18)],quarter_final:[dateOf(4,8),dateOf(4,15)],semi_final:[dateOf(4,29),dateOf(5,6)],final:[dateOf(5,26)]},
+   UECL:{knockout_playoff:[dateOf(2,18),dateOf(2,25)],round_of_16:[dateOf(3,11),dateOf(3,18)],quarter_final:[dateOf(4,8),dateOf(4,15)],semi_final:[dateOf(4,29),dateOf(5,6)],final:[dateOf(6,2)]}
+  };
+  const dates=calendar[String(comp.code)]?.[stage]||[dateOf(5,26)];
+  const firstDate=dates[0],secondDate=dates[1]||dates[0];
   for(let i=0;i<pairs.length;i++){
    const [home,away]=pairs[i];if(!home||!away||home.id===away.id)continue;
    const firstId=comp.id+"-"+stage+"-"+firstMatchday+"-"+home.id+"-"+away.id;
