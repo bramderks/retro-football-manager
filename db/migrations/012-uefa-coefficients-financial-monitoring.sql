@@ -55,7 +55,7 @@ CREATE TABLE IF NOT EXISTS national_financial_rules (
  procedure_notes TEXT NOT NULL DEFAULT ''
 );
 INSERT INTO national_financial_rules(country_code,rule_code,rule_name,squad_cost_limit_pct,allowed_loss_eur,monitoring_years,requires_licence,procedure_notes) VALUES
-('ENG','PREMIER_LEAGUE_PSR','Premier League PSR / UEFA FSR overlay',70,125000000,3,TRUE,'Simuleert driejaarsverliescontrole en UEFA squad-cost monitoring; de echte PSR-berekening is geen simpele salarisratio.'),
+('ENG','PREMIER_LEAGUE_PSR','Premier League PSR / UEFA FSR overlay',100,125000000,3,TRUE,'Simuleert driejaarsverliescontrole en UEFA squad-cost monitoring; de echte PSR-berekening is geen simpele salarisratio.'),
 ('ESP','LALIGA_ECONOMIC_CONTROL','LaLiga economische controle',100,60000000,3,TRUE,'Simuleert budgetlimiet op basis van goedgekeurde inkomsten, loonkosten en selectie-uitgaven.'),
 ('GER','DFL_LICENSING','DFL licentie en liquiditeitscontrole',100,60000000,3,TRUE,'Simuleert licentiecontrole, liquiditeit en selectie-uitgaven; echte Duitse procedures hebben eigen beoordelingscriteria.'),
 ('ITA','FIGC_COVISOC','FIGC / COVISOC financiële controle',100,60000000,3,TRUE,'Simuleert licentie, solvabiliteit en betalingsverplichtingen.'),
