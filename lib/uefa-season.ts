@@ -52,6 +52,7 @@ async function finishPreviousSeason(sql:Sql,from:string){
    const diff=(Number(home.team_strength||55)-Number(away.team_strength||55))*.025;
    hg=clamp(Math.round(1.3+diff+(seed(id)%7-3)*.35),0,6);
    ag=clamp(Math.round(1.05-diff+(seed(id+"a")%7-3)*.35),0,6);
+   if(stage==="final"&&hg===ag){if(seed(id+"pen")%2===0)hg++;else ag++;}
    await sql.query("INSERT INTO uefa_fixtures(id,competition_id,season_id,matchday,kickoff_date,home_club_id,away_club_id,stage,home_goals,away_goals,status) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'played') ON CONFLICT(id) DO UPDATE SET home_goals=EXCLUDED.home_goals,away_goals=EXCLUDED.away_goals,status='played'",[id,comp.id,from,matchday,matchDate(matchday),home.id,away.id,stage,hg,ag]);
   }
   addCoefficient(String(home.id),hg>ag?2:hg===ag?1:0);addCoefficient(String(away.id),ag>hg?2:hg===ag?1:0);
@@ -108,8 +109,9 @@ async function finishPreviousSeason(sql:Sql,from:string){
  for(let i=0;i<clubRows.length;i++){
   const x=clubRows[i];const ten=await sql.query("SELECT COALESCE(SUM(points),0) total FROM uefa_club_season_coefficients WHERE club_id=$1 AND season_id IN (SELECT id FROM seasons WHERE starts_on <= (SELECT starts_on FROM seasons WHERE id=$2) ORDER BY starts_on DESC LIMIT 10)",[x.id,from]);
   const association=countryById.get(String(x.id))||"UNK";const assocCoeff=allAssoc.find(a=>a.country===association)?.total||0;
+  const fiveTotal=Math.max(Number(x.total||0),assocCoeff*.2);
   const tenTotal=Math.max(Number(ten[0]?.total||0),assocCoeff*.2);
-  await sql.query("INSERT INTO uefa_club_coefficients(club_id,five_season_total,ten_season_total,coefficient,ranking) VALUES($1,$2,$3,$2,$4) ON CONFLICT(club_id) DO UPDATE SET five_season_total=EXCLUDED.five_season_total,ten_season_total=EXCLUDED.ten_season_total,coefficient=EXCLUDED.coefficient,ranking=EXCLUDED.ranking",[x.id,Number(x.total||0).toFixed(3),tenTotal.toFixed(3),i+1]);
+  await sql.query("INSERT INTO uefa_club_coefficients(club_id,five_season_total,ten_season_total,coefficient,ranking) VALUES($1,$2,$3,$2,$4) ON CONFLICT(club_id) DO UPDATE SET five_season_total=EXCLUDED.five_season_total,ten_season_total=EXCLUDED.ten_season_total,coefficient=EXCLUDED.coefficient,ranking=EXCLUDED.ranking",[x.id,fiveTotal.toFixed(3),tenTotal.toFixed(3),i+1]);
  }
 }
 
