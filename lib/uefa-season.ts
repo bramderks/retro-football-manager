@@ -150,6 +150,82 @@ async function createCompetition(sql:Sql,season:string,code:string,clubs:any[],m
   }
  }
 }
+export async function advanceUefaDay(sql:Sql,day:string){
+ const due=await sql.query("SELECT f.id,f.competition_id,f.season_id,f.matchday,f.stage,f.home_club_id,f.away_club_id,h.team_strength AS home_strength,a.team_strength AS away_strength FROM uefa_fixtures f JOIN uefa_clubs h ON h.id=f.home_club_id JOIN uefa_clubs a ON a.id=f.away_club_id WHERE f.kickoff_date=$1 AND f.status='scheduled' ORDER BY f.competition_id,f.matchday,f.id",[day]);
+ for(const f of due){
+  let hg=clamp(Math.round(1.3+(Number(f.home_strength||55)-Number(f.away_strength||55))*.025+(seed(String(f.id))%7-3)*.35),0,6);
+  let ag=clamp(Math.round(1.05+(Number(f.away_strength||55)-Number(f.home_strength||55))*.025+(seed(String(f.id)+"a")%7-3)*.35),0,6);
+  if(f.stage==="final"&&hg===ag){if(seed(String(f.id)+"pen")%2===0)hg++;else ag++;}
+  await sql.query("UPDATE uefa_fixtures SET home_goals=$2,away_goals=$3,status='played' WHERE id=$1 AND status='scheduled'",[f.id,hg,ag]);
+  if(f.stage==="league_phase"){
+   await sql.query("UPDATE uefa_participants SET played=played+1,points=points+$1,wins=wins+$2,draws=draws+$3,losses=losses+$4,goals_for=goals_for+$5,goals_against=goals_against+$6 WHERE competition_id=$7 AND club_id=$8",[hg>ag?3:hg===ag?1:0,hg>ag?1:0,hg===ag?1:0,hg<ag?1:0,hg,ag,f.competition_id,f.home_club_id]);
+   await sql.query("UPDATE uefa_participants SET played=played+1,points=points+$1,wins=wins+$2,draws=draws+$3,losses=losses+$4,goals_for=goals_for+$5,goals_against=goals_against+$6 WHERE competition_id=$7 AND club_id=$8",[ag>hg?3:ag===hg?1:0,ag>hg?1:0,ag===hg?1:0,ag<hg?1:0,ag,hg,f.competition_id,f.away_club_id]);
+  }
+ }
+ const seasons=await sql.query("SELECT id FROM seasons WHERE starts_on<=$1::date AND ends_on>=$1::date ORDER BY starts_on DESC LIMIT 1",[day]);
+ if(!seasons.length)return {played:due.length,scheduledKnockout:0};
+ const season=String(seasons[0].id);
+ const comps=await sql.query("SELECT id,code FROM uefa_competitions WHERE season_id=$1",[season]);
+ let scheduledKnockout=0;
+ const addDays=(n:number)=>{const d=new Date(day+"T12:00:00Z");d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10);};
+ const fixturesFor=async(compId:string,stage:string)=>sql.query("SELECT id,matchday,kickoff_date,home_club_id,away_club_id,home_goals,away_goals,status FROM uefa_fixtures WHERE competition_id=$1 AND stage=$2 ORDER BY matchday,kickoff_date,id",[compId,stage]);
+ const complete=async(compId:string,stage:string)=>{const fs=await fixturesFor(compId,stage);return fs.length>0&&fs.every((x:any)=>x.status==="played");};
+ const hasStage=async(compId:string,stage:string)=>{const r=await sql.query("SELECT 1 FROM uefa_fixtures WHERE competition_id=$1 AND stage=$2 LIMIT 1",[compId,stage]);return r.length>0;};
+ const table=async(compId:string)=>sql.query("SELECT p.club_id AS id,c.name,c.country_code,c.team_strength,p.points,p.goals_for,p.goals_against,COALESCE(cc.five_season_total,0) AS coefficient FROM uefa_participants p JOIN uefa_clubs c ON c.id=p.club_id LEFT JOIN uefa_club_coefficients cc ON cc.club_id=c.id WHERE p.competition_id=$1 ORDER BY p.points DESC,(p.goals_for-p.goals_against) DESC,p.goals_for DESC,coefficient DESC,c.name",[compId]);
+ const winners=async(compId:string,stage:string)=>{
+  const fs=await fixturesFor(compId,stage),groups=new Map<string,any[]>();
+  for(const f of fs){const key=[String(f.home_club_id),String(f.away_club_id)].sort().join("|");if(!groups.has(key))groups.set(key,[]);groups.get(key)!.push(f);}
+  const out:any[]=[];
+  for(const group of [...groups.values()].sort((a:any[],b:any[])=>Number(a[0].matchday)-Number(b[0].matchday)||String(a[0].id).localeCompare(String(b[0].id)))){
+   const totals=new Map<string,number>();for(const f of group){totals.set(String(f.home_club_id),(totals.get(String(f.home_club_id))||0)+Number(f.home_goals||0));totals.set(String(f.away_club_id),(totals.get(String(f.away_club_id))||0)+Number(f.away_goals||0));}
+   const ids=[...totals.keys()];let winner=ids[0],loser=ids[1],a=totals.get(winner)||0,b=totals.get(loser)||0;
+   if(a===b){const teams=await sql.query("SELECT id,team_strength FROM uefa_clubs WHERE id=ANY($1::text[])",[ids]);const strength=new Map(teams.map((x:any)=>[String(x.id),Number(x.team_strength||55)]));if((strength.get(loser)||55)+seed(loser)%10>(strength.get(winner)||55)+seed(winner)%10){const temp=winner;winner=loser;loser=temp;}}
+   const club=await sql.query("SELECT id,name,country_code,team_strength FROM uefa_clubs WHERE id=$1",[winner]);if(club.length)out.push(club[0]);
+  }
+  return out;
+ };
+ const scheduleTies=async(comp:any,stage:string,firstMatchday:number,pairs:any[],twoLegs=true)=>{
+  const firstDate=addDays(7),secondDate=addDays(14);
+  for(let i=0;i<pairs.length;i++){
+   const [home,away]=pairs[i];if(!home||!away||home.id===away.id)continue;
+   const firstId=comp.id+"-"+stage+"-"+firstMatchday+"-"+home.id+"-"+away.id;
+   await sql.query("INSERT INTO uefa_fixtures(id,competition_id,season_id,matchday,kickoff_date,home_club_id,away_club_id,stage,status) VALUES($1,$2,$3,$4,$5,$6,$7,$8,'scheduled') ON CONFLICT DO NOTHING",[firstId,comp.id,season,firstMatchday,firstDate,home.id,away.id,stage]);
+   if(twoLegs){const secondId=comp.id+"-"+stage+"-"+(firstMatchday+1)+"-"+away.id+"-"+home.id;await sql.query("INSERT INTO uefa_fixtures(id,competition_id,season_id,matchday,kickoff_date,home_club_id,away_club_id,stage,status) VALUES($1,$2,$3,$4,$5,$6,$7,$8,'scheduled') ON CONFLICT DO NOTHING",[secondId,comp.id,season,firstMatchday+1,secondDate,away.id,home.id,stage]);}
+   scheduledKnockout+=twoLegs?2:1;
+  }
+ };
+ for(const comp of comps){
+  const league=await fixturesFor(String(comp.id),"league_phase");
+  if(!league.length||!league.every((x:any)=>x.status==="played"))continue;
+  const standings=await table(String(comp.id));
+  if(!await hasStage(String(comp.id),"knockout_playoff")){
+   const pairs:any[]=[];for(let i=8;i<16&&i<standings.length;i++){const opponent=standings[23-(i-8)];if(opponent)pairs.push([standings[i],opponent]);}
+   await scheduleTies(comp,"knockout_playoff",9,pairs,true);continue;
+  }
+  if(!await complete(String(comp.id),"knockout_playoff"))continue;
+  if(!await hasStage(String(comp.id),"round_of_16")){
+   const playoffWinners=await winners(String(comp.id),"knockout_playoff"),pairs:any[]=[];
+   for(let i=0;i<8;i++)if(standings[i]&&playoffWinners[i])pairs.push([standings[i],playoffWinners[i]]);
+   await scheduleTies(comp,"round_of_16",11,pairs,true);continue;
+  }
+  if(!await complete(String(comp.id),"round_of_16"))continue;
+  if(!await hasStage(String(comp.id),"quarter_final")){
+   const won=await winners(String(comp.id),"round_of_16"),pairs:any[]=[];for(let i=0;i+1<won.length;i+=2)pairs.push([won[i],won[i+1]]);
+   await scheduleTies(comp,"quarter_final",13,pairs,true);continue;
+  }
+  if(!await complete(String(comp.id),"quarter_final"))continue;
+  if(!await hasStage(String(comp.id),"semi_final")){
+   const won=await winners(String(comp.id),"quarter_final"),pairs:any[]=[];for(let i=0;i+1<won.length;i+=2)pairs.push([won[i],won[i+1]]);
+   await scheduleTies(comp,"semi_final",15,pairs,true);continue;
+  }
+  if(!await complete(String(comp.id),"semi_final"))continue;
+  if(!await hasStage(String(comp.id),"final")){
+   const won=await winners(String(comp.id),"semi_final");if(won.length>=2)await scheduleTies(comp,"final",17,[[won[0],won[1]]],false);
+  }
+ }
+ return {played:due.length,scheduledKnockout};
+}
+
 export async function buildUefaSeason(sql:Sql,from:string,season:string){
  await finishPreviousSeason(sql,from);
  await ensureDomesticUefaClubs(sql,season);
