@@ -220,6 +220,10 @@ export async function POST(request: Request) {
       await sql.query("INSERT INTO career_actions(save_id,action_date,action_type,payload,result) VALUES($1,$2,'facility_upgrade',$3::jsonb,$4::jsonb)",[b.saveId,dateOnly(s.game_date),JSON.stringify({facility,level:next,cost,approvedBy:chairpersonName,approvalRequest:true}),JSON.stringify({ok:true})]);
       await sql.query("UPDATE career_saves SET cash_balance=$1,updated_at=NOW() WHERE id=$2",[balance,b.saveId]);
       if(facility==="stadium"){await sql.query("UPDATE teams SET stadium_capacity=GREATEST(COALESCE(stadium_capacity,0)+1000,ROUND(COALESCE(stadium_capacity,0)*1.10)::int) WHERE id=$1",[s.club_id]);await sql.query("UPDATE stadiums SET capacity=GREATEST(COALESCE(capacity,0)+1000,ROUND(COALESCE(capacity,0)*1.10)::int) WHERE team_id=$1",[s.club_id]);}
+      if(["stadium","hospitality","training","youth","academy","marketing","scouting","medical"].includes(facility)){
+        await sql.query("UPDATE teams SET reputation=LEAST(100,reputation+1) WHERE id=$1",[s.club_id]);
+        await sql.query("INSERT INTO team_reputation_events(team_id,season_id,source,points,description) VALUES($1,$2,$3,1,$4) ON CONFLICT(team_id,season_id,source) DO NOTHING",[s.club_id,s.season_id||SEASON,"facility-"+facility+"-level-"+next,"Investering in "+facility+" niveau "+next]);
+      }
       await sql.query("INSERT INTO club_finances(save_id,entry_date,category,description,amount,balance_after) VALUES($1,$2,$3,$4,$5,$6)",[b.saveId,dateOnly(s.game_date),facility==="stadium"?"stadium":(["youth","academy"].includes(facility)?"youth":"operating_cost"),"Goedgekeurde investering: "+facility,-cost,balance]);
       await sql.query("INSERT INTO career_news(save_id,news_date,category,headline,body) VALUES($1,$2,'board',$3,$4)",[b.saveId,dateOnly(s.game_date),"Voorzitter keurt investering goed",chairpersonName+" keurt niveau "+next+"/5 voor "+facility+" goed. "+emotion]);
     }else{
@@ -243,6 +247,10 @@ export async function POST(request: Request) {
    await sql.query("INSERT INTO career_actions(save_id,action_date,action_type,payload,result) VALUES($1,$2,'facility_upgrade',$3::jsonb,$4::jsonb)",[b.saveId,dateOnly(s.game_date),JSON.stringify(payload),JSON.stringify({ok:true})]);
    await sql.query("UPDATE career_saves SET cash_balance=$1,updated_at=NOW() WHERE id=$2",[balance,b.saveId]);
    if(facility==="stadium"){await sql.query("UPDATE teams SET stadium_capacity=GREATEST(COALESCE(stadium_capacity,0)+1000,ROUND(COALESCE(stadium_capacity,0)*1.10)::int) WHERE id=$1",[s.club_id]);await sql.query("UPDATE stadiums SET capacity=GREATEST(COALESCE(capacity,0)+1000,ROUND(COALESCE(capacity,0)*1.10)::int) WHERE team_id=$1",[s.club_id]);}
+   if(["stadium","hospitality","training","youth","academy","marketing","scouting","medical"].includes(facility)){
+     await sql.query("UPDATE teams SET reputation=LEAST(100,reputation+1) WHERE id=$1",[s.club_id]);
+     await sql.query("INSERT INTO team_reputation_events(team_id,season_id,source,points,description) VALUES($1,$2,$3,1,$4) ON CONFLICT(team_id,season_id,source) DO NOTHING",[s.club_id,s.season_id||SEASON,"facility-"+facility+"-level-"+next,"Investering in "+facility+" niveau "+next]);
+   }
    await sql.query("INSERT INTO club_finances(save_id,entry_date,category,description,amount,balance_after) VALUES($1,$2,$3,$4,$5,$6)",[b.saveId,dateOnly(s.game_date),facility==="stadium"?"stadium":(["youth","academy"].includes(facility)?"youth":"operating_cost"),"Investering faciliteit: "+facility,-cost,balance]);
    await sql.query("INSERT INTO career_news(save_id,news_date,category,headline,body) VALUES($1,$2,'club',$3,$4)",[b.saveId,dateOnly(s.game_date),"Clubfaciliteit verbeterd","De club investeert €"+cost.toLocaleString("nl-NL")+" in "+facility+". Het niveau is nu "+next+"/5."]);
    return NextResponse.json({ok:true,facility,level:next,cost,balance});
