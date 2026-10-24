@@ -163,7 +163,8 @@ export async function advanceUefaDay(sql:Sql,day:string){
   let hg=clamp(Math.round(1.3+(Number(f.home_strength||55)-Number(f.away_strength||55))*.025+(seed(String(f.id))%7-3)*.35),0,6);
   let ag=clamp(Math.round(1.05+(Number(f.away_strength||55)-Number(f.home_strength||55))*.025+(seed(String(f.id)+"a")%7-3)*.35),0,6);
   if(f.stage==="final"&&hg===ag){if(seed(String(f.id)+"pen")%2===0)hg++;else ag++;}
-  await sql.query("UPDATE uefa_fixtures SET home_goals=$2,away_goals=$3,status='played' WHERE id=$1 AND status='scheduled'",[f.id,hg,ag]);
+  const claimed=await sql.query("UPDATE uefa_fixtures SET home_goals=$2,away_goals=$3,status='played' WHERE id=$1 AND status='scheduled' RETURNING id",[f.id,hg,ag]);
+  if(!claimed.length)continue;
   if(f.stage==="league_phase"){
    await sql.query("UPDATE uefa_participants SET played=played+1,points=points+$1,wins=wins+$2,draws=draws+$3,losses=losses+$4,goals_for=goals_for+$5,goals_against=goals_against+$6 WHERE competition_id=$7 AND club_id=$8",[hg>ag?3:hg===ag?1:0,hg>ag?1:0,hg===ag?1:0,hg<ag?1:0,hg,ag,f.competition_id,f.home_club_id]);
    await sql.query("UPDATE uefa_participants SET played=played+1,points=points+$1,wins=wins+$2,draws=draws+$3,losses=losses+$4,goals_for=goals_for+$5,goals_against=goals_against+$6 WHERE competition_id=$7 AND club_id=$8",[ag>hg?3:ag===hg?1:0,ag>hg?1:0,ag===hg?1:0,ag<hg?1:0,ag,hg,f.competition_id,f.away_club_id]);
