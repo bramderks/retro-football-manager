@@ -71,16 +71,55 @@ let promoted=0,relegated=0;
  for(const d of divs){
   const ts=old.filter((t:any)=>t.division_id===d.id);const standing=await sql.query("SELECT t.id,COALESCE(SUM(CASE WHEN COALESCE(cr.home_goals,wr.home_goals,f.home_goals) IS NULL OR COALESCE(cr.away_goals,wr.away_goals,f.away_goals) IS NULL THEN 0 WHEN f.home_team_id=t.id AND COALESCE(cr.home_goals,wr.home_goals,f.home_goals)>COALESCE(cr.away_goals,wr.away_goals,f.away_goals) THEN 3 WHEN f.away_team_id=t.id AND COALESCE(cr.away_goals,wr.away_goals,f.away_goals)>COALESCE(cr.home_goals,wr.home_goals,f.home_goals) THEN 3 WHEN COALESCE(cr.home_goals,wr.home_goals,f.home_goals)=COALESCE(cr.away_goals,wr.away_goals,f.away_goals) THEN 1 ELSE 0 END),0)::int points,COALESCE(SUM(CASE WHEN f.home_team_id=t.id THEN COALESCE(cr.home_goals,wr.home_goals,f.home_goals) ELSE COALESCE(cr.away_goals,wr.away_goals,f.away_goals) END),0)::int gf,COALESCE(SUM(CASE WHEN f.home_team_id=t.id THEN COALESCE(cr.away_goals,wr.away_goals,f.away_goals) ELSE COALESCE(cr.home_goals,wr.home_goals,f.home_goals) END),0)::int ga FROM teams t LEFT JOIN fixtures f ON (f.home_team_id=t.id OR f.away_team_id=t.id) AND f.season_id=$1 AND f.division_id=$2 LEFT JOIN world_fixture_results wr ON wr.fixture_id=f.id LEFT JOIN career_fixture_results cr ON cr.fixture_id=f.id AND cr.save_id=$3 GROUP BY t.id ORDER BY points DESC,(gf-ga) DESC,gf DESC,t.id",[from,d.id,saveId]);
   const higher=divs.find((x:any)=>x.country_code===d.country_code&&Number(x.tier)===Number(d.tier)-1),lower=divs.find((x:any)=>x.country_code===d.country_code&&Number(x.tier)===Number(d.tier)+1);
-  for(let i=0;i<standing.length;i++){const row=standing[i],t=ts.find((x:any)=>x.id===row.id);if(!t)continue;let tier=Number(d.tier),up=false,down=false;if(higher&&i<2){tier--;up=true;promoted++;}else if(lower&&i>=Math.max(0,standing.length-2)){tier++;down=true;relegated++;}const target=divs.find((x:any)=>x.country_code===d.country_code&&Number(x.tier)===tier)||d;await sql.query("INSERT INTO team_season_history(id,team_id,season_id,division_id,final_position,promoted,relegated,points) VALUES($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT(team_id,season_id) DO UPDATE SET final_position=EXCLUDED.final_position,promoted=EXCLUDED.promoted,relegated=EXCLUDED.relegated,points=EXCLUDED.points",[from+"-"+t.id,t.id,from,d.id,i+1,up,down,Number(row.points||0)]);await sql.query("UPDATE teams SET division_id=$2 WHERE id=$1",[t.id,target.country_code+"-"+target.tier+"-"+season]);}
+  for(let i=0;i<standing.length;i++){
+   const row=standing[i],t=ts.find((x:any)=>x.id===row.id);if(!t)continue;
+   let nextTier=Number(d.tier),up=false,down=false;
+   if(higher&&i<2){nextTier--;up=true;promoted++;}else if(lower&&i>=Math.max(0,standing.length-2)){nextTier++;down=true;relegated++;}
+   const target=divs.find((x:any)=>x.country_code===d.country_code&&Number(x.tier)===nextTier)||d;
+   await sql.query("INSERT INTO team_season_history(id,team_id,season_id,division_id,final_position,promoted,relegated,points) VALUES($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT(team_id,season_id) DO UPDATE SET final_position=EXCLUDED.final_position,promoted=EXCLUDED.promoted,relegated=EXCLUDED.relegated,points=EXCLUDED.points",[from+"-"+t.id,t.id,from,d.id,i+1,up,down,Number(row.points||0)]);
+   const topQuarter=i<Math.max(1,Math.ceil(standing.length*0.25)),bottomQuarter=i>=Math.floor(standing.length*0.75);
+   let reputationPoints=i===0?5:i===1?3:i===2?2:topQuarter?1:bottomQuarter?-1:0;
+   if(up)reputationPoints+=2;if(down)reputationPoints-=3;
+   reputationPoints=Math.max(-5,Math.min(7,reputationPoints));
+   const oldReputation=Number(t.reputation||45),newReputation=Math.max(1,Math.min(100,oldReputation+reputationPoints));
+   await sql.query("UPDATE teams SET division_id=$2,reputation=$3 WHERE id=$1",[t.id,target.country_code+"-"+target.tier+"-"+season,newReputation]);
+   await sql.query("INSERT INTO team_reputation_events(team_id,season_id,source,points,description) VALUES($1,$2,'league_final',$3,$4) ON CONFLICT(team_id,season_id,source) DO NOTHING",[t.id,from,reputationPoints,"League finish "+(i+1)+"/"+standing.length+"; promoted="+up+"; relegated="+down]);
+   const marketFactor=({ENG:1.8,ESP:1.3,GER:1.35,ITA:1.2,FRA:1.05,NED:0.85} as Record<string,number>)[String(d.country_code)]||0.45;
+   const prizeShare=i===0?0.16:i===1?0.11:i===2?0.08:topQuarter?0.045:0.018;
+   const prizeMoney=Math.round(80000000*marketFactor*prizeShare/Math.pow(Number(d.tier)||1,1.55));
+   await sql.query("UPDATE world_financial_profiles SET cash_balance=cash_balance+$1,transfer_budget=transfer_budget+ROUND($1*0.25)::bigint,annual_revenue=annual_revenue+$1,updated_at=now() WHERE team_id=$2",[prizeMoney,t.id]);
+   await sql.query("INSERT INTO world_financial_events(team_id,season_id,event_date,category,description,amount,balance_after) SELECT $1,$2,$3,'prize_money',$4,$5,COALESCE((SELECT cash_balance FROM world_financial_profiles WHERE team_id=$1),0) ON CONFLICT DO NOTHING",[t.id,from,end,"League prize money: position "+(i+1),prizeMoney]);
+   if(saveId){
+    const saved=await sql.query("UPDATE career_saves SET cash_balance=cash_balance+$1,transfer_budget=transfer_budget+ROUND($1*0.25)::bigint,updated_at=NOW() WHERE id=$2 AND club_id=$3 RETURNING cash_balance",[prizeMoney,saveId,t.id]);
+    if(saved.length){
+     await sql.query("INSERT INTO club_finances(save_id,entry_date,category,description,amount,balance_after) VALUES($1,$2,'prize_money',$3,$4,$5)",[saveId,end,"Competition prize money: league position "+(i+1),prizeMoney,Number(saved[0].cash_balance)]);
+     await sql.query("INSERT INTO career_news(save_id,news_date,category,headline,body) VALUES($1,$2,'finance',$3,$4)",[saveId,end,"Competitiepremie ontvangen","De club ontvangt €"+prizeMoney.toLocaleString("nl-NL")+" aan competitiepremies op basis van de eindklassering."]);
+    }
+   }
+  }
  }
  await sql.query("INSERT INTO team_player_memberships(season_id,team_id,player_id,membership_type) SELECT $1,tm.team_id,tm.player_id,tm.membership_type FROM team_player_memberships tm JOIN teams t ON t.id=tm.team_id JOIN divisions d ON d.id=t.division_id WHERE tm.season_id=$2 AND d.season_id=$1 ON CONFLICT(season_id,team_id,player_id) DO NOTHING",[season,from]);
  await sql.query("INSERT INTO uefa_club_player_memberships(season_id,club_id,player_id,membership_type) SELECT $1,um.club_id,um.player_id,um.membership_type FROM uefa_club_player_memberships um JOIN uefa_clubs u ON u.id=um.club_id WHERE um.season_id=$2 AND u.domestic_team_id IS NULL ON CONFLICT(season_id,club_id,player_id) DO NOTHING",[season,from]);
- const teams=await sql.query("SELECT t.id,t.name,t.city,t.reputation,t.team_strength,t.stadium_name,t.stadium_capacity,t.ticket_price FROM teams t JOIN divisions d ON d.id=t.division_id WHERE d.season_id=$1 ORDER BY t.id",[season]);let added=0;
- for(const t of teams){added+=await fillRoster(sql,t,season);const rep=Number(t.reputation||50),strength=Number(t.team_strength||50),revenue=Math.round(350000+rep*rep*13000+strength*strength*6500),wages=Math.round(revenue*(.42+strength/500)),capacity=Math.max(3500,Math.min(95000,Math.round(5000+rep*rep*18))),price=Math.max(8,Math.min(110,Number((5+rep*.48).toFixed(2)))),stadium=t.stadium_name||"Stadion "+t.name;
-  await sql.query("UPDATE teams SET stadium_name=COALESCE(stadium_name,$2),stadium_capacity=COALESCE(stadium_capacity,$3),ticket_price=COALESCE(ticket_price,$4),annual_revenue=CASE WHEN annual_revenue=0 THEN $5 ELSE annual_revenue END,annual_wage_bill=CASE WHEN annual_wage_bill=0 THEN $6 ELSE annual_wage_bill END,season_budget=CASE WHEN season_budget=0 THEN $7 ELSE season_budget END,financial_tier=CASE WHEN reputation>=80 THEN 'elite' WHEN reputation>=65 THEN 'upper' WHEN reputation>=45 THEN 'stable' ELSE 'small' END WHERE id=$1",[t.id,stadium,capacity,price,revenue,wages,Math.round(revenue*.12)]);
-  await sql.query("INSERT INTO stadiums(id,team_id,name,city,capacity,ticket_price,hospitality_price,annual_maintenance) VALUES($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT(team_id) DO UPDATE SET capacity=GREATEST(stadiums.capacity,EXCLUDED.capacity)",["stadium-"+slug(t.id),t.id,stadium,t.city,capacity,price,price*4,capacity*8]);
-  await sql.query("INSERT INTO world_financial_profiles(team_id,season_id,cash_balance,transfer_budget,annual_revenue,annual_wages,debt,ticket_price) VALUES($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT(team_id) DO UPDATE SET season_id=EXCLUDED.season_id,annual_revenue=EXCLUDED.annual_revenue,annual_wages=EXCLUDED.annual_wages,ticket_price=EXCLUDED.ticket_price,updated_at=now()",[t.id,season,Math.round(revenue*.08),Math.round(revenue*.12),revenue,wages,Math.round(Math.max(0,rep-65)*rep*40000),price]);
-  await sql.query("INSERT INTO world_financial_events(team_id,season_id,event_date,category,description,amount,balance_after) VALUES($1,$2,$3,'season_budget','Season budget opening estimate',$4,$5) ON CONFLICT DO NOTHING",[t.id,season,start,Math.round(revenue*.12),Math.round(revenue*.08)]);
+ const teams=await sql.query("SELECT t.id,t.name,t.city,t.reputation,t.team_strength,t.stadium_name,t.stadium_capacity,t.ticket_price,d.tier,d.country_code FROM teams t JOIN divisions d ON d.id=t.division_id WHERE d.season_id=$1 ORDER BY t.id",[season]);let added=0;
+ for(const t of teams){
+  added+=await fillRoster(sql,t,season);
+  const rep=Number(t.reputation||45),strength=Number(t.team_strength||45),tier=Number(t.tier||1);
+  const market=({ENG:1.8,ESP:1.3,GER:1.35,ITA:1.2,FRA:1.05,NED:0.85} as Record<string,number>)[String(t.country_code)]||0.45;
+  const tierFactor=tier===1?1:tier===2?0.42:tier===3?0.23:0.14;
+  const stadium=String(t.stadium_name||"Stadion "+t.name);
+  const capacity=Math.max(2500,Math.min(100000,Number(t.stadium_capacity||Math.round(4500+rep*rep*15))));
+  const stadiumFactor=Math.max(0.65,Math.min(1.6,Math.sqrt(capacity/30000)));
+  const revenue=Math.max(250000,Math.round((250000+rep*rep*10500+strength*strength*4800)*tierFactor*market*stadiumFactor));
+  const wages=Math.round(revenue*Math.max(0.38,Math.min(0.72,0.36+strength/280)));
+  const budget=Math.round(revenue*Math.max(0.06,Math.min(0.18,0.07+rep/900)));
+  const price=Math.max(6,Math.min(95,Number((3.5+rep*0.43*Math.sqrt(market)).toFixed(2))));
+  const debtRatio=Math.max(0.015,Math.min(0.32,(70-rep)/180+(tier-1)*0.045));
+  const debt=Math.round(revenue*debtRatio);
+  const cash=Math.round(revenue*Math.max(0.02,Math.min(0.14,0.045+rep/1100))-debt*0.08);
+  await sql.query("UPDATE teams SET stadium_name=COALESCE(stadium_name,$2),stadium_capacity=$3,ticket_price=$4,annual_revenue=$5,annual_wage_bill=$6,season_budget=$7,debt=$8,financial_tier=CASE WHEN reputation>=85 THEN 'elite' WHEN reputation>=70 THEN 'upper' WHEN reputation>=50 THEN 'stable' ELSE 'small' END WHERE id=$1",[t.id,stadium,capacity,price,revenue,wages,budget,debt]);
+  await sql.query("INSERT INTO stadiums(id,team_id,name,city,capacity,ticket_price,hospitality_price,annual_maintenance) VALUES($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT(team_id) DO UPDATE SET capacity=EXCLUDED.capacity,ticket_price=EXCLUDED.ticket_price,annual_maintenance=EXCLUDED.annual_maintenance",["stadium-"+slug(t.id),t.id,stadium,t.city,capacity,price,price*4,Math.round(capacity*10)]);
+  await sql.query("INSERT INTO world_financial_profiles(team_id,season_id,cash_balance,transfer_budget,annual_revenue,annual_wages,debt,ticket_price) VALUES($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT(team_id) DO UPDATE SET season_id=EXCLUDED.season_id,cash_balance=EXCLUDED.cash_balance,transfer_budget=EXCLUDED.transfer_budget,annual_revenue=EXCLUDED.annual_revenue,annual_wages=EXCLUDED.annual_wages,debt=EXCLUDED.debt,ticket_price=EXCLUDED.ticket_price,updated_at=now()",[t.id,season,cash,budget,revenue,wages,debt,price]);
+  await sql.query("INSERT INTO world_financial_events(team_id,season_id,event_date,category,description,amount,balance_after) VALUES($1,$2,$3,'season_budget','Season budget opening estimate',$4,$5) ON CONFLICT DO NOTHING",[t.id,season,start,budget,cash]);
  }
  
  // Every non-human manager and staff member gets a generated birthday if the source data lacks one.
