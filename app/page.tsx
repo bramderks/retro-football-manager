@@ -41,7 +41,7 @@ function parseGameDate(value: unknown): Date | null {
   if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value;
   const raw = String(value).trim();
   // Database date-only values must be parsed as local calendar dates, not UTC timestamps.
-  const dateOnly = raw.match(/^(\\d{4})-(\\d{2})-(\\d{2})$/);
+  const dateOnly = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   const parsed = dateOnly ? new Date(Number(dateOnly[1]), Number(dateOnly[2]) - 1, Number(dateOnly[3]), 12) : new Date(raw);
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
