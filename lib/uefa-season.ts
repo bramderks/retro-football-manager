@@ -1,5 +1,3 @@
-import type { NeonQueryFunction } from "@neondatabase/serverless";
-
 type Sql = { query: (query: string, params?: any[]) => Promise<any[]> };
 const clamp = (n:number,min:number,max:number)=>Math.max(min,Math.min(max,n));
 const seasonYear = (season:string)=>Number(season.slice(0,4));
