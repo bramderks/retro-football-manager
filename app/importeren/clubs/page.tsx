@@ -81,8 +81,7 @@ export default function Cm0102ClubImportPage() {
     } finally { setBusy(false); }
   }
   const percent = total ? Math.round(progress / total * 100) : 0;
-  return <><AppSidebar />
-    <main style={{minHeight:"100vh",background:"#0b1220",color:"#e5edf7",padding:"36px 18px",fontFamily:"Arial,sans-serif"}}>
+  return <main style={{minHeight:"100vh",background:"#0b1220",color:"#e5edf7",padding:"36px 18px",fontFamily:"Arial,sans-serif"}}><AppSidebar />
     <div style={{maxWidth:760,margin:"0 auto"}}>
       <a href="/importeren" style={{color:"#9fb4cf",textDecoration:"none"}}>← Terug naar CM0102-import</a>
       <h1 style={{fontSize:32,margin:"26px 0 8px"}}>CM0102-clubkoppelingen importeren</h1>
@@ -103,5 +102,5 @@ export default function Cm0102ClubImportPage() {
         <ul><li>Maakt een aparte CM0102-clubdatabase aan, met originele club-ID's en namen.</li><li>Koppelt spelers via hun CM0102-staff-ID aan de juiste club.</li><li>Werkt veilig opnieuw uit te voeren; bestaande carrières en de huidige spelersdatabase blijven intact.</li></ul>
       </section>
     </div>
-  </main></>;
+  </main>;
 }
