@@ -1,5 +1,7 @@
 "use client";
 
+
+import AppSidebar from "../components/AppSidebar";
 import { useState } from "react";
 
 type CsvRow = Record<string, string>;
@@ -80,7 +82,8 @@ export default function Cm0102ImportPage() {
     } finally { setBusy(false); }
   }
   const percent = total ? Math.round(progress / total * 100) : 0;
-  return <main className="import-page">
+  return <AppSidebar />
+    <main className="import-page">
     <div className="import-wrap">
       <div className="import-top"><a href="/">← Terug naar Retro Football Manager</a><span>DATABASEBEHEER / CM 01/02</span></div>
       <header className="import-header"><div className="import-mark">CM</div><div><div className="import-kicker">CENTRALE SPELERSDATABASE</div><h1>Spelersbestand importeren</h1><p>Werk de centrale database bij vanuit een CM 01/02 CSV-export. Teams, selecties, transfers en profielen blijven naar dezelfde spelerrecords verwijzen.</p></div></header>
