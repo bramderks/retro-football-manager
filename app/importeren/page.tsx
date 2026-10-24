@@ -82,8 +82,7 @@ export default function Cm0102ImportPage() {
     } finally { setBusy(false); }
   }
   const percent = total ? Math.round(progress / total * 100) : 0;
-  return <><AppSidebar />
-    <main className="import-page">
+  return <main className="import-page"><AppSidebar />
     <div className="import-wrap">
       <div className="import-top"><a href="/">← Terug naar Retro Football Manager</a><span>DATABASEBEHEER / CM 01/02</span></div>
       <header className="import-header"><div className="import-mark">CM</div><div><div className="import-kicker">CENTRALE SPELERSDATABASE</div><h1>Spelersbestand importeren</h1><p>Werk de centrale database bij vanuit een CM 01/02 CSV-export. Teams, selecties, transfers en profielen blijven naar dezelfde spelerrecords verwijzen.</p></div></header>
@@ -125,5 +124,5 @@ export default function Cm0102ImportPage() {
       .import-footer{padding-top:20px;color:#687c8a;font-size:10px;letter-spacing:.09em}.import-footer span{padding:0 6px;color:#2b638f}
       @media(max-width:600px){.import-page{padding:16px 10px}.import-header{align-items:flex-start;gap:12px}.import-mark{flex-basis:48px;height:48px;font-size:17px}h1{font-size:23px}.import-info-grid{grid-template-columns:1fr}.import-actions{align-items:stretch;flex-direction:column}.import-actions button{width:100%}.import-drop{margin:12px;padding:20px 10px}}
     `}</style>
-  </main></>;
+  </main>;
 }
