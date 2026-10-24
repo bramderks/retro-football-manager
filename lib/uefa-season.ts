@@ -131,20 +131,28 @@ export async function buildUefaSeason(sql:Sql,from:string,season:string){
   const samePool=pools[code];
   for(const c of fallback){if(samePool.length>=36)break;if(used.has(String(c.id)))continue;if(code!=="UCL"&&pools.UCL.some((x:any)=>x.id===c.id))continue;if(code==="UECL"&&pools.UEL.some((x:any)=>x.id===c.id))continue;samePool.push({...c,entry_rank:999,association_rank:rank.get(String(c.country_code))||999});used.add(String(c.id));}
   samePool.sort((a:any,b:any)=>Number(a.entry_rank)-Number(b.entry_rank)||Number(a.association_rank)-Number(b.association_rank)||Number(b.reputation)-Number(a.reputation));
-  await createCompetition(sql,season,code,samePool,code==="UECL"?6:8);
+  await createCompetition(sql,season,code,samePool.slice(0,36),code==="UECL"?6:8);
+  await sql.query("INSERT INTO uefa_club_player_memberships(season_id,club_id,player_id,membership_type) SELECT $1,u.id,tm.player_id,'primary' FROM uefa_clubs u JOIN team_player_memberships tm ON tm.team_id=u.domestic_team_id AND tm.season_id=$1 AND tm.membership_type='primary' JOIN players p ON p.id=tm.player_id AND p.is_active=TRUE AND p.career_status='active' WHERE u.id=ANY($2::text[]) ON CONFLICT(season_id,club_id,player_id) DO NOTHING",[season,samePool.slice(0,36).map((x:any)=>String(x.id))]);
  }
  // Domestic financial monitoring: UEFA 70% squad-cost ceiling plus solvency and break-even controls.
- const finance=await sql.query("SELECT t.id,t.annual_revenue,t.annual_wage_bill,t.season_budget,t.debt,t.reputation FROM teams t JOIN divisions d ON d.id=t.division_id WHERE d.season_id=$1 AND d.tier=1",[season]);
+ const finance=await sql.query("SELECT t.id,t.annual_revenue,t.annual_wage_bill,t.season_budget,t.debt,t.reputation,d.country_code,d.tier FROM teams t JOIN divisions d ON d.id=t.division_id WHERE d.season_id=$1",[season]);
+ const rules=await sql.query("SELECT country_code,rule_code,rule_name,squad_cost_limit_pct,allowed_loss_eur,monitoring_years,requires_licence FROM national_financial_rules");
+ const ruleByCountry=new Map(rules.map((x:any)=>[String(x.country_code),x]));
  for(const t of finance){
   const revenue=Math.max(1,Number(t.annual_revenue||0));
+  const rule:any=ruleByCountry.get(String(t.country_code))||{rule_code:"UEFA_FSR",rule_name:"UEFA financial sustainability",squad_cost_limit_pct:70,allowed_loss_eur:60000000,monitoring_years:3,requires_licence:true};
   const squadCost=Math.round(Number(t.annual_wage_bill||0)+Number(t.season_budget||0)*.35);
   const ratio=squadCost/revenue*100;
+  const limit=Number(rule.squad_cost_limit_pct||70);
   const sanctions:any[]=[];
-  if(ratio>70)sanctions.push({type:"squad_cost_ratio",severity:ratio>80?"major":"warning",ratio:Number(ratio.toFixed(2)),ceiling:70});
-  const overdueClub=Number(t.debt||0)>revenue*.35?Math.round(Number(t.debt)-revenue*.35):0;
-  if(overdueClub>0)sanctions.push({type:"overdue_payables_review",amount:overdueClub});
-  const status=ratio>80?"breach":ratio>70||overdueClub>0?"review":"compliant";
-  await sql.query("INSERT INTO club_financial_monitoring(team_id,season_id,relevant_revenue,squad_cost,squad_cost_ratio,overdue_club_payables,compliance_status,sanctions) VALUES($1,$2,$3,$4,$5,$6,$7,$8::jsonb) ON CONFLICT(team_id,season_id) DO UPDATE SET relevant_revenue=EXCLUDED.relevant_revenue,squad_cost=EXCLUDED.squad_cost,squad_cost_ratio=EXCLUDED.squad_cost_ratio,overdue_club_payables=EXCLUDED.overdue_club_payables,compliance_status=EXCLUDED.compliance_status,sanctions=EXCLUDED.sanctions,reviewed_at=now()",[t.id,season,revenue,squadCost,ratio.toFixed(2),overdueClub,status,JSON.stringify(sanctions)]);
+  if(ratio>limit)sanctions.push({type:"squad_cost_ratio",severity:ratio>limit+10?"major":"warning",ratio:Number(ratio.toFixed(2)),ceiling:limit,rule:rule.rule_code});
+  const debt=Number(t.debt||0);
+  const estimatedLoss=Math.max(0,debt-revenue*.2);
+  if(estimatedLoss>Number(rule.allowed_loss_eur||60000000))sanctions.push({type:"football_earnings",estimated_loss:estimatedLoss,allowed_loss:Number(rule.allowed_loss_eur||60000000),monitoring_years:Number(rule.monitoring_years||3)});
+  const overdueClub=debt>revenue*.35?Math.round(debt-revenue*.35):0;
+  if(overdueClub>0)sanctions.push({type:"solvency_review",amount:overdueClub});
+  const status=sanctions.some((x:any)=>x.severity==="major"||x.type==="football_earnings")?"breach":sanctions.length?"review":"compliant";
+  await sql.query("INSERT INTO club_financial_monitoring(team_id,season_id,relevant_revenue,squad_cost,squad_cost_ratio,overdue_club_payables,compliance_status,sanctions) VALUES($1,$2,$3,$4,$5,$6,$7,$8::jsonb) ON CONFLICT(team_id,season_id) DO UPDATE SET relevant_revenue=EXCLUDED.relevant_revenue,squad_cost=EXCLUDED.squad_cost,squad_cost_ratio=EXCLUDED.squad_cost_ratio,overdue_club_payables=EXCLUDED.overdue_club_payables,compliance_status=EXCLUDED.compliance_status,sanctions=EXCLUDED.sanctions,reviewed_at=now()",[t.id,season,revenue,squadCost,ratio.toFixed(2),overdueClub,status,JSON.stringify([{national_rule:rule.rule_code,national_rule_name:rule.rule_name,licence_required:rule.requires_licence},...sanctions])]);
  }
  return {competitions:3,associationCount:assoc.length,entrants:{UCL:pools.UCL.slice(0,36).length,UEL:pools.UEL.slice(0,36).length,UECL:pools.UECL.slice(0,36).length}};
 }
