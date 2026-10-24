@@ -486,3 +486,54 @@ main.min-h-screen.bg-slate-950 button:hover{background:#173a5e!important}
 .route-sidebar .game-clock{background:#244c70!important;border-color:#4c7394!important;color:#fff!important}
 .route-sidebar .game-clock strong{color:#fff!important}
 @media(max-width:900px){.workspace{grid-template-columns:1fr!important}.sidebar{order:0}.route-sidebar{background:#173a5e!important}}
+
+
+/* Unified fixed left navigation: CM 01/02 density + Clevers ERP palette */
+.global-sidebar{position:fixed;z-index:100;left:0;top:0;bottom:0;width:224px;display:flex;flex-direction:column;overflow-y:auto;background:#173a5e;border-right:1px solid #102d49;box-shadow:2px 0 8px #173a5e16;color:#edf4fa}
+.global-sidebar-brand{display:flex;align-items:center;gap:10px;padding:16px 12px;text-decoration:none!important;background:#12314f;border-bottom:1px solid #355674;color:#fff!important}
+.global-sidebar-brand>span:last-child{display:flex;flex-direction:column;gap:4px;min-width:0}
+.global-sidebar-brand strong{font-size:12px;letter-spacing:.3px;color:#fff}
+.global-sidebar-brand small{font-size:9px;letter-spacing:.35px;color:#c6d7e6}
+.global-sidebar-mark{display:grid;place-items:center;flex:0 0 37px;height:37px;background:#f3f6f9;color:#173a5e;border:1px solid #b8c5d1;font-weight:800;font-size:14px}
+.global-sidebar-date{padding:13px 12px;border-bottom:1px solid #355674;display:flex;flex-direction:column;gap:6px}
+.global-sidebar-date small{font-size:9px;letter-spacing:.5px;color:#c6d7e6}
+.global-sidebar-date strong{font-size:11px;color:#fff}
+.global-sidebar nav{display:flex;flex-direction:column;gap:2px;padding:9px 7px}
+.global-sidebar-link{display:flex;align-items:center;gap:10px;padding:10px 9px;color:#e0eaf3!important;text-decoration:none!important;font-size:12px;font-weight:600;border-left:3px solid transparent;border-radius:2px}
+.global-sidebar-icon{width:17px;text-align:center;font-size:14px;color:#bdd0e0}
+.global-sidebar-link:hover{background:#28547b;color:#fff!important}
+.global-sidebar-link.active{background:#fff;color:#173a5e!important;border-left-color:#78acd2}
+.global-sidebar-link.active .global-sidebar-icon{color:#245b86}
+.global-sidebar-footer{margin-top:auto;padding:13px 11px;color:#b8cbdb;font-size:9px;letter-spacing:.6px;border-top:1px solid #355674}
+body:has(.global-sidebar) main:not(.app-shell){margin-left:224px!important;max-width:none!important;width:auto!important;min-height:100vh}
+body:has(.global-sidebar) main[style*="maxWidth"]{max-width:none!important}
+body:has(.global-sidebar) main>div{max-width:1400px}
+.app-shell{max-width:none!important;margin:0!important;min-height:100vh}
+.app-shell>.topbar{margin-left:206px;width:calc(100% - 206px);padding-left:20px!important}
+.app-shell>.sidebar-nav{position:fixed!important;z-index:90!important;left:0!important;top:62px!important;bottom:0!important;width:206px!important;height:auto!important;overflow-y:auto!important;overflow-x:hidden!important;display:flex!important;flex-direction:column!important;align-items:stretch!important;justify-content:flex-start!important;gap:2px!important;padding:8px 7px!important;background:#173a5e!important;border-right:1px solid #102d49!important;border-bottom:0!important}
+.app-shell>.sidebar-nav .game-clock{order:-1!important;display:flex!important;flex-direction:column!important;gap:8px!important;padding:11px!important;margin-bottom:7px!important;background:#244c70!important;border:1px solid #4c7394!important;color:#fff!important}
+.app-shell>.sidebar-nav .game-clock .eyebrow{color:#d2e2ef!important}
+.app-shell>.sidebar-nav .game-clock strong{color:#fff!important;font-size:11px!important}
+.app-shell>.sidebar-nav .page-arrows{display:flex!important;align-items:center!important;justify-content:space-between!important}
+.app-shell>.sidebar-nav .page-arrows button{background:#e8eff5!important;color:#173a5e!important;border:1px solid #9fb4c6!important}
+.app-shell>.sidebar-nav .sidebar-save-button{width:100%!important;background:#fff!important;color:#173a5e!important;border:1px solid #b8c5d1!important;padding:8px!important}
+.app-shell>.sidebar-nav .nav-button{display:flex!important;align-items:center!important;justify-content:flex-start!important;gap:10px!important;width:100%!important;text-align:left!important;padding:10px 9px!important;color:#e0eaf3!important;border:0!important;border-left:3px solid transparent!important;border-radius:2px!important;background:transparent!important;font:600 12px Inter,Arial,sans-serif!important}
+.app-shell>.sidebar-nav .nav-button:hover{background:#28547b!important;color:#fff!important}
+.app-shell>.sidebar-nav .nav-button.active{background:#fff!important;color:#173a5e!important;border-left-color:#78acd2!important}
+.app-shell>.sidebar-nav .nav-button .nav-icon{width:17px;text-align:center}
+.app-shell>.workspace{margin-left:206px!important;padding:12px!important;min-height:calc(100vh - 62px)!important}
+.app-shell>.workspace .sidebar{display:none!important}
+.app-shell>.workspace>main,.app-shell>.workspace>.main-content{min-width:0}
+@media(max-width:900px){
+ .global-sidebar{position:sticky;top:0;bottom:auto;width:100%;height:auto;max-height:none;overflow-x:auto;overflow-y:hidden;display:block;white-space:nowrap}
+ .global-sidebar-brand{display:none}
+ .global-sidebar-date,.global-sidebar-footer{display:none}
+ .global-sidebar nav{flex-direction:row;width:max-content;padding:5px;gap:4px}
+ .global-sidebar-link{flex:0 0 auto;padding:9px}
+ body:has(.global-sidebar) main:not(.app-shell){margin-left:0!important}
+ .app-shell>.topbar{margin-left:0;width:100%;height:58px!important}
+ .app-shell>.sidebar-nav{position:sticky!important;top:0!important;left:auto!important;bottom:auto!important;width:100%!important;height:auto!important;flex-direction:row!important;overflow-x:auto!important;overflow-y:hidden!important;white-space:nowrap!important}
+ .app-shell>.sidebar-nav .game-clock{display:none!important}
+ .app-shell>.sidebar-nav .nav-button{width:auto!important;flex:0 0 auto!important}
+ .app-shell>.workspace{margin-left:0!important}
+}
