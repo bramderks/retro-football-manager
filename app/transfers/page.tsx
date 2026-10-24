@@ -46,7 +46,7 @@ export default function FreeTransfersPage() {
 
   useEffect(() => { void load(""); }, []);
 
-  return (
+  return (<>
     <AppSidebar />
     <main style={{ minHeight: "100vh", padding: 24, background: "#171717", color: "#f2f2f2", fontFamily: "Arial, sans-serif" }}>
       <div style={{ maxWidth: 1100, margin: "0 auto" }}>
@@ -82,6 +82,6 @@ export default function FreeTransfersPage() {
           </table>
         </div>
       </div>
-    </main>
+    </main></>
   );
 }
