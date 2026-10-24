@@ -32,7 +32,23 @@ async function ensureSaveSchedule(sql:any,saveId:string,divisionId:string,season
  for(let i=0;i<rows.length;i+=100){const chunk=rows.slice(i,i+100);const values=chunk.map(x=>"("+[saveId,x.id,x.matchday,x.date,x.home,x.away].map((v:any)=>"'"+String(v).replace(/'/g,"''")+"'").join(",")+")").join(",");await sql.query("INSERT INTO career_fixture_schedule(save_id,fixture_id,matchday,kickoff_date,home_team_id,away_team_id) VALUES "+values+" ON CONFLICT(save_id,fixture_id) DO NOTHING");}
 }
 const fail = (error: string, status = 400) => NextResponse.json({ error }, { status });
-const dateOnly = (d: Date | string) => new Date(d).toISOString().slice(0, 10);
+function dateOnly(value: Date | string): string {
+  if (typeof value === "string") {
+    const raw = value.trim();
+    const dateOnlyMatch = raw.match(/^(\\d{4})-(\\d{2})-(\\d{2})$/);
+    if (dateOnlyMatch) {
+      const year = Number(dateOnlyMatch[1]);
+      const month = Number(dateOnlyMatch[2]);
+      const day = Number(dateOnlyMatch[3]);
+      const check = new Date(Date.UTC(year, month - 1, day));
+      if (check.getUTCFullYear() === year && check.getUTCMonth() === month - 1 && check.getUTCDate() === day) return raw;
+      throw new Error("Ongeldige kalenderdatum: " + raw);
+    }
+  }
+  const parsed = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(parsed.getTime())) throw new Error("Ongeldige datumwaarde: " + String(value));
+  return parsed.toISOString().slice(0, 10);
+}
 function seasonEndDate(seasonId:string){const year=Number(String(seasonId||SEASON).split("-")[1]||Number(String(seasonId||SEASON).slice(0,4))+1);return String(year)+"-06-30";}
 function matchScore(home: number, away: number, ht: any = {}, at: any = {}) {
   const factor = (t: any, o: any) => (t.mentality === "Aanvallend" ? 1.12 : t.mentality === "Verdedigend" ? .86 : 1) * (t.counter && o.mentality === "Aanvallend" ? 1.07 : 1) * (t.pressing ? 1.02 : 1);
@@ -143,7 +159,7 @@ export async function POST(request: Request) {
    const weeks=Math.max(0,Math.ceil((new Date(dateOnly(contract[0].end_date)+"T12:00:00Z").getTime()-new Date(dateOnly(s.game_date)+"T12:00:00Z").getTime())/604800000));const penalty=Math.round(Number(contract[0].weekly_wage)*weeks*.75);
    if(penalty>Number(s.cash_balance||0))return fail("Onvoldoende clubkas voor de afkoopsom van €"+penalty.toLocaleString("nl-NL")+".");
    await sql.query("UPDATE career_player_contracts SET end_date=$1 WHERE id=$2",[dateOnly(s.game_date),contract[0].id]);await sql.query("UPDATE career_saves SET cash_balance=cash_balance-$1,updated_at=NOW() WHERE id=$2",[penalty,b.saveId]);
-   await sql.query("INSERT INTO club_finances(save_id,entry_date,category,description,amount,balance_after) VALUES($1,$2,'contract',$3,$4,$5)",[b.saveId,dateOnly(s.game_date),"Contract ontbonden (75% resterend loon)",-penalty,Number(s.cash_balance)-penalty]);
+   await sql.query("INSERT INTO club_finances(save_id,entry_date,category,description,amount,balance_after) VALUES($1,$2,'operating_cost',$3,$4,$5)",[b.saveId,dateOnly(s.game_date),"Contract ontbonden (75% resterend loon)",-penalty,Number(s.cash_balance)-penalty]);
    return NextResponse.json({ok:true,penalty});
   }
   if(b.action==="hire_staff"){
@@ -162,7 +178,7 @@ export async function POST(request: Request) {
    if(signing>Number(s.cash_balance||0))return fail("Onvoldoende clubkas voor tekengeld.");
    await sql.query("INSERT INTO club_staff(id,club_id,full_name,role,reputation,wage_weekly,employed_from,date_of_birth,career_status,career_path,personality,mood) VALUES($1,$2,$3,$4,$5,$6,$7,$8,'employed',$9,$10,$11)",["staff-"+crypto.randomUUID(),s.club_id,name,role,staffRep,wage,dateOnly(s.game_date),birthDate,role,personality,mood]);
    await sql.query("UPDATE career_saves SET cash_balance=cash_balance-$1,updated_at=NOW() WHERE id=$2",[signing,b.saveId]);
-   await sql.query("INSERT INTO club_finances(save_id,entry_date,category,description,amount,balance_after) VALUES($1,$2,'staff',$3,$4,$5)",[b.saveId,dateOnly(s.game_date),"Tekengeld staf: "+name,-signing,Number(s.cash_balance)-signing]);
+   await sql.query("INSERT INTO club_finances(save_id,entry_date,category,description,amount,balance_after) VALUES($1,$2,'operating_cost',$3,$4,$5)",[b.saveId,dateOnly(s.game_date),"Tekengeld staf: "+name,-signing,Number(s.cash_balance)-signing]);
    await sql.query("INSERT INTO career_news(save_id,news_date,category,headline,body) VALUES($1,$2,'club',$3,$4)",[b.saveId,dateOnly(s.game_date),"Nieuwe aanstelling: "+name,name+" is aangesteld als "+role.replaceAll("_"," ")+"."]);
    return NextResponse.json({ok:true});
   }
@@ -170,7 +186,7 @@ export async function POST(request: Request) {
    const staffId=String(b.staffId||"");const staff=await sql.query("SELECT id,full_name,role,wage_weekly FROM club_staff WHERE id=$1 AND club_id=$2 AND employed_until IS NULL LIMIT 1",[staffId,s.club_id]);if(!staff.length)return fail("Medewerker niet gevonden.");
    const penalty=Math.round(Number(staff[0].wage_weekly||0)*52*.75);if(penalty>Number(s.cash_balance||0))return fail("Onvoldoende clubkas voor de afkoopsom van €"+penalty.toLocaleString("nl-NL")+".");
    await sql.query("UPDATE club_staff SET employed_until=$1 WHERE id=$2",[dateOnly(s.game_date),staffId]);await sql.query("UPDATE career_saves SET cash_balance=cash_balance-$1,updated_at=NOW() WHERE id=$2",[penalty,b.saveId]);
-   await sql.query("INSERT INTO club_finances(save_id,entry_date,category,description,amount,balance_after) VALUES($1,$2,'contract',$3,$4,$5)",[b.saveId,dateOnly(s.game_date),"Contract ontbonden: "+staff[0].full_name,-penalty,Number(s.cash_balance)-penalty]);
+   await sql.query("INSERT INTO club_finances(save_id,entry_date,category,description,amount,balance_after) VALUES($1,$2,'operating_cost',$3,$4,$5)",[b.saveId,dateOnly(s.game_date),"Contract ontbonden: "+staff[0].full_name,-penalty,Number(s.cash_balance)-penalty]);
    return NextResponse.json({ok:true,penalty});
   }
   if(b.action==="request_facility_upgrade"){
@@ -282,7 +298,7 @@ export async function POST(request: Request) {
      const total:any=totals[0]||{appearances:0,goals:0,assists:0};let payout=0;const updated={...terms};
      if(Number(terms.appearanceThreshold)>0&&Number(total.appearances)>=Number(terms.appearanceThreshold)&&Number(terms.appearanceBonus)>0&&!terms.appearancePaid){payout+=Number(terms.appearanceBonus);updated.appearancePaid=true;}
      if(Number(terms.goalThreshold)>0&&Number(total.goals)>=Number(terms.goalThreshold)&&Number(terms.goalBonus)>0&&!terms.goalPaid){payout+=Number(terms.goalBonus);updated.goalPaid=true;}
-     if(payout>0){const balanceRow=await sql.query("UPDATE career_saves SET cash_balance=cash_balance-$1,updated_at=NOW() WHERE id=$2 RETURNING cash_balance",[payout,b.saveId]);const balance=Number(balanceRow[0]?.cash_balance||0);await sql.query("INSERT INTO club_finances(save_id,entry_date,category,description,amount,balance_after) VALUES($1,$2,'bonus',$3,$4,$5)",[b.saveId,day,"Contractuele mijlpaalbonus voor "+playerId,-payout,balance]);await sql.query("INSERT INTO career_news(save_id,news_date,category,headline,body) VALUES($1,$2,'finance',$3,$4)",[b.saveId,day,"Contractbonus uitgekeerd","Een contractuele prestatiebonus van €"+payout.toLocaleString("nl-NL")+" is verschuldigd na het behalen van een afgesproken mijlpaal."]);}
+     if(payout>0){const balanceRow=await sql.query("UPDATE career_saves SET cash_balance=cash_balance-$1,updated_at=NOW() WHERE id=$2 RETURNING cash_balance",[payout,b.saveId]);const balance=Number(balanceRow[0]?.cash_balance||0);await sql.query("INSERT INTO club_finances(save_id,entry_date,category,description,amount,balance_after) VALUES($1,$2,'wages',$3,$4,$5)",[b.saveId,day,"Contractuele mijlpaalbonus voor "+playerId,-payout,balance]);await sql.query("INSERT INTO career_news(save_id,news_date,category,headline,body) VALUES($1,$2,'finance',$3,$4)",[b.saveId,day,"Contractbonus uitgekeerd","Een contractuele prestatiebonus van €"+payout.toLocaleString("nl-NL")+" is verschuldigd na het behalen van een afgesproken mijlpaal."]);}
      if(JSON.stringify(updated)!==JSON.stringify(terms))await sql.query("UPDATE career_actions SET payload=$1::jsonb WHERE id=$2",[JSON.stringify(updated),contract.id]);
     }
     const otherMatches=await sql.query("SELECT f.id,cfs.home_team_id,cfs.away_team_id,cfs.kickoff_date,h.team_strength AS hs,h.reputation AS hr,a.team_strength AS aws,a.reputation AS ar FROM career_fixture_schedule cfs JOIN fixtures f ON f.id=cfs.fixture_id JOIN teams h ON h.id=cfs.home_team_id JOIN teams a ON a.id=cfs.away_team_id WHERE cfs.kickoff_date=$1 AND f.status='scheduled' AND f.division_id=$2 AND cfs.fixture_id<>$3 AND cfs.save_id=$4 AND NOT EXISTS (SELECT 1 FROM career_fixture_results cr WHERE cr.fixture_id=f.id AND cr.save_id=$4)",[day,s.division_id,fixtureId,b.saveId]);
