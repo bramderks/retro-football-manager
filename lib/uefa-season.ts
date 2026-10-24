@@ -214,11 +214,11 @@ export async function buildUefaSeason(sql:Sql,from:string,season:string){
   const sanctions:any[]=[];
   if(ratio>limit)sanctions.push({type:"squad_cost_ratio",severity:ratio>limit+10?"major":"warning",ratio:Number(ratio.toFixed(2)),ceiling:limit,rule:rule.rule_code});
   const debt=Number(t.debt||0);
-  const estimatedLoss=Math.max(0,debt-revenue*.2);
-  if(estimatedLoss>Number(rule.allowed_loss_eur||60000000))sanctions.push({type:"football_earnings",estimated_loss:estimatedLoss,allowed_loss:Number(rule.allowed_loss_eur||60000000),monitoring_years:Number(rule.monitoring_years||3)});
-  const overdueClub=debt>revenue*.35?Math.round(debt-revenue*.35):0;
-  if(overdueClub>0)sanctions.push({type:"solvency_review",amount:overdueClub});
-  const status=sanctions.some((x:any)=>x.severity==="major"||x.type==="football_earnings")?"breach":sanctions.length?"review":"compliant";
+  const debtToRevenue=debt/revenue;
+  if(debtToRevenue>1.5)sanctions.push({type:"debt_sustainability_review",debt_to_revenue:Number(debtToRevenue.toFixed(2)),threshold:1.5});
+  // Debt is not the same as an overdue payable or a football-earnings loss; those stay unasserted until separate ledger data exists.
+  const overdueClub=0;
+  const status=sanctions.some((x:any)=>x.severity==="major")?"breach":sanctions.length?"review":"compliant";
   await sql.query("INSERT INTO club_financial_monitoring(team_id,season_id,relevant_revenue,squad_cost,squad_cost_ratio,overdue_club_payables,compliance_status,sanctions) VALUES($1,$2,$3,$4,$5,$6,$7,$8::jsonb) ON CONFLICT(team_id,season_id) DO UPDATE SET relevant_revenue=EXCLUDED.relevant_revenue,squad_cost=EXCLUDED.squad_cost,squad_cost_ratio=EXCLUDED.squad_cost_ratio,overdue_club_payables=EXCLUDED.overdue_club_payables,compliance_status=EXCLUDED.compliance_status,sanctions=EXCLUDED.sanctions,reviewed_at=now()",[t.id,season,revenue,squadCost,ratio.toFixed(2),overdueClub,status,JSON.stringify([{national_rule:rule.rule_code,national_rule_name:rule.rule_name,licence_required:rule.requires_licence},...sanctions])]);
  }
  return {competitions:3,associationCount:assoc.length,entrants:{UCL:pools.UCL.slice(0,36).length,UEL:pools.UEL.slice(0,36).length,UECL:pools.UECL.slice(0,36).length}};
