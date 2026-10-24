@@ -423,3 +423,66 @@ main[style*="#0b1220"] h1,main[style*="#0b1220"] h2,main[style*="#0b1220"] h3,ma
 main[style*="#0b1220"] section,main[style*="#0b1220"] article,main[style*="#0b1220"] div[style*="background"]{background:#f3f6f8!important;border-color:#b4c0c9!important}
 main[style*="#0b1220"] input{background:#fff!important;color:#172d40!important;border-color:#96a6b2!important}
 main[style*="#0b1220"] button{background:#2b6595!important;color:#fff!important;border:1px solid #1b4f79!important;border-radius:0!important}
+
+
+/* CM 01/02 structure + Clevers ERP visual system */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+:root{
+ --bg:#edf1f5;--panel:#ffffff;--panel2:#e2e8ef;--line:#b8c5d1;
+ --text:#24384b;--muted:#687b8d;--gold:#245b86;--green:#25804b;--blue:#2c6f9f;
+ --erp-navy:#173a5e;--erp-blue:#245b86;--erp-pale:#e7eef5;--erp-border:#aebdca;
+}
+html,body{background:#edf1f5!important;color:#24384b!important;font-family:Inter,Arial,sans-serif!important;font-size:13px}
+body *{font-family:Inter,Arial,sans-serif}
+button,input,select,textarea{font-family:Inter,Arial,sans-serif!important;border-radius:2px!important}
+.app-shell{background:#edf1f5!important;color:#24384b!important}
+.topbar{height:62px!important;background:#173a5e!important;border-bottom:2px solid #245b86!important;padding:0 20px!important;color:#fff!important}
+.brand-mark{background:#fff!important;color:#245b86!important;border:1px solid #b8c5d1!important}
+.brand-title{color:#fff!important;letter-spacing:.3px!important;font-size:17px!important}
+.brand-sub{color:#c8d8e7!important;letter-spacing:.6px!important}
+.live-pill{background:#244c70!important;border-color:#4c7394!important;color:#edf4fa!important}
+.nav{background:#e2e8ef!important;border-bottom:1px solid #aebdca!important;padding:0 16px!important;gap:2px!important}
+.nav-button{color:#294b68!important;font-weight:700!important;padding:12px 14px!important;border-bottom:3px solid transparent!important}
+.nav-button:hover{background:#f7f9fb!important;color:#173a5e!important}
+.nav-button.active{background:#fff!important;color:#173a5e!important;border-bottom-color:#245b86!important}
+.workspace{grid-template-columns:260px minmax(0,1fr)!important;gap:12px!important;padding:12px!important;background:#edf1f5!important}
+.sidebar,.panel,.card,.match-panel,.stat-card,.content-panel{background:#fff!important;border:1px solid #b8c5d1!important;box-shadow:0 1px 2px #173a5e0a!important;color:#24384b!important}
+.side-section{border-bottom:1px solid #d4dde5!important;padding:13px 14px!important}
+.eyebrow{color:#245b86!important;letter-spacing:.7px!important;font-family:Inter,Arial,sans-serif!important;font-weight:800!important}
+.fixture-title{color:#173a5e!important;font-size:15px!important}
+.muted,.stadium,.stat-row{color:#687b8d!important}
+.stat-row strong{color:#173a5e!important;font-family:Inter,Arial,sans-serif!important}
+.tactics label,.speed-label{color:#405a70!important}
+.tactics select,.speed-label select{background:#fff!important;color:#24384b!important;border:1px solid #aebdca!important}
+button{transition:background .12s ease,border-color .12s ease}
+button:disabled{opacity:.5}
+input,select,textarea{background:#fff!important;color:#24384b!important;border:1px solid #aebdca!important}
+table{border-collapse:collapse}
+th{background:#e2e8ef!important;color:#173a5e!important;font-weight:700!important}
+td,th{border-color:#d2dce5!important}
+tr:nth-child(even){background:#f7f9fb}
+tr:hover{background:#e7eef5!important}
+a{color:#245b86}
+h1,h2,h3,h4{color:#173a5e}
+main{color:#24384b}
+.route-shell{background:#edf1f5!important;color:#24384b!important}
+.route-sidebar{background:#173a5e!important;color:#fff!important;border-right:1px solid #102d49!important;box-shadow:2px 0 5px #122d4510!important}
+.route-sidebar a,.route-sidebar button{color:#e5edf5!important;border-radius:2px!important}
+.route-sidebar a:hover,.route-sidebar button:hover{background:#28547b!important;color:#fff!important}
+.route-sidebar a.active,.route-sidebar button.active{background:#fff!important;color:#173a5e!important;border-left:3px solid #80b1d5!important}
+.route-topbar{background:#fff!important;color:#173a5e!important;border-bottom:1px solid #b8c5d1!important;box-shadow:0 1px 2px #173a5e0a!important}
+.route-topbar h1,.route-topbar h2{color:#173a5e!important}
+.route-main{background:#edf1f5!important;color:#24384b!important}
+.route-main section,.route-main article{background:#fff!important;border-color:#b8c5d1!important}
+.route-main button{border-radius:2px!important}
+main.min-h-screen.bg-slate-950{background:#edf1f5!important;color:#24384b!important}
+main.min-h-screen.bg-slate-950 h1,main.min-h-screen.bg-slate-950 h2,main.min-h-screen.bg-slate-950 h3,main.min-h-screen.bg-slate-950 p,main.min-h-screen.bg-slate-950 div,main.min-h-screen.bg-slate-950 td,main.min-h-screen.bg-slate-950 th,main.min-h-screen.bg-slate-950 label,main.min-h-screen.bg-slate-950 li{font-family:Inter,Arial,sans-serif!important}
+main.min-h-screen.bg-slate-950 button{background:#245b86!important;border-color:#1b4a70!important;color:#fff!important}
+main.min-h-screen.bg-slate-950 button:hover{background:#173a5e!important}
+.power-card,.ai-note,.scorers-panel,.tactics-controls,.pitch-panel{background:#fff!important;border-color:#b8c5d1!important;color:#24384b!important}
+.power-card p,.ai-note p,.tactic-setting p{color:#687b8d!important}
+.pitch-heading,.pitch-heading label,.tactic-setting label,.tactic-check{color:#405a70!important}
+.pitch-heading select,.tactic-setting select{background:#fff!important;color:#24384b!important;border:1px solid #aebdca!important}
+.route-sidebar .game-clock{background:#244c70!important;border-color:#4c7394!important;color:#fff!important}
+.route-sidebar .game-clock strong{color:#fff!important}
+@media(max-width:900px){.workspace{grid-template-columns:1fr!important}.sidebar{order:0}.route-sidebar{background:#173a5e!important}}
