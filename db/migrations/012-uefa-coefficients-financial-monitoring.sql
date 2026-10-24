@@ -66,6 +66,11 @@ INSERT INTO national_financial_rules(country_code,rule_code,rule_name,squad_cost
 ('SCO','SPFL_SFA_FINANCIAL','Schotse licentie en UEFA FSR',70,60000000,3,TRUE,'Simuleert licentie en betalingsverplichtingen.'),
 ('TUR','TFF_FINANCIAL','TFF financiële licentie en UEFA FSR',70,60000000,3,TRUE,'Simuleert licentiecontrole en betalingsachterstanden.')
 ON CONFLICT(country_code) DO UPDATE SET rule_code=EXCLUDED.rule_code,rule_name=EXCLUDED.rule_name,squad_cost_limit_pct=EXCLUDED.squad_cost_limit_pct,allowed_loss_eur=EXCLUDED.allowed_loss_eur,monitoring_years=EXCLUDED.monitoring_years,requires_licence=EXCLUDED.requires_licence,procedure_notes=EXCLUDED.procedure_notes;
+INSERT INTO national_financial_rules(country_code,rule_code,rule_name,squad_cost_limit_pct,allowed_loss_eur,monitoring_years,requires_licence,procedure_notes)
+SELECT x.country_code,x.country_code||'_LICENSING',x.country_code||' national licensing and UEFA FSR overlay',70,60000000,3,TRUE,
+'Generic game simulation profile: licensing, overdue-payables and UEFA squad-cost controls. Replace with verified national rules where the league has a distinct published framework.'
+FROM (SELECT DISTINCT country_code FROM uefa_clubs) x
+ON CONFLICT(country_code) DO NOTHING;
 CREATE INDEX IF NOT EXISTS idx_uefa_assoc_coefficient_rank ON uefa_association_coefficients(ranking);
 CREATE INDEX IF NOT EXISTS idx_uefa_club_coefficient_rank ON uefa_club_coefficients(ranking);
 COMMIT;
