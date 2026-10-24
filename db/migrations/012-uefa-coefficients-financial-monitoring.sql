@@ -56,18 +56,18 @@ CREATE TABLE IF NOT EXISTS national_financial_rules (
 );
 INSERT INTO national_financial_rules(country_code,rule_code,rule_name,squad_cost_limit_pct,allowed_loss_eur,monitoring_years,requires_licence,procedure_notes) VALUES
 ('ENG','PREMIER_LEAGUE_PSR','Premier League PSR / UEFA FSR overlay',70,125000000,3,TRUE,'Simuleert driejaarsverliescontrole en UEFA squad-cost monitoring; de echte PSR-berekening is geen simpele salarisratio.'),
-('ESP','LALIGA_ECONOMIC_CONTROL','LaLiga economische controle',70,60000000,3,TRUE,'Simuleert budgetlimiet op basis van goedgekeurde inkomsten, loonkosten en selectie-uitgaven.'),
-('GER','DFL_LICENSING','DFL licentie en liquiditeitscontrole',70,60000000,3,TRUE,'Simuleert licentiecontrole, liquiditeit en selectie-uitgaven; echte Duitse procedures hebben eigen beoordelingscriteria.'),
-('ITA','FIGC_COVISOC','FIGC / COVISOC financiële controle',70,60000000,3,TRUE,'Simuleert licentie, solvabiliteit en betalingsverplichtingen.'),
-('FRA','DNCG','DNCG financiële controle',70,60000000,3,TRUE,'Simuleert begrotingsgoedkeuring, solvabiliteit en mogelijke toezichtmaatregelen.'),
-('NED','KNVB_LICENSING','KNVB licentie en financiële beoordeling',70,60000000,3,TRUE,'Simuleert licentiecontrole en betalingsachterstanden.'),
-('POR','FPF_LICENSING','Portugese licentie en UEFA FSR',70,60000000,3,TRUE,'Simuleert licentie, betalingsachterstanden en squad-cost controle.'),
-('BEL','RBFA_LICENSING','Belgische licentie en UEFA FSR',70,60000000,3,TRUE,'Simuleert licentiecontrole en solvabiliteit.'),
-('SCO','SPFL_SFA_FINANCIAL','Schotse licentie en UEFA FSR',70,60000000,3,TRUE,'Simuleert licentie en betalingsverplichtingen.'),
-('TUR','TFF_FINANCIAL','TFF financiële licentie en UEFA FSR',70,60000000,3,TRUE,'Simuleert licentiecontrole en betalingsachterstanden.')
+('ESP','LALIGA_ECONOMIC_CONTROL','LaLiga economische controle',100,60000000,3,TRUE,'Simuleert budgetlimiet op basis van goedgekeurde inkomsten, loonkosten en selectie-uitgaven.'),
+('GER','DFL_LICENSING','DFL licentie en liquiditeitscontrole',100,60000000,3,TRUE,'Simuleert licentiecontrole, liquiditeit en selectie-uitgaven; echte Duitse procedures hebben eigen beoordelingscriteria.'),
+('ITA','FIGC_COVISOC','FIGC / COVISOC financiële controle',100,60000000,3,TRUE,'Simuleert licentie, solvabiliteit en betalingsverplichtingen.'),
+('FRA','DNCG','DNCG financiële controle',100,60000000,3,TRUE,'Simuleert begrotingsgoedkeuring, solvabiliteit en mogelijke toezichtmaatregelen.'),
+('NED','KNVB_LICENSING','KNVB licentie en financiële beoordeling',100,60000000,3,TRUE,'Simuleert licentiecontrole en betalingsachterstanden.'),
+('POR','FPF_LICENSING','Portugese licentie en UEFA FSR',100,60000000,3,TRUE,'Simuleert licentie, betalingsachterstanden en squad-cost controle.'),
+('BEL','RBFA_LICENSING','Belgische licentie en UEFA FSR',100,60000000,3,TRUE,'Simuleert licentiecontrole en solvabiliteit.'),
+('SCO','SPFL_SFA_FINANCIAL','Schotse licentie en UEFA FSR',100,60000000,3,TRUE,'Simuleert licentie en betalingsverplichtingen.'),
+('TUR','TFF_FINANCIAL','TFF financiële licentie en UEFA FSR',100,60000000,3,TRUE,'Simuleert licentiecontrole en betalingsachterstanden.')
 ON CONFLICT(country_code) DO UPDATE SET rule_code=EXCLUDED.rule_code,rule_name=EXCLUDED.rule_name,squad_cost_limit_pct=EXCLUDED.squad_cost_limit_pct,allowed_loss_eur=EXCLUDED.allowed_loss_eur,monitoring_years=EXCLUDED.monitoring_years,requires_licence=EXCLUDED.requires_licence,procedure_notes=EXCLUDED.procedure_notes;
 INSERT INTO national_financial_rules(country_code,rule_code,rule_name,squad_cost_limit_pct,allowed_loss_eur,monitoring_years,requires_licence,procedure_notes)
-SELECT x.country_code,x.country_code||'_LICENSING',x.country_code||' national licensing and UEFA FSR overlay',70,60000000,3,TRUE,
+SELECT x.country_code,x.country_code||'_LICENSING',x.country_code||' national licensing and UEFA FSR overlay',100,60000000,3,TRUE,
 'Generic game simulation profile: licensing, overdue-payables and UEFA squad-cost controls. Replace with verified national rules where the league has a distinct published framework.'
 FROM (SELECT DISTINCT country_code FROM uefa_clubs) x
 ON CONFLICT(country_code) DO NOTHING;
