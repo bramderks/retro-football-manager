@@ -64,7 +64,8 @@ async function finishPreviousSeason(sql:Sql,from:string){
 async function ensureDomesticUefaClubs(sql:Sql,from:string){
  const rows=await sql.query("SELECT t.id,t.name,t.reputation,t.team_strength,d.country_code,d.id AS division_id FROM teams t JOIN divisions d ON d.id=t.division_id WHERE d.season_id=$1 AND d.tier=1",[from]);
  for(const t of rows){
-  const id="domestic-"+slug(String(t.id));
+  const existing=await sql.query("SELECT id FROM uefa_clubs WHERE domestic_team_id=$1 ORDER BY id LIMIT 1",[t.id]);
+  const id=String(existing[0]?.id||("domestic-"+slug(String(t.id))));
   await sql.query("INSERT INTO uefa_clubs(id,name,country_code,reputation,team_strength,domestic_division_id,domestic_team_id) VALUES($1,$2,$3,$4,$5,$6,$7) ON CONFLICT(id) DO UPDATE SET name=EXCLUDED.name,country_code=EXCLUDED.country_code,reputation=EXCLUDED.reputation,team_strength=EXCLUDED.team_strength,domestic_division_id=EXCLUDED.domestic_division_id,domestic_team_id=EXCLUDED.domestic_team_id",[id,t.name,t.country_code,clamp(Number(t.reputation||45),1,100),clamp(Number(t.team_strength||45),1,100),t.division_id,t.id]);
  }
 }
@@ -123,7 +124,7 @@ export async function buildUefaSeason(sql:Sql,from:string,season:string){
   const prev=await sql.query("SELECT f.home_club_id,f.away_club_id,f.home_goals,f.away_goals,f.stage FROM uefa_fixtures f JOIN uefa_competitions c ON c.id=f.competition_id WHERE c.season_id=$1 AND c.code=$2 AND f.stage='final' AND f.status='played' ORDER BY f.kickoff_date DESC LIMIT 1",[from,code]);
   if(prev.length){const winner=Number(prev[0].home_goals)>Number(prev[0].away_goals)?prev[0].home_club_id:prev[0].away_club_id;const club=await sql.query("SELECT id,name,reputation,team_strength FROM uefa_clubs WHERE id=$1",[winner]);if(club.length&&!pools.UCL.some((x:any)=>x.id===winner))pools.UCL.push({...club[0],entry_rank:0,association_rank:rank.get(String(club[0].country_code))||999});}
  }
- const fallback=await sql.query("SELECT id,name,country_code,reputation,team_strength,domestic_team_id FROM uefa_clubs ORDER BY reputation DESC,team_strength DESC,id");
+ const fallback=await sql.query("SELECT id,name,country_code,reputation,team_strength,domestic_team_id FROM uefa_clubs WHERE domestic_team_id IS NULL ORDER BY reputation DESC,team_strength DESC,id");
  for(const code of ["UCL","UEL","UECL"]){
   const used=new Set(pools[code].map((x:any)=>String(x.id)));
   const samePool=pools[code];
