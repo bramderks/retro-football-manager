@@ -42,7 +42,13 @@ async function finishPreviousSeason(sql:Sql,from:string){
  // Generate and resolve the knockout bracket for the completed league phase.
  const bonusByCompetition:Record<string,number>={UCL:1.5,UEL:1,UECL:.5};
  const competitions=await sql.query("SELECT id,code,matches_per_club FROM uefa_competitions WHERE season_id=$1 ORDER BY code",[from]);
- const matchDate=(matchday:number)=>new Date(Date.UTC(seasonYear(from)+1,1,matchday*5+1,12)).toISOString().slice(0,10);
+ const matchDate=(comp:any,stage:string,matchday:number)=>{
+  const y=seasonYear(from),date=(month:number,day:number,next=false)=>new Date(Date.UTC(y+(next?1:0),month-1,day,12)).toISOString().slice(0,10);
+  const calendars:Record<string,string[]>={UCL:[date(9,8),date(9,29),date(10,20),date(11,3),date(11,24),date(12,8),date(1,19,true),date(1,28,true)],UEL:[date(9,17),date(10,1),date(10,22),date(11,5),date(11,26),date(12,10),date(1,21,true),date(1,28,true)],UECL:[date(9,17),date(10,1),date(10,22),date(11,5),date(11,26),date(12,10)]};
+  if(stage==="league_phase")return calendars[String(comp.code)]?.[matchday-1]||date(9,8);
+  const knockout:Record<number,string>={9:date(2,16,true),10:date(2,23,true),11:date(3,9,true),12:date(3,16,true),13:date(4,6,true),14:date(4,13,true),15:date(4,27,true),16:date(5,4,true),17:date(5,28,true)};
+  return knockout[matchday]||date(5,28,true);
+ };
  const playMatch=async(comp:any,matchday:number,home:any,away:any,stage:string)=>{
   const id=String(comp.id)+"-"+stage+"-"+matchday+"-"+home.id+"-"+away.id;
   const prior=await sql.query("SELECT home_goals,away_goals,status FROM uefa_fixtures WHERE id=$1 LIMIT 1",[id]);
@@ -53,7 +59,7 @@ async function finishPreviousSeason(sql:Sql,from:string){
    hg=clamp(Math.round(1.3+diff+(seed(id)%7-3)*.35),0,6);
    ag=clamp(Math.round(1.05-diff+(seed(id+"a")%7-3)*.35),0,6);
    if(stage==="final"&&hg===ag){if(seed(id+"pen")%2===0)hg++;else ag++;}
-   await sql.query("INSERT INTO uefa_fixtures(id,competition_id,season_id,matchday,kickoff_date,home_club_id,away_club_id,stage,home_goals,away_goals,status) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'played') ON CONFLICT(id) DO UPDATE SET home_goals=EXCLUDED.home_goals,away_goals=EXCLUDED.away_goals,status='played'",[id,comp.id,from,matchday,matchDate(matchday),home.id,away.id,stage,hg,ag]);
+   await sql.query("INSERT INTO uefa_fixtures(id,competition_id,season_id,matchday,kickoff_date,home_club_id,away_club_id,stage,home_goals,away_goals,status) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'played') ON CONFLICT(id) DO UPDATE SET home_goals=EXCLUDED.home_goals,away_goals=EXCLUDED.away_goals,status='played'",[id,comp.id,from,matchday,matchDate(comp,stage,matchday),home.id,away.id,stage,hg,ag]);
   }
   addCoefficient(String(home.id),hg>ag?2:hg===ag?1:0);addCoefficient(String(away.id),ag>hg?2:hg===ag?1:0);
   for(const [clubId,goals,against] of [[String(home.id),hg,ag],[String(away.id),ag,hg]] as any[]){
@@ -142,11 +148,12 @@ async function createCompetition(sql:Sql,season:string,code:string,clubs:any[],m
  const offset=seed(season+code)%rounds;
  for(let md=1;md<=matches;md++){
   const pairs=roundPairs[(md-1+offset)%rounds];
-  const date=new Date(Date.UTC(seasonYear(season)+(md>5?1:0),md<=5?8:1,md<=5?1+md*7:1+(md-5)*7,12));
+  const y=seasonYear(season),dateFor=(month:number,day:number,next=false)=>new Date(Date.UTC(y+(next?1:0),month-1,day,12)).toISOString().slice(0,10);
+  const calendar:Record<string,string[]>={UCL:[dateFor(9,8),dateFor(9,29),dateFor(10,20),dateFor(11,3),dateFor(11,24),dateFor(12,8),dateFor(1,19,true),dateFor(1,28,true)],UEL:[dateFor(9,17),dateFor(10,1),dateFor(10,22),dateFor(11,5),dateFor(11,26),dateFor(12,10),dateFor(1,21,true),dateFor(1,28,true)],UECL:[dateFor(9,17),dateFor(10,1),dateFor(10,22),dateFor(11,5),dateFor(11,26),dateFor(12,10)]};
   for(let i=0;i<pairs.length;i++){
    const pair=pairs[(i+md-1)%pairs.length],flip=((md+i+seed(code))%2)===0;
    const home=flip?pair.h:pair.a,away=flip?pair.a:pair.h;
-   await sql.query("INSERT INTO uefa_fixtures(id,competition_id,season_id,matchday,kickoff_date,home_club_id,away_club_id,stage,status) VALUES($1,$2,$3,$4,$5,$6,$7,'league_phase','scheduled') ON CONFLICT DO NOTHING",[id+"-md"+md+"-"+home.id+"-"+away.id,id,season,md,date.toISOString().slice(0,10),home.id,away.id]);
+   await sql.query("INSERT INTO uefa_fixtures(id,competition_id,season_id,matchday,kickoff_date,home_club_id,away_club_id,stage,status) VALUES($1,$2,$3,$4,$5,$6,$7,'league_phase','scheduled') ON CONFLICT DO NOTHING",[id+"-md"+md+"-"+home.id+"-"+away.id,id,season,md,calendar[code]?.[md-1]||dateFor(9,8),home.id,away.id]);
   }
  }
 }
@@ -185,7 +192,8 @@ export async function advanceUefaDay(sql:Sql,day:string){
   return out;
  };
  const scheduleTies=async(comp:any,stage:string,firstMatchday:number,pairs:any[],twoLegs=true)=>{
-  const firstDate=addDays(7),secondDate=addDays(14);
+  const offset=stage==="knockout_playoff"?19:stage==="round_of_16"?14:stage==="quarter_final"?21:stage==="semi_final"?14:24;
+  const firstDate=addDays(offset),secondDate=addDays(offset+7);
   for(let i=0;i<pairs.length;i++){
    const [home,away]=pairs[i];if(!home||!away||home.id===away.id)continue;
    const firstId=comp.id+"-"+stage+"-"+firstMatchday+"-"+home.id+"-"+away.id;
