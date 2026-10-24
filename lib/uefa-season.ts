@@ -72,7 +72,7 @@ async function finishPreviousSeason(sql:Sql,from:string){
   const table=await sql.query("SELECT p.club_id AS id,c.name,c.country_code,c.team_strength,p.points,p.goals_for,p.goals_against,COALESCE(cc.five_season_total,0) AS coefficient FROM uefa_participants p JOIN uefa_clubs c ON c.id=p.club_id LEFT JOIN uefa_club_coefficients cc ON cc.club_id=c.id WHERE p.competition_id=$1 ORDER BY p.points DESC,(p.goals_for-p.goals_against) DESC,p.goals_for DESC,coefficient DESC,c.name",[comp.id]);
   if(table.length<16)continue;
   const playoffWinners:any[]=[];
-  for(let i=8;i<Math.min(24,table.length);i+=1){
+  for(let i=8;i<Math.min(16,table.length);i+=1){
    const home=table[i],away=table[Math.min(23,table.length-1)-(i-8)];
    if(!home||!away||home.id===away.id)continue;
    const winner=await playTie(comp,5,home,away,"knockout_playoff",true);
