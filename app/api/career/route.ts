@@ -35,7 +35,7 @@ const fail = (error: string, status = 400) => NextResponse.json({ error }, { sta
 function dateOnly(value: Date | string): string {
   if (typeof value === "string") {
     const raw = value.trim();
-    const dateOnlyMatch = raw.match(/^(\\d{4})-(\\d{2})-(\\d{2})$/);
+    const dateOnlyMatch = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
     if (dateOnlyMatch) {
       const year = Number(dateOnlyMatch[1]);
       const month = Number(dateOnlyMatch[2]);
