@@ -1,5 +1,7 @@
 "use client";
 
+
+import AppSidebar from "../components/AppSidebar";
 import { useEffect, useState } from "react";
 
 type Player = {
@@ -12,6 +14,14 @@ type Player = {
   potential_ability: number | null;
   positions: unknown;
 };
+
+function formatDate(value: string | null): string {
+  if (!value) return "—";
+  const raw=String(value);
+  const match=raw.match(/^(\\d{4})-(\\d{2})-(\\d{2})/);
+  const date=match ? new Date(Number(match[1]),Number(match[2])-1,Number(match[3]),12) : new Date(raw);
+  return Number.isNaN(date.getTime()) ? "—" : date.toLocaleDateString("nl-NL");
+}
 
 export default function FreeTransfersPage() {
   const [players, setPlayers] = useState<Player[]>([]);
@@ -37,7 +47,7 @@ export default function FreeTransfersPage() {
   useEffect(() => { void load(""); }, []);
 
   return (
-    <main style={{ minHeight: "100vh", padding: 24, background: "#171717", color: "#f2f2f2", fontFamily: "Arial, sans-serif" }}>
+    <main style={{ minHeight: "100vh", padding: 24, background: "#171717", color: "#f2f2f2", fontFamily: "Arial, sans-serif" }}><AppSidebar />
       <div style={{ maxWidth: 1100, margin: "0 auto" }}>
         <div style={{ borderBottom: "3px solid #315bdf", paddingBottom: 12, marginBottom: 18 }}>
           <div style={{ color: "#8da8ff", fontSize: 12, fontWeight: 700, letterSpacing: 2 }}>RETRO FOOTBALL MANAGER</div>
@@ -60,7 +70,7 @@ export default function FreeTransfersPage() {
             <tbody>
               {players.map((p) => <tr key={p.id}>
                 <td style={{ padding: 11, borderBottom: "1px solid #333", fontWeight: 700, whiteSpace: "nowrap" }}>{p.full_name}</td>
-                <td style={{ padding: 11, borderBottom: "1px solid #333", whiteSpace: "nowrap" }}>{p.date_of_birth ? new Date(p.date_of_birth).toLocaleDateString("nl-NL") : "—"}</td>
+                <td style={{ padding: 11, borderBottom: "1px solid #333", whiteSpace: "nowrap" }}>{formatDate(p.date_of_birth)}</td>
                 <td style={{ padding: 11, borderBottom: "1px solid #333" }}>{Array.isArray(p.positions) ? p.positions.join(", ") : "—"}</td>
                 <td style={{ padding: 11, borderBottom: "1px solid #333" }}>{p.current_ability ?? "—"}</td>
                 <td style={{ padding: 11, borderBottom: "1px solid #333" }}>{p.potential_ability ?? "—"}</td>

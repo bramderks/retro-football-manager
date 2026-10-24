@@ -1,51 +1,46 @@
 # Retro Football Manager
 
-Een retro-voetbalmanager geïnspireerd op de klassieke managementgames uit de jaren 90.
+Een browsergebaseerde retro-voetbalmanager geïnspireerd op de klassieke managementgames uit de jaren 90 en CM 01/02.
 
-## Huidige status
+## Webapp
 
-**Desktop prototype v0.2**
-- Eerste Windows-desktopinterface in Python/Tkinter met muisknoppen
-- Live scorebord, wedstrijdminuut en doorlopend tekstcommentaar
-- Start, pauze, verder, nieuwe wedstrijd en tempo-instelling
-- Schoten, schoten op doel, kansen en corners
-- Klassieke donkere blauw/groene interface als eerste stijlbasis
+De actieve webapp is gebouwd met Next.js, React, TypeScript en Neon PostgreSQL en wordt gedeployed via Vercel.
 
-Dit is een vroege UI-prototype. De huidige desktopversie gebruikt nog een eenvoudige, eigen Python-simulatie; de bestaande C-engine in `MATCHENG.C` is nog niet geïntegreerd in de GUI. De navigatieknoppen voor selectie, tactiek, competitie en transfers zijn voorlopig placeholders. Voortgang wordt nog niet opgeslagen en de wedstrijdregels zijn nog niet gekalibreerd.
+De interface bevat schermen voor:
+- Overzicht en live wedstrijdsimulatie met commentaar, statistieken, doelpuntenmakers, kaarten, blessures en wissels.
+- Selectie, opstelling en tactieken.
+- Competitie, Europees voetbal en kalender.
+- Transfers en spelersprofielen.
+- Faciliteiten en loopbaan/career saves.
 
-## Bestanden
+De actuele webcode staat in `app/`; API-routes staan in `app/api/`. De databasebasis en uitbreidingen staan in `db/schema.sql` en `db/migrations/`.
 
-- `retro_manager.py` — Windows-desktopinterfaceprototype (Python 3 + Tkinter)
-- `MATCHENG.C` — oorspronkelijke C/DOS-wedstrijdengine
-- `TESTPLAN.md` — handmatig testplan voor de oorspronkelijke engine
+## Spelersdatabase
 
-## Desktopprototype starten op Windows
+De webapp hoort één centrale spelersbron te gebruiken. De actuele implementatie haalt spelers via de gedeelde database/view `all_players`; loopbaangegevens zoals club, fitheid, moraal, contracten en wedstrijdstatistieken horen bij de afzonderlijke career save. De CM 01/02-import schrijft bronprofielen naar `cm0102_player_profiles`.
 
-1. Installeer Python 3 als dat nog niet op de pc staat. Kies tijdens de installatie indien beschikbaar voor **Add Python to PATH**.
-2. Download `retro_manager.py` uit deze repository naar een map op je pc.
-3. Open Opdrachtprompt in die map.
-4. Start het programma met:
+De database moet zijn ingericht met de schema's en migraties die bij de gedeployde branch horen. Stel `DATABASE_URL` in bij Vercel voordat database-afhankelijke schermen en API-routes worden getest. Voer database-migraties bewust uit op de juiste Neon-database; voer geen schema's uit op een andere applicatiedatabase.
 
-```bat
-py retro_manager.py
+## Ontwikkelen
+
+Vereist: Node.js en npm.
+
+```bash
+npm install
+npm run dev
 ```
 
-Als `py` niet wordt herkend, probeer:
+Controleer voor oplevering:
 
-```bat
-python retro_manager.py
+```bash
+npm run lint
+npm run build
 ```
 
-Tkinter is meestal inbegrepen bij de standaard Windows-installatie van Python. Er zijn geen extra Python-pakketten nodig.
+## Legacy DOS-engine
 
-## DOS-prototype
+`MATCHENG.C` is een afzonderlijk C/DOS-prototype van de wedstrijdengine. Het is nog geen bewijs dat de webapp dezelfde engine gebruikt. Het testplan hiervoor staat in `TESTPLAN.md`; bouwen en uitvoeren vereist een DOS-target compiler en bijvoorbeeld DOSBox.
 
-De C-versie kan afzonderlijk worden gebouwd met Open Watcom dat voor DOS is ingesteld. De exacte compileropties en bibliotheekinstellingen hangen af van de installatie. Start de resulterende DOS-executable vanuit DOSBox; Windows 64-bit voert een 16-bits DOS-programma niet rechtstreeks uit.
+## Status en beperkingen
 
-## Volgende ontwikkelstappen
-
-1. Test de desktopinterface op Windows.
-2. Verfijn het commentaar en de wedstrijdsimulatie.
-3. Integreer de C-engine via een duidelijke interface of migreer de wedstrijdregels gecontroleerd.
-4. Bouw echte selectie-, tactiek-, competitie- en transferonderdelen.
-5. Voeg opslag van spelstanden en een speelbare seizoenstructuur toe.
+De Vercel-deployment is de actieve webversie; een groene build bewijst alleen dat de code kan bouwen, niet dat de Neon-database gevuld is of dat iedere gameplay-flow end-to-end werkt. Controleer daarom ook de database-migraties, de API-responses en de volledige carrièremove vóór een release.
