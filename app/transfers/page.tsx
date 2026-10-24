@@ -46,9 +46,8 @@ export default function FreeTransfersPage() {
 
   useEffect(() => { void load(""); }, []);
 
-  return (<>
-    <AppSidebar />
-    <main style={{ minHeight: "100vh", padding: 24, background: "#171717", color: "#f2f2f2", fontFamily: "Arial, sans-serif" }}>
+  return (
+    <main style={{ minHeight: "100vh", padding: 24, background: "#171717", color: "#f2f2f2", fontFamily: "Arial, sans-serif" }}><AppSidebar />
       <div style={{ maxWidth: 1100, margin: "0 auto" }}>
         <div style={{ borderBottom: "3px solid #315bdf", paddingBottom: 12, marginBottom: 18 }}>
           <div style={{ color: "#8da8ff", fontSize: 12, fontWeight: 700, letterSpacing: 2 }}>RETRO FOOTBALL MANAGER</div>
@@ -82,6 +81,6 @@ export default function FreeTransfersPage() {
           </table>
         </div>
       </div>
-    </main></>
+    </main>
   );
 }
