@@ -41,7 +41,7 @@ export default function JeugdPage() {
     finally { setBusy(null); }
   }
   const active = players.filter(p=>!p.promoted);
-  return <AppSidebar />
+  return <><AppSidebar />
     <main className="min-h-screen bg-slate-950 text-slate-100 px-4 py-8 md:px-8">
     <div className="mx-auto max-w-6xl space-y-6">
       <header><p className="text-sm uppercase tracking-[.25em] text-cyan-300">Ajax academy</p><h1 className="mt-2 text-3xl font-bold">Ajax O19</h1><p className="mt-2 text-slate-400">Jeugdselectie buiten de competitie-indeling, met doorstroom naar Jong Ajax en Ajax 1.</p></header>
@@ -58,5 +58,5 @@ export default function JeugdPage() {
       </section>
       <p className="text-xs leading-5 text-slate-500">Bron: publiek geïndexeerde FM26-clubdata. CA/PA is omgerekend van 0–200 naar 1–100. Exacte geboortedata en voorkeursvoet zijn niet voor alle spelers in de gebruikte openbare lijst beschikbaar; ontbrekende gegevens zijn daarom niet verzonnen.</p>
     </div>
-  </main>;
+  </main></>;
 }
