@@ -162,7 +162,7 @@ async function createCompetition(sql:Sql,season:string,code:string,clubs:any[],m
  }
 }
 export async function advanceUefaDay(sql:Sql,day:string){
- const due=await sql.query("SELECT f.id,f.competition_id,f.season_id,f.matchday,f.stage,f.home_club_id,f.away_club_id,h.team_strength AS home_strength,a.team_strength AS away_strength FROM uefa_fixtures f JOIN uefa_clubs h ON h.id=f.home_club_id JOIN uefa_clubs a ON a.id=f.away_club_id WHERE f.kickoff_date=$1 AND f.status='scheduled' ORDER BY f.competition_id,f.matchday,f.id",[day]);
+ const due=await sql.query("SELECT f.id,f.competition_id,f.season_id,f.matchday,f.stage,f.home_club_id,f.away_club_id,h.team_strength AS home_strength,a.team_strength AS away_strength FROM uefa_fixtures f JOIN uefa_clubs h ON h.id=f.home_club_id JOIN uefa_clubs a ON a.id=f.away_club_id WHERE f.kickoff_date<=$1::date AND f.status='scheduled' ORDER BY f.kickoff_date,f.competition_id,f.matchday,f.id",[day]);
  for(const f of due){
   let hg=clamp(Math.round(1.3+(Number(f.home_strength||55)-Number(f.away_strength||55))*.025+(seed(String(f.id))%7-3)*.35),0,6);
   let ag=clamp(Math.round(1.05+(Number(f.away_strength||55)-Number(f.home_strength||55))*.025+(seed(String(f.id)+"a")%7-3)*.35),0,6);
