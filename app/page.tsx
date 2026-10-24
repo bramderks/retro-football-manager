@@ -66,6 +66,11 @@ export default function Home() {
     { minute: "INFO", text: "Selecteer teams uit de centrale CM 01/02-database. De wedstrijd start zodra beide selecties geladen zijn.", kind: "system" },
   ]);
   const [activeScreen, setActiveScreen] = useState("Overzicht");
+  useEffect(() => {
+    const requested = new URLSearchParams(window.location.search).get("screen");
+    const allowed = ["Overzicht","Wedstrijd","Selectie","Tactiek","Competitie","Faciliteiten","Transfers","Loopbaan","Opstelling"];
+    if (requested && allowed.includes(requested)) setActiveScreen(requested);
+  }, []);
   const screenOrder = ["Overzicht", "Wedstrijd", "Selectie", "Tactiek", "Competitie", "Europees", "Kalender", "Transfers", "Faciliteiten", "Database", "Loopbaan"];
   function moveScreen(direction: number) { const current = screenOrder.indexOf(activeScreen); const next = screenOrder[(Math.max(0,current) + direction + screenOrder.length) % screenOrder.length]; if (next === "Europees") window.location.href = "/uefa"; else if (next === "Kalender") window.location.href = "/kalender"; else if (next === "Database") window.location.href = "/importeren"; else setActiveScreen(next); }
   const [homeTactics, setHomeTactics] = useState<Tactics>({ ...initialTactics });
