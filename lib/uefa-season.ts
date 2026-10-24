@@ -63,6 +63,7 @@ async function finishPreviousSeason(sql:Sql,from:string){
  };
  const playTie=async(comp:any,round:number,home:any,away:any,stage:string,twoLegs=true)=>{
   const bonus=bonusByCompetition[String(comp.code)]||0;addCoefficient(String(home.id),bonus);addCoefficient(String(away.id),bonus);
+  for(const club of [home,away]){const cc=countryById.get(String(club.id))||"UNK";if(!assoc.has(cc))assoc.set(cc,{points:0,clubs:new Set()});const a=assoc.get(cc)!;a.points+=bonus;a.clubs.add(String(club.id));}
   const first=await playMatch(comp,round*2-1,home,away,stage);
   if(!twoLegs)return first.hg===first.ag?(seed(String(comp.id)+home.id+away.id)%2===0?home:away):(first.hg>first.ag?home:away);
   const second=await playMatch(comp,round*2,away,home,stage);
@@ -172,6 +173,19 @@ export async function buildUefaSeason(sql:Sql,from:string,season:string){
   for(const r of ranked.filter((r:any)=>Number(r.final_position)>uclSlots&&Number(r.final_position)<=uclSlots+uelSlots))pools.UEL.push({...r.club,entry_rank:Number(r.final_position),association_rank:cr});
   for(const r of ranked.filter((r:any)=>Number(r.final_position)>uclSlots+uelSlots&&Number(r.final_position)<=uclSlots+uelSlots+ueclSlots))pools.UECL.push({...r.club,entry_rank:Number(r.final_position),association_rank:cr});
   if(champion&&!pools.UCL.some((x:any)=>x.id===champion.club.id))pools.UCL.push({...champion.club,entry_rank:1,association_rank:cr});
+ }
+ // UEFA's two European Performance Spots go to the highest-placed additional domestic clubs from the two best-performing associations in the previous European season.
+ const epsCountries=await sql.query("SELECT country_code FROM uefa_association_season_coefficients WHERE season_id=$1 ORDER BY coefficient DESC,country_code LIMIT 2",[from]);
+ for(const e of epsCountries){
+  const country=String(e.country_code);
+  const rows=countryRows.get(country)||[];
+  const candidate=rows.map((r:any)=>({...r,club:(r as any).club||null})).sort((a:any,b:any)=>Number(a.final_position)-Number(b.final_position)||Number(b.points)-Number(a.points));
+  let chosen:any=null;
+  for(const r of candidate){
+   const club=await sql.query("SELECT id,name,country_code,reputation,team_strength FROM uefa_clubs WHERE domestic_team_id=$1 ORDER BY id LIMIT 1",[r.team_id]);
+   if(club.length&&!pools.UCL.some((x:any)=>x.id===club[0].id)){chosen={...club[0],entry_rank:0,association_rank:rank.get(country)||999,eps:true};break;}
+  }
+  if(chosen)pools.UCL.push(chosen);
  }
  // Winners of last season retain a league-phase place if not qualified domestically.
  for(const code of ["UCL","UEL"]){
