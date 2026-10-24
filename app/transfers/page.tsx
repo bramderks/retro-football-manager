@@ -1,5 +1,7 @@
 "use client";
 
+
+import AppSidebar from "../components/AppSidebar";
 import { useEffect, useState } from "react";
 
 type Player = {
@@ -45,6 +47,7 @@ export default function FreeTransfersPage() {
   useEffect(() => { void load(""); }, []);
 
   return (
+    <AppSidebar />
     <main style={{ minHeight: "100vh", padding: 24, background: "#171717", color: "#f2f2f2", fontFamily: "Arial, sans-serif" }}>
       <div style={{ maxWidth: 1100, margin: "0 auto" }}>
         <div style={{ borderBottom: "3px solid #315bdf", paddingBottom: 12, marginBottom: 18 }}>
