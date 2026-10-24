@@ -153,7 +153,7 @@ async function createCompetition(sql:Sql,season:string,code:string,clubs:any[],m
  for(let md=1;md<=matches;md++){
   const pairs=roundPairs[(md-1+offset)%rounds];
   const y=seasonYear(season),dateFor=(month:number,day:number,next=false)=>new Date(Date.UTC(y+(next?1:0),month-1,day,12)).toISOString().slice(0,10);
-  const calendar:Record<string,string[]>={UCL:[dateFor(9,8),dateFor(9,29),dateFor(10,20),dateFor(11,3),dateFor(11,24),dateFor(12,8),dateFor(1,19,true),dateFor(1,28,true)],UEL:[dateFor(9,17),dateFor(10,1),dateFor(10,22),dateFor(11,5),dateFor(11,26),dateFor(12,10),dateFor(1,21,true),dateFor(1,28,true)],UECL:[dateFor(9,17),dateFor(10,1),dateFor(10,22),dateFor(11,5),dateFor(11,26),dateFor(12,10)]};
+  const calendar:Record<string,string[]>={UCL:[dateFor(9,8),dateFor(10,13),dateFor(10,20),dateFor(11,3),dateFor(11,24),dateFor(12,8),dateFor(1,19,true),dateFor(1,27,true)],UEL:[dateFor(9,16),dateFor(10,15),dateFor(10,22),dateFor(11,5),dateFor(11,26),dateFor(12,10),dateFor(1,21,true),dateFor(1,28,true)],UECL:[dateFor(10,15),dateFor(10,22),dateFor(11,5),dateFor(11,26),dateFor(12,10),dateFor(12,17)]};
   for(let i=0;i<pairs.length;i++){
    const pair=pairs[(i+md-1)%pairs.length],flip=((md+i+seed(code))%2)===0;
    const home=flip?pair.h:pair.a,away=flip?pair.a:pair.h;
