@@ -435,3 +435,37 @@ tbody tr:hover{background:rgba(131,201,244,.045)}
 @media (max-width: 850px) {
   .tactics-screen .lineup-table-wrap.lineup-in-match .lineup-table { min-width: 505px; }
 }
+
+
+/* Matchday overview: stable columns keep competition, teams, score and action aligned. */
+.matchday-fixtures { display:flex; flex-direction:column; width:100%; min-width:0; }
+.matchday-fixture-row {
+  display:grid;
+  grid-template-columns:minmax(125px, .7fr) minmax(220px, 2fr) 64px 150px;
+  align-items:center;
+  gap:14px;
+  width:100%;
+  min-width:0;
+  padding:13px 10px;
+  border-bottom:1px solid var(--line);
+  font-size:12px;
+}
+.matchday-fixture-row.my-fixture { background:color-mix(in srgb, var(--gold) 8%, transparent); }
+.matchday-competition { color:var(--muted); font-size:10px; line-height:1.4; min-width:0; overflow-wrap:anywhere; }
+.matchday-teams { min-width:0; font-size:13px; line-height:1.45; overflow-wrap:anywhere; text-align:left; }
+.matchday-teams span { color:var(--muted); padding:0 5px; }
+.matchday-score { text-align:center; font:700 12px 'DM Mono',monospace; white-space:nowrap; }
+.matchday-select-button { justify-self:end; width:100%; max-width:150px; padding:9px 12px; border:1px solid var(--line); border-radius:6px; background:var(--panel2); color:var(--text); font:700 11px Manrope; cursor:pointer; white-space:normal; }
+.matchday-action-placeholder { display:block; min-height:1px; }
+@media(max-width:900px) {
+ .matchday-fixture-row { grid-template-columns:minmax(90px,.65fr) minmax(150px,1.6fr) 54px 125px; gap:8px; padding:11px 5px; }
+ .matchday-select-button { max-width:125px; }
+}
+@media(max-width:620px) {
+ .matchday-fixture-row { grid-template-columns:minmax(0,1fr) 54px; gap:5px 10px; }
+ .matchday-competition { grid-column:1; }
+ .matchday-teams { grid-column:1; grid-row:2; }
+ .matchday-score { grid-column:2; grid-row:1 / span 2; }
+ .matchday-select-button { grid-column:1 / -1; grid-row:3; justify-self:start; max-width:none; width:auto; }
+ .matchday-action-placeholder { display:none; }
+}
