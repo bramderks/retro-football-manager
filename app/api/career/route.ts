@@ -385,8 +385,9 @@ export async function POST(request: Request) {
      const ps=await sql.query("SELECT cps.player_id,COALESCE(cps.current_rating,p.overall_rating)::int AS ca,COALESCE(cps.potential_rating,p.potential_rating)::int AS pa,p.position,p.date_of_birth,cps.fitness FROM career_player_states cps JOIN players p ON p.id=cps.player_id WHERE cps.save_id=$1 AND cps.club_id=$2 AND p.is_active=TRUE AND cps.injury_type IS NULL",[b.saveId,s.club_id]);
      for(const pl of ps as any[]){
       const age=pl.date_of_birth?Math.floor((new Date(day+"T12:00:00Z").getTime()-new Date(dateOnly(pl.date_of_birth)+"T12:00:00Z").getTime())/31557600000):24,pos=String(pl.position||"").toUpperCase();
-      const peak=pos==="GK"||pos==="K"?33:["CB","LB","RB","LWB","RWB"].includes(pos)?31:["DM","CM","AM","LM","RM"].includes(pos)?29:27;
+      const peak=pos==="GK"||pos==="K"||pos==="KEEPER"?33:["CB","LB","RB","LWB","RWB","DC","DL","DR","DLC","DRC","SW","DEFENDER"].includes(pos)?31:["DM","DMC","CM","MC","AM","AMC","LM","ML","RM","MR","MIDFIELDER"].includes(pos)?29:27;
       const ageFactor=age<=peak-8?1.12:age<=peak-4?1:age<=peak?0.82:age<=peak+3?0.48:age<=peak+6?0.2:0.06;
+      if(age>peak+3){const declineChance=Math.min(0.38,0.035+(age-peak-3)*0.035);if(Math.random()<declineChance){await sql.query("UPDATE career_player_states SET current_rating=GREATEST(1,COALESCE(current_rating,$3)-1),updated_at=NOW() WHERE save_id=$1 AND player_id=$2",[b.saveId,pl.player_id,pl.ca]);continue;}}
       const gap=Math.max(0,Number(pl.pa)-Number(pl.ca));if(!gap)continue;
       const group=(Array.isArray(plan.groups)?plan.groups:[]).find((g:any)=>Array.isArray(g.players)&&g.players.includes(String(pl.player_id)));
       const focus=String(group?.focus||plan.focus||"Technisch"),intensity=String(group?.intensity||mode);
