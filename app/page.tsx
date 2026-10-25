@@ -333,7 +333,7 @@ export default function Home() {
     if(bench.length!==9||new Set(bench).size!==9||bench.some(id=>starters.includes(id))){setCareerError("Kies 9 verschillende wisselspelers die niet in de basis staan.");return;}
     if([...starters,...bench].some(id=>!available.some((p:any)=>p.id===id))){setCareerError("Geblesseerde of niet-beschikbare spelers kunnen niet worden opgesteld.");return;}
     const lineup={...(homeTactics.lineup||{})};formationSlots(homeTactics.formation).forEach((slot,i)=>{lineup[slot.key]=starters[i]||"";});
-    const saved=await saveCareerTactics({...homeTactics,lineup});if(saved===false)return;setLineupConfirmed(true);setMatchPhase("first-half");setCareerError("");setActiveScreen("Wedstrijd");
+    try{const response=await fetch("/api/career",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"confirm_match_tactics",saveId:careerSaveId,fixtureId:pendingCareerFixture?.id,tactics:{...homeTactics,lineup},lineup:starters,bench})});const data=await response.json();if(!response.ok||!data.ok)throw new Error(data.error||"Tactiek en opstelling konden niet worden vastgelegd.");setLineupConfirmed(true);setMatchPhase("first-half");setCareerError("");setActiveScreen("Wedstrijd");}catch(e){setCareerError(e instanceof Error?e.message:"Tactiek en opstelling konden niet worden vastgelegd.");return;}
     setFeed([{minute:"OPSTELLING",text:"Opstelling bevestigd. 11 basisspelers en 9 wissels zijn vastgelegd voor deze wedstrijd.",kind:"system"},{minute:"INFO",text:(pendingCareerFixture?.home_name||homeTeam.name)+" – "+(pendingCareerFixture?.away_name||awayTeam.name)+". Klaar voor de aftrap.",kind:"system"}]);
   }
   function makeSubstitution(outId:string,inId:string,team:0|1=userSide){

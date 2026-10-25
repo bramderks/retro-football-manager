@@ -649,3 +649,12 @@ body:has(.global-sidebar) main>div{max-width:1400px}
 .matchday-next-action p{margin:6px 0;color:var(--muted);font-size:12px}
 .match-tactics-setup .career-grid{align-items:start}
 @media(max-width:800px){.matchday-fixture{grid-template-columns:1fr 1fr 70px;gap:7px}.matchday-competition{grid-column:1/-1}.matchday-status{grid-column:1/-1}.matchday-next-action{align-items:stretch;flex-direction:column}}
+
+.match-tactics-pitch{margin:14px 0}
+.match-tactics-pitch .football-pitch{position:relative;max-width:620px;margin:12px auto}
+.matchday-player-dot{width:72px;height:46px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;transform:translate(-50%,-50%);border:1px solid rgba(255,255,255,.35);cursor:pointer;z-index:2}
+.matchday-player-dot strong{font-size:10px}
+.matchday-player-dot small{font-size:8px;max-width:68px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.matchday-player-dot.selected{outline:2px solid var(--gold);outline-offset:2px}
+.matchday-instructions{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0}
+.matchday-instructions label{display:flex;align-items:center;gap:7px;padding:9px 12px;background:var(--panel2);border:1px solid var(--line);font-size:11px}
