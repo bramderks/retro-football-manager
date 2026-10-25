@@ -537,3 +537,41 @@ body:has(.global-sidebar) main>div{max-width:1400px}
  .app-shell>.sidebar-nav .nav-button{width:auto!important;flex:0 0 auto!important}
  .app-shell>.workspace{margin-left:0!important}
 }
+
+
+/* Optional Clevers ERP-inspired light mode; dark mode remains the default. */
+:root[data-theme="light"]{color-scheme:light;--bg:#edf1f5;--panel:#fff;--panel2:#e2e9ef;--line:#b8c5d1;--text:#24384b;--muted:#687b8d;--gold:#245b86;--green:#347957;--blue:#245b86}
+.header-actions{display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-wrap:wrap}
+.theme-toggle{background:#fff;color:#173a5e;border:1px solid #9fb4c6;padding:9px 12px;font:700 10px Manrope,Arial,sans-serif;cursor:pointer;white-space:nowrap}
+.theme-toggle:hover{background:#e8eff5}
+:root[data-theme="light"] body,:root[data-theme="light"] .app-shell,:root[data-theme="light"] .career-screen,:root[data-theme="light"] .tactics-screen{background:#edf1f5;color:#24384b}
+:root[data-theme="light"] .topbar{background:#fff;color:#173a5e;border-color:#b8c5d1}
+:root[data-theme="light"] .brand-title,:root[data-theme="light"] .brand-mark{color:#173a5e}
+:root[data-theme="light"] .brand-mark{border-color:#9fb4c6}
+:root[data-theme="light"] .brand-sub{color:#687b8d}
+:root[data-theme="light"] .live-pill{background:#f5f8fa;border-color:#b8c5d1;color:#405a70}
+:root[data-theme="light"] .nav{background:#e2e9ef;border-color:#b8c5d1}
+:root[data-theme="light"] .nav-button{color:#405a70}
+:root[data-theme="light"] .nav-button.active{color:#173a5e;border-bottom-color:#245b86}
+:root[data-theme="light"] .match-area,:root[data-theme="light"] .career-panel,:root[data-theme="light"] .career-kpis>div,:root[data-theme="light"] .pitch-panel,:root[data-theme="light"] .tactics-controls,:root[data-theme="light"] .new-career-card,:root[data-theme="light"] .profile-modal,:root[data-theme="light"] .power-card,:root[data-theme="light"] .ai-note{background:#fff;color:#24384b;border-color:#b8c5d1}
+:root[data-theme="light"] .match-meta,:root[data-theme="light"] .commentary-head,:root[data-theme="light"] .match-footer,:root[data-theme="light"] .bottom-note,:root[data-theme="light"] .career-panel,:root[data-theme="light"] .career-kpis>div{border-color:#d3dce4}
+:root[data-theme="light"] .scoreboard{background:radial-gradient(ellipse at center,#e6edf3 0%,#f6f8fa 54%,#fff 100%);border-color:#d3dce4}
+:root[data-theme="light"] .team-name,:root[data-theme="light"] .score,:root[data-theme="light"] .career-header h1,:root[data-theme="light"] .tactics-screen-header h1{color:#173a5e}
+:root[data-theme="light"] .clock,:root[data-theme="light"] .eyebrow,:root[data-theme="light"] .event-minute,:root[data-theme="light"] .team-tactics-title{color:#245b86}
+:root[data-theme="light"] .event,:root[data-theme="light"] .fixture-row,:root[data-theme="light"] .news-row,:root[data-theme="light"] .career-table td,:root[data-theme="light"] .career-table th,:root[data-theme="light"] .tactic-setting{border-color:#e0e6eb}
+:root[data-theme="light"] .event-text,:root[data-theme="light"] .scorer-line,:root[data-theme="light"] .tactics label,:root[data-theme="light"] .speed-label,:root[data-theme="light"] .new-career-card>label,:root[data-theme="light"] .tactic-setting label,:root[data-theme="light"] .tactic-check,:root[data-theme="light"] .career-table td{color:#24384b}
+:root[data-theme="light"] .event.system .event-text,:root[data-theme="light"] .muted,:root[data-theme="light"] .career-header p,:root[data-theme="light"] .team-meta,:root[data-theme="light"] .stadium,:root[data-theme="light"] .tactic-setting p,:root[data-theme="light"] .power-card p,:root[data-theme="light"] .ai-note p{color:#687b8d}
+:root[data-theme="light"] .event.goal .event-text,:root[data-theme="light"] .event.goal .event-minute{color:#245b86}
+:root[data-theme="light"] .tactics select,:root[data-theme="light"] .speed-label select,:root[data-theme="light"] .side-section>label select,:root[data-theme="light"] .pitch-heading select,:root[data-theme="light"] .tactic-setting select,:root[data-theme="light"] .new-career-card input,:root[data-theme="light"] .new-career-card select,:root[data-theme="light"] input,:root[data-theme="light"] select,:root[data-theme="light"] textarea{background:#fff;color:#24384b;border-color:#aebdca}
+:root[data-theme="light"] .control-grid button,:root[data-theme="light"] .back-match{background:#e8eff5;color:#173a5e;border-color:#b8c5d1}
+:root[data-theme="light"] .club-preview,:root[data-theme="light"] .power-card,:root[data-theme="light"] .ai-note{background:#f5f8fa;border-color:#c5d1db;color:#24384b}
+:root[data-theme="light"] .career-table tr.my-club{background:#e1efe7;color:#24543a}
+:root[data-theme="light"] .fixture-row.my-fixture{color:#245b86}
+:root[data-theme="light"] .career-error{background:#fff0f0;color:#8b2424;border-color:#dca9a9}
+:root[data-theme="light"] .match-footer,:root[data-theme="light"] .bottom-note{color:#687b8d}
+:root[data-theme="light"] .saved-games-panel{grid-column:1 / -1;width:100%;max-width:none;align-self:stretch}
+.saved-games-panel{grid-column:1 / -1;width:100%;max-width:none}
+:root[data-theme="light"] main.min-h-screen.bg-slate-950{background:#edf1f5!important;color:#24384b!important}
+:root[data-theme="light"] .route-shell,:root[data-theme="light"] .route-main{background:#edf1f5!important;color:#24384b!important}
+:root[data-theme="light"] .route-main section,:root[data-theme="light"] .route-main article{background:#fff!important;border-color:#b8c5d1!important}
+@media(max-width:760px){.header-actions{gap:5px}.theme-toggle{padding:7px 8px;font-size:9px}.saved-games-panel{grid-column:1 / -1}}
