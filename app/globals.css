@@ -383,3 +383,55 @@ tbody tr:hover{background:rgba(131,201,244,.045)}
   }
   .tactics-screen .football-pitch { height: 500px; }
 }
+
+
+/* Clean, column-based lineup: position, first name, surname and fitness. */
+.tactics-screen .lineup-table-wrap {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+.tactics-screen .lineup-table {
+  width: 100%;
+  min-width: 270px;
+  font-size: 11px;
+}
+.tactics-screen .lineup-table-row {
+  display: grid;
+  grid-template-columns: 46px minmax(54px, .9fr) minmax(66px, 1.1fr) 48px;
+  align-items: center;
+  gap: 5px;
+  min-height: 38px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--line);
+}
+.tactics-screen .lineup-table-row > span,
+.tactics-screen .lineup-table-row > strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.tactics-screen .lineup-table-header {
+  min-height: 32px;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+}
+.tactics-screen .lineup-position {
+  color: var(--gold);
+  font-size: 11px;
+}
+.tactics-screen .lineup-surname { font-weight: 700; }
+.tactics-screen .lineup-fitness,
+.tactics-screen .lineup-match-rating { font-family: 'DM Mono', monospace; font-weight: 700; }
+.tactics-screen .lineup-match-rating { color: var(--gold); }
+.tactics-screen .lineup-table-wrap.lineup-in-match .lineup-table { min-width: 505px; }
+.tactics-screen .lineup-table-wrap.lineup-in-match .lineup-table-row {
+  grid-template-columns: 44px minmax(60px, .9fr) minmax(70px, 1.1fr) 48px 42px 36px 70px;
+  gap: 5px;
+}
+@media (max-width: 850px) {
+  .tactics-screen .lineup-table-wrap.lineup-in-match .lineup-table { min-width: 505px; }
+}
