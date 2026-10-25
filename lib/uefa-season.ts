@@ -155,24 +155,76 @@ async function ensureDomesticUefaClubs(sql:Sql,from:string){
   await sql.query("INSERT INTO uefa_clubs(id,name,country_code,reputation,team_strength,domestic_division_id,domestic_team_id) VALUES($1,$2,$3,$4,$5,$6,$7) ON CONFLICT(id) DO UPDATE SET name=EXCLUDED.name,country_code=EXCLUDED.country_code,reputation=EXCLUDED.reputation,team_strength=EXCLUDED.team_strength,domestic_division_id=EXCLUDED.domestic_division_id,domestic_team_id=EXCLUDED.domestic_team_id",[id,t.name,t.country_code,clamp(Number(t.reputation||45),1,100),clamp(Number(t.team_strength||45),1,100),t.division_id,t.id]);
  }
 }
+
+function buildConstrainedUefaRounds(clubs:any[],code:string,matches:number,seedBase:string,coefficientById:Map<string,number>){
+ const selected=[...clubs].sort((a:any,b:any)=>(coefficientById.get(String(b.id))||0)-(coefficientById.get(String(a.id))||0)||String(a.id).localeCompare(String(b.id)));
+ if(selected.length!==36)return null;
+ const potCount=code==="UECL"?6:4,potSize=36/potCount,quota=code==="UECL"?1:2,homeTarget=matches/2,groupCount=code==="UECL"?3:4;
+ const potById=new Map<string,number>();selected.forEach((c:any,i:number)=>potById.set(String(c.id),Math.floor(i/potSize)));
+ for(let attempt=0;attempt<160;attempt++){
+  const states=new Map<string,any>();
+  for(const c of selected)states.set(String(c.id),{played:new Set<string>(),byPot:Array(potCount).fill(0),homeByGroup:Array(groupCount).fill(0),awayByGroup:Array(groupCount).fill(0),home:0,away:0,countryCount:new Map<string,number>()});
+  const groupFor=(pot:number)=>code==="UECL"?Math.floor(pot/2):pot;
+  const orientations=(a:any,b:any)=>{
+   const sa=states.get(String(a.id)),sb=states.get(String(b.id)),pa=potById.get(String(a.id))||0,pb=potById.get(String(b.id))||0;
+   const ga=groupFor(pb),gb=groupFor(pa),out:any[]=[];
+   if(sa.home<homeTarget&&sb.away<homeTarget&&sa.homeByGroup[ga]<1&&sb.awayByGroup[gb]<1)out.push({h:a,a:b});
+   if(sb.home<homeTarget&&sa.away<homeTarget&&sb.homeByGroup[gb]<1&&sa.awayByGroup[ga]<1)out.push({h:b,a});
+   return out;
+  };
+  const allowed=(a:any,b:any)=>{
+   if(String(a.id)===String(b.id)||String(a.country_code)===String(b.country_code))return false;
+   const sa=states.get(String(a.id)),sb=states.get(String(b.id)),pa=potById.get(String(a.id))||0,pb=potById.get(String(b.id))||0;
+   if(sa.played.has(String(b.id))||sb.played.has(String(a.id))||sa.byPot[pb]>=quota||sb.byPot[pa]>=quota)return false;
+   if((sa.countryCount.get(String(b.country_code))||0)>=2||(sb.countryCount.get(String(a.country_code))||0)>=2)return false;
+   return orientations(a,b).length>0;
+  };
+  const apply=(home:any,away:any)=>{
+   const sh=states.get(String(home.id)),sa=states.get(String(away.id)),ph=potById.get(String(home.id))||0,pa=potById.get(String(away.id))||0;
+   sh.played.add(String(away.id));sa.played.add(String(home.id));sh.byPot[pa]++;sa.byPot[ph]++;
+   sh.home++;sa.away++;sh.homeByGroup[groupFor(pa)]++;sa.awayByGroup[groupFor(ph)]++;
+   sh.countryCount.set(String(away.country_code),(sh.countryCount.get(String(away.country_code))||0)+1);
+   sa.countryCount.set(String(home.country_code),(sa.countryCount.get(String(home.country_code))||0)+1);
+  };
+  const built:any[][]=[];let ok=true;
+  for(let md=0;md<matches&&ok;md++){
+   const unpaired=[...selected],pairs:any[]=[];
+   while(unpaired.length){
+    let chosen:any=null,choices:any[]=[];
+    for(const club of unpaired){
+     const candidates=unpaired.filter((other:any)=>allowed(club,other)).map((other:any)=>({club:other,options:orientations(club,other),tie:seed(seedBase+attempt+md+String(club.id)+String(other.id))}));
+     if(chosen===null||candidates.length<choices.length){chosen=club;choices=candidates;}
+     if(candidates.length===0)break;
+    }
+    if(!chosen||choices.length===0){ok=false;break;}
+    choices.sort((a:any,b:any)=>a.options.length-b.options.length||a.tie-b.tie);
+    const opponent=choices[0].club,options=choices[0].options;
+    const orientation=options[seed(seedBase+attempt+md+String(chosen.id)+String(opponent.id)+"home")%options.length];
+    apply(orientation.h,orientation.a);pairs.push(orientation);
+    unpaired.splice(unpaired.findIndex((x:any)=>String(x.id)===String(chosen.id)),1);
+    unpaired.splice(unpaired.findIndex((x:any)=>String(x.id)===String(opponent.id)),1);
+   }
+   if(ok)built.push(pairs);
+  }
+  if(ok&&built.length===matches)return built;
+ }
+ return null;
+}
+
 async function createCompetition(sql:Sql,season:string,code:string,clubs:any[],matches:number){
  const id=season+"-"+code;
  await sql.query("INSERT INTO uefa_competitions(id,season_id,code,name,format,league_phase_clubs,matches_per_club) VALUES($1,$2,$3,$4,'swiss_league',36,$5) ON CONFLICT(season_id,code) DO UPDATE SET format='swiss_league',league_phase_clubs=36,matches_per_club=EXCLUDED.matches_per_club",[id,season,code,compNames[code],matches]);
  for(const c of clubs){
   await sql.query("INSERT INTO uefa_participants(id,competition_id,club_id,entry_stage) VALUES($1,$2,$3,$4) ON CONFLICT(competition_id,club_id) DO UPDATE SET entry_stage=EXCLUDED.entry_stage",[id+"-"+c.id,id,c.id,"league_phase"]);
  }
- const selected=clubs.slice(0,36);if(selected.length<2)return;
- // Swiss-style round robin slice: every round is a perfect matching, so no club plays itself or twice in a matchday.
- const rotation=[...selected];if(rotation.length%2)rotation.push({id:"BYE"} as any);
- const n=rotation.length,rounds=n-1,roundPairs:any[][]=[];
- let ring=[...rotation];
- for(let r=0;r<rounds;r++){
-  const pairs:any[]=[];for(let i=0;i<n/2;i++){const h=ring[i],a=ring[n-1-i];if(h.id!=="BYE"&&a.id!=="BYE")pairs.push({h,a});}
-  roundPairs.push(pairs);ring=[ring[0],ring[n-1],...ring.slice(1,n-1)];
- }
- const offset=seed(season+code)%rounds;
+ const selected=clubs.slice(0,36);if(selected.length<36)return;
+ const coefficientRows=await sql.query("SELECT club_id,five_season_total FROM uefa_club_coefficients WHERE club_id=ANY($1::text[])",[selected.map((c:any)=>String(c.id))]);
+ const coefficientById=new Map(coefficientRows.map((c:any)=>[String(c.club_id),Number(c.five_season_total||0)]));
+ const roundPairs=buildConstrainedUefaRounds(selected,code,matches,season+code,coefficientById);
+ if(!roundPairs)throw new Error("UEFA draw constraints could not be satisfied for "+season+" "+code);
+ const offset=seed(season+code)%roundPairs.length;
  for(let md=1;md<=matches;md++){
-  const pairs=roundPairs[(md-1+offset)%rounds];
+  const pairs=roundPairs[(md-1+offset)%roundPairs.length];
   const y=seasonYear(season),dateFor=(month:number,day:number,next=false)=>new Date(Date.UTC(y+(next?1:0),month-1,day,12)).toISOString().slice(0,10);
   const calendar:Record<string,string[]>={UCL:[dateFor(9,8),dateFor(10,13),dateFor(10,20),dateFor(11,3),dateFor(11,24),dateFor(12,8),dateFor(1,19,true),dateFor(1,27,true)],UEL:[dateFor(9,16),dateFor(10,15),dateFor(10,22),dateFor(11,5),dateFor(11,26),dateFor(12,10),dateFor(1,21,true),dateFor(1,28,true)],UECL:[dateFor(10,15),dateFor(10,22),dateFor(11,5),dateFor(11,26),dateFor(12,10),dateFor(12,17)]};
   for(let i=0;i<pairs.length;i++){
