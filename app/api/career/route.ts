@@ -290,6 +290,10 @@ export async function POST(request: Request) {
   }
   if(b.action==="advance_day"){
    const dayDate=new Date(dateOnly(s.game_date)+"T12:00:00Z");dayDate.setUTCDate(dayDate.getUTCDate()+1);const day=dateOnly(dayDate);
+    // Individual daily recovery: match fatigue may persist for 48–72h, so training load matters.
+    // Exact percentages are gameplay balancing, not a universal medical claim.
+    const intensity = String(b.trainingIntensity || "normaal");
+    await sql.query("UPDATE career_player_states cps SET fitness=LEAST(100,GREATEST(5,COALESCE(cps.fitness,75)::numeric + CASE WHEN EXTRACT(YEAR FROM age($3::date,p.date_of_birth))>=30 THEN 1.0 WHEN EXTRACT(YEAR FROM age($3::date,p.date_of_birth))<=21 THEN 3.2 ELSE 2.2 END + CASE WHEN EXTRACT(YEAR FROM age($3::date,p.date_of_birth))<=24 AND COALESCE(cps.potential_rating,p.potential_rating,50)>=85 THEN 0.8 ELSE 0 END + CASE WHEN $2='rust' THEN 2.5 WHEN $2='licht' THEN 1.2 WHEN $2='intensief' THEN -1.2 ELSE 0 END)) FROM all_players p WHERE cps.player_id=p.id AND cps.save_id=$1 AND cps.club_id=$4", [b.saveId,intensity,day,s.club_id]);
     const pendingFixture=await sql.query("SELECT cfs.fixture_id AS id,cfs.home_team_id,cfs.away_team_id,cfs.kickoff_date,h.name AS home_name,a.name AS away_name FROM career_fixture_schedule cfs JOIN fixtures f ON f.id=cfs.fixture_id JOIN teams h ON h.id=cfs.home_team_id JOIN teams a ON a.id=cfs.away_team_id WHERE cfs.save_id=$4 AND cfs.kickoff_date=$1 AND f.status='scheduled' AND f.division_id=$2 AND (cfs.home_team_id=$3 OR cfs.away_team_id=$3) AND NOT EXISTS (SELECT 1 FROM career_fixture_results cr WHERE cr.fixture_id=cfs.fixture_id AND cr.save_id=$4) LIMIT 1",[day,s.division_id,s.club_id,b.saveId]);
    if(pendingFixture.length)return NextResponse.json({ok:true,needsMatch:true,fixture:pendingFixture[0],gameDate:day});
    await sql.query("UPDATE career_saves SET game_date=$1,updated_at=NOW() WHERE id=$2",[day,b.saveId]);
