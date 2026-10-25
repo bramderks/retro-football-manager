@@ -94,6 +94,15 @@ let promoted=0,relegated=0;
     if(saved.length){
      await sql.query("INSERT INTO club_finances(save_id,entry_date,category,description,amount,balance_after) VALUES($1,$2,'prize_money',$3,$4,$5)",[saveId,end,"Competition prize money: league position "+(i+1),prizeMoney,Number(saved[0].cash_balance)]);
      await sql.query("INSERT INTO career_news(save_id,news_date,category,headline,body) VALUES($1,$2,'finance',$3,$4)",[saveId,end,"Competitiepremie ontvangen","De club ontvangt €"+prizeMoney.toLocaleString("nl-NL")+" aan competitiepremies op basis van de eindklassering."]);
+      const awardPayload={seasonId:from,clubId:t.id,clubName:t.name,competition:d.name,position:i+1,points:Number(row.points||0),promoted:up,relegated:down};
+      if(i===0){
+       const exists=await sql.query("SELECT id FROM career_actions WHERE save_id=$1 AND action_type='manager_trophy' AND payload->>'seasonId'=$2 AND payload->>'clubId'=$3 LIMIT 1",[saveId,from,t.id]);
+       if(!exists.length){await sql.query("INSERT INTO career_actions(save_id,action_date,action_type,payload,result) VALUES($1,$2,'manager_trophy',$3::jsonb,$4::jsonb)",[saveId,end,JSON.stringify({...awardPayload,title:"Kampioen "+d.name}),JSON.stringify({ok:true,trophy:"league_title"})]);await sql.query("INSERT INTO career_news(save_id,news_date,category,headline,body) VALUES($1,$2,'club',$3,$4)",[saveId,end,"🏆 Kampioen van "+d.name,t.name+" is kampioen geworden in "+d.name+". Dit resultaat is toegevoegd aan de managerloopbaan."]);}
+      }
+      if(i<3||up||down){
+       const exists=await sql.query("SELECT id FROM career_actions WHERE save_id=$1 AND action_type='manager_milestone' AND payload->>'seasonId'=$2 AND payload->>'clubId'=$3 LIMIT 1",[saveId,from,t.id]);
+       if(!exists.length){const title=up?"Promotie behaald":down?"Degradatie":(i+1)+". plaats in "+d.name;await sql.query("INSERT INTO career_actions(save_id,action_date,action_type,payload,result) VALUES($1,$2,'manager_milestone',$3::jsonb,$4::jsonb)",[saveId,end,JSON.stringify({...awardPayload,title,detail:"Seizoensafsluiting: "+Number(row.points||0)+" punten."}),JSON.stringify({ok:true})]);}
+      }
     }
    }
   }
@@ -165,6 +174,7 @@ let promoted=0,relegated=0;
  const events=[[season+"-start",start,"season_start","Start seizoen "+season],[season+"-summer-window",start,"transfer_window","Zomertransferwindow opent"],[season+"-domestic-start",season.slice(0,4)+"-08-08","domestic_round","Start nationale competities"],[season+"-winter-window",season.slice(0,4)+"-01-01","transfer_window","Wintertransferwindow opent"],[season+"-end",end,"season_end","Einde seizoen "+season]];
  for(const e of events)await sql.query("INSERT INTO season_calendar(id,season_id,event_date,event_type,title,description) VALUES($1,$2,$3,$4,$5,'Jaarlijkse wereldsimulatie') ON CONFLICT(id) DO NOTHING",[e[0],season,e[1],e[2],e[3]]);
  await sql.query("UPDATE career_saves SET season_id=$1,game_date=GREATEST(game_date,$2::date) WHERE season_id=$3 AND status='active'",[season,start,from]);
+  if(saveId)await sql.query("INSERT INTO career_actions(save_id,action_date,action_type,payload,result) VALUES($1,$2,'season_rollover',$3::jsonb,$4::jsonb)",[saveId,end,JSON.stringify({fromSeason:from,toSeason:season,title:"Seizoensovergang "+from+" → "+season}),JSON.stringify({ok:true})]);
  await sql.query("UPDATE world_season_runs SET status='completed',teams_processed=$2,players_added=$3,people_aged=$4,promoted=$5,relegated=$6,completed_at=now() WHERE season_id=$1",[season,teams.length,added,aged.length,promoted,relegated]);
  return NextResponse.json({ok:true,season,teamsProcessed:teams.length,playersAdded:added,peopleAged:aged.length,playersRetired:aged.filter((x:any)=>x.career_status==="retired").length,convertedToManagers:converted,promotionRelegation:{promoted,relegated},financialProfiles:teams.length,stadiums:teams.length,minimumSquadRule:"23 actieve spelers per nationale en Europese club"});
  }catch(e){console.error("world rollover",e);return NextResponse.json({error:"Seizoensopbouw mislukt",detail:String(e)},{status:500})}
