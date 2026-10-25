@@ -539,11 +539,11 @@ export default function Home() {
           <div className="lineup-editor">
             <div className="eyebrow">{lineupConfirmed ? "🔒 VASTE OPSTELLING" : "SPELERS KOPPELEN AAN POSITIES"}</div>
             <p className="muted">{lineupConfirmed ? "De opstelling staat vast voor deze wedstrijd." : "Sleep spelers uit de selectielijst naar een positie op het veld, of klik een speler aan om hem op een vrije positie te zetten."}</p>
-            <div className={"lineup-table-wrap" + (lineupConfirmed ? " lineup-in-match" : "")}>
+            <div className={"lineup-table-wrap" + (lineupConfirmed && (minute > 0 || finished) ? " lineup-in-match" : "")}>
               <div className="lineup-table">
                 <div className="lineup-table-row lineup-table-header">
                   <span>Positie</span><span>Voornaam</span><span>Achternaam</span><span>Fitheid</span>
-                  {lineupConfirmed ? <><span>Assists</span><span>Goals</span><span>Beoordeling</span></> : null}
+                  {lineupConfirmed && (minute > 0 || finished) ? <><span>Assists</span><span>Goals</span><span>Beoordeling</span></> : null}
                 </div>
                 {formationSlots(homeTactics.formation).map(slot => {
                   const selected = homeTactics.lineup?.[slot.key] || "";
@@ -561,7 +561,7 @@ export default function Home() {
                     <span>{firstName}</span>
                     <span className="lineup-surname">{lastName}</span>
                     <span className={"lineup-fitness" + (fitness < 40 ? " fitness-low" : fitness < 70 ? " fitness-mid" : " fitness-high")}>{player ? fitness + "%" : "—"}</span>
-                    {lineupConfirmed ? <><span>{player ? assistsMade : "—"}</span><span>{player ? goalsScored : "—"}</span><strong className="lineup-match-rating">{player ? liveRating.toFixed(1) : "—"}</strong></> : null}
+                    {lineupConfirmed && (minute > 0 || finished) ? <><span>{player ? assistsMade : "—"}</span><span>{player ? goalsScored : "—"}</span><strong className="lineup-match-rating">{player ? liveRating.toFixed(1) : "—"}</strong></> : null}
                   </div>;
                 })}
               </div>
