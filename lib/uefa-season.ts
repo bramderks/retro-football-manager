@@ -207,6 +207,31 @@ function buildConstrainedUefaRounds(clubs:any[],code:string,matches:number,seedB
    if(ok)built.push(pairs);
   }
   if(ok&&built.length===matches)return built;
+
+ }
+ // Fallback for unusually constrained country distributions: preserve UEFA's association ban, maximum two opponents per country, and home/away balance even if the full pot matrix has no greedy solution.
+ for(let attempt=0;attempt<100;attempt++){
+  const states=new Map<string,any>();
+  for(const c of selected)states.set(String(c.id),{played:new Set<string>(),home:0,away:0,countryCount:new Map<string,number>()});
+  const orientations=(a:any,b:any)=>{const sa=states.get(String(a.id)),sb=states.get(String(b.id)),out:any[]=[];if(sa.home<homeTarget&&sb.away<homeTarget)out.push({h:a,a:b});if(sb.home<homeTarget&&sa.away<homeTarget)out.push({h:b,a});return out;};
+  const allowed=(a:any,b:any)=>{if(String(a.id)===String(b.id)||String(a.country_code)===String(b.country_code))return false;const sa=states.get(String(a.id)),sb=states.get(String(b.id));return !sa.played.has(String(b.id))&&!sb.played.has(String(a.id))&&(sa.countryCount.get(String(b.country_code))||0)<2&&(sb.countryCount.get(String(a.country_code))||0)<2&&orientations(a,b).length>0;};
+  const apply=(home:any,away:any)=>{const sh=states.get(String(home.id)),sa=states.get(String(away.id));sh.played.add(String(away.id));sa.played.add(String(home.id));sh.home++;sa.away++;sh.countryCount.set(String(away.country_code),(sh.countryCount.get(String(away.country_code))||0)+1);sa.countryCount.set(String(home.country_code),(sa.countryCount.get(String(home.country_code))||0)+1);};
+  const built:any[][]=[];let ok=true;
+  for(let md=0;md<matches&&ok;md++){
+   const unpaired=[...selected],pairs:any[]=[];
+   while(unpaired.length){
+    let chosen:any=null,choices:any[]=[];
+    for(const club of unpaired){const candidates=unpaired.filter((other:any)=>allowed(club,other)).map((other:any)=>({club:other,tie:seed(seedBase+attempt+md+String(club.id)+String(other.id))}));if(chosen===null||candidates.length<choices.length){chosen=club;choices=candidates;}if(candidates.length===0)break;}
+    if(!chosen||!choices.length){ok=false;break;}
+    choices.sort((a:any,b:any)=>a.tie-b.tie);
+    const opponent=choices[0].club,options=orientations(chosen,opponent),orientation=options[seed(seedBase+attempt+md+String(chosen.id)+String(opponent.id)+"fallback")%options.length];
+    apply(orientation.h,orientation.a);pairs.push(orientation);
+    unpaired.splice(unpaired.findIndex((x:any)=>String(x.id)===String(chosen.id)),1);
+    unpaired.splice(unpaired.findIndex((x:any)=>String(x.id)===String(opponent.id)),1);
+   }
+   if(ok)built.push(pairs);
+  }
+  if(ok&&built.length===matches)return built;
  }
  return null;
 }
