@@ -28,7 +28,7 @@ async function ensureHistoricalCoefficients(sql:Sql){
 async function finishPreviousSeason(sql:Sql,from:string){
  const fixtures=await sql.query("SELECT f.id,f.competition_id,f.home_club_id,f.away_club_id,f.home_goals,f.away_goals,f.status,h.country_code AS hc,a.country_code AS ac FROM uefa_fixtures f JOIN uefa_clubs h ON h.id=f.home_club_id JOIN uefa_clubs a ON a.id=f.away_club_id WHERE f.season_id=$1 AND f.stage='league_phase'",[from]);
  const stats=new Map<string,{played:number;points:number;gf:number;ga:number;wins:number;draws:number;losses:number}>();
- const get=(id:string)=>{if(!stats.has(id))stats.set(id,{played:0,points:0,gf:0,ga:0,wins:0,draws:0,losses:0});return stats.get(id)!;};
+ const get=(competitionId:string,id:string)=>{const key=competitionId+"|"+id;if(!stats.has(key))stats.set(key,{played:0,points:0,gf:0,ga:0,wins:0,draws:0,losses:0});return stats.get(key)!;};
  const assoc=new Map<string,{points:number;clubs:Set<string>}>();
  const coefficientPoints=new Map<string,number>();
  const addCoefficient=(id:string,points:number)=>coefficientPoints.set(id,(coefficientPoints.get(id)||0)+points);
@@ -49,13 +49,14 @@ async function finishPreviousSeason(sql:Sql,from:string){
    await sql.query("UPDATE uefa_participants SET played=played+1,points=points+$1,wins=wins+$2,draws=draws+$3,losses=losses+$4,goals_for=goals_for+$5,goals_against=goals_against+$6 WHERE competition_id=$7 AND club_id=$8",[ag>hg?3:ag===hg?1:0,ag>hg?1:0,ag===hg?1:0,ag<hg?1:0,ag,hg,f.competition_id,f.away_club_id]);
   }
   for(const [id,g,a] of [[String(f.home_club_id),Number(hg),Number(ag)],[String(f.away_club_id),Number(ag),Number(hg)]] as any[]){
-   const s=get(id);s.played++;s.gf+=g;s.ga+=a;if(g>a){s.points+=3;s.wins++;addCoefficient(id,2);}else if(g===a){s.points++;s.draws++;addCoefficient(id,1);}else s.losses++;
+   const s=get(String(f.competition_id),id);s.played++;s.gf+=g;s.ga+=a;if(g>a){s.points+=3;s.wins++;addCoefficient(id,2);}else if(g===a){s.points++;s.draws++;addCoefficient(id,1);}else s.losses++;
    const cc=countryById.get(id)||"UNK";if(!assoc.has(cc))assoc.set(cc,{points:0,clubs:new Set()});const ac=assoc.get(cc)!;ac.points+=g>a?2:g===a?1:0;ac.clubs.add(id);
   }
  }
- for(const [clubId,s] of stats){
+ for(const [key,s] of stats){
+  const [competitionId,clubId]=key.split("|");
   await sql.query("INSERT INTO uefa_club_season_coefficients(season_id,club_id,points) VALUES($1,$2,$3) ON CONFLICT(season_id,club_id) DO UPDATE SET points=EXCLUDED.points",[from,clubId,coefficientPoints.get(clubId)||0]);
-  await sql.query("UPDATE uefa_participants SET played=$3,points=$4,wins=$5,draws=$6,losses=$7,goals_for=$8,goals_against=$9 WHERE competition_id IN (SELECT id FROM uefa_competitions WHERE season_id=$1) AND club_id=$2",[from,clubId,s.played,s.points,s.wins,s.draws,s.losses,s.gf,s.ga]);
+  await sql.query("UPDATE uefa_participants SET played=$3,points=$4,wins=$5,draws=$6,losses=$7,goals_for=$8,goals_against=$9 WHERE competition_id=$1 AND club_id=$2",[competitionId,clubId,s.played,s.points,s.wins,s.draws,s.losses,s.gf,s.ga]);
  }
  // Generate and resolve the knockout bracket for the completed league phase.
  const bonusByCompetition:Record<string,number>={UCL:1.5,UEL:1,UECL:.5};
@@ -90,8 +91,8 @@ async function finishPreviousSeason(sql:Sql,from:string){
   return {hg,ag};
  };
  const playTie=async(comp:any,round:number,home:any,away:any,stage:string,twoLegs=true)=>{
-  const bonus=bonusByCompetition[String(comp.code)]||0;addCoefficient(String(home.id),bonus);addCoefficient(String(away.id),bonus);
-  for(const club of [home,away]){const cc=countryById.get(String(club.id))||"UNK";if(!assoc.has(cc))assoc.set(cc,{points:0,clubs:new Set()});const a=assoc.get(cc)!;a.points+=bonus;a.clubs.add(String(club.id));}
+  const bonus=["round_of_16","quarter_final","semi_final","final"].includes(stage)?(bonusByCompetition[String(comp.code)]||0):0;
+  if(bonus>0){addCoefficient(String(home.id),bonus);addCoefficient(String(away.id),bonus);for(const club of [home,away]){const cc=countryById.get(String(club.id))||"UNK";if(!assoc.has(cc))assoc.set(cc,{points:0,clubs:new Set()});const a=assoc.get(cc)!;a.points+=bonus;a.clubs.add(String(club.id));}}
   const first=await playMatch(comp,round*2-1,home,away,stage);
   if(!twoLegs)return first.hg===first.ag?(seed(String(comp.id)+home.id+away.id)%2===0?home:away):(first.hg>first.ag?home:away);
   const second=await playMatch(comp,round*2,away,home,stage);
