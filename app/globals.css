@@ -575,3 +575,33 @@ body:has(.global-sidebar) main>div{max-width:1400px}
 :root[data-theme="light"] .route-shell,:root[data-theme="light"] .route-main{background:#edf1f5!important;color:#24384b!important}
 :root[data-theme="light"] .route-main section,:root[data-theme="light"] .route-main article{background:#fff!important;border-color:#b8c5d1!important}
 @media(max-width:760px){.header-actions{gap:5px}.theme-toggle{padding:7px 8px;font-size:9px}.saved-games-panel{grid-column:1 / -1}}
+
+
+/* Training workspace and match lineup: readable at desktop and mobile widths. */
+.training-plan-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:start}
+.training-screen .career-panel label{display:grid;gap:6px;margin:12px 0;color:var(--muted);font-size:11px}
+.training-screen .career-panel input,.training-screen .career-panel select{width:100%;min-width:0;padding:9px;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:3px}
+.training-dates,.training-group-controls{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.training-focus-help{padding:12px;margin:14px 0;background:var(--panel2);border-left:3px solid var(--gold);font-size:12px}
+.training-focus-help p{margin:7px 0;color:var(--muted)}
+.training-focus-help small{color:var(--muted);line-height:1.5}
+.training-add-group{display:flex;gap:8px;margin:12px 0}
+.training-add-group input{flex:1;min-width:0;background:var(--panel2);color:var(--text);border:1px solid var(--line);padding:9px}
+.training-add-group button,.training-group-heading button{border:1px solid var(--line);background:var(--panel2);color:var(--text);padding:8px 10px;cursor:pointer}
+.training-group{border:1px solid var(--line);padding:12px;margin:12px 0}
+.training-group-heading{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.training-roster{margin-top:14px}
+.lineup-summary-panel{min-width:0;max-height:760px;overflow:auto}
+.lineup-summary-list{list-style:none;margin:0;padding:0;counter-reset:lineup}
+.lineup-summary-list li{display:grid;grid-template-columns:26px minmax(0,1fr) 42px;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+.lineup-summary-list li.unfilled{opacity:.6}
+.lineup-summary-number{font:11px 'DM Mono',monospace;color:var(--gold)}
+.lineup-summary-player{min-width:0;display:grid;gap:3px}
+.lineup-summary-player strong{font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lineup-summary-player small{font-size:9px;color:var(--muted)}
+.lineup-summary-list li>span:last-child{text-align:right;font:10px 'DM Mono',monospace}
+.table-sort-button{background:transparent;border:0;color:inherit;font:inherit;cursor:pointer;padding:0;white-space:nowrap}
+.table-sort-button:hover{color:var(--gold)}
+.nav-button:disabled{opacity:.35;cursor:not-allowed}
+@media(max-width:1050px){.training-plan-grid{grid-template-columns:1fr}.lineup-summary-panel{max-height:none}}
+@media(max-width:760px){.training-dates,.training-group-controls{grid-template-columns:1fr}.training-add-group{flex-direction:column}}
