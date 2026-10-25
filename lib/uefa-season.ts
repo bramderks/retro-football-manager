@@ -7,6 +7,24 @@ const MARKET:Record<string,number>={ENG:1.8,ESP:1.3,GER:1.35,ITA:1.2,FRA:1.05,NE
 const COUNTRY_NAMES:Record<string,string>={ENG:"England",ESP:"Spain",GER:"Germany",ITA:"Italy",FRA:"France",NED:"Netherlands",POR:"Portugal",BEL:"Belgium",SCO:"Scotland",TUR:"Türkiye",AUT:"Austria",CZE:"Czechia",GRE:"Greece"};
 const compNames:Record<string,string>={UCL:"UEFA Champions League",UEL:"UEFA Europa League",UECL:"UEFA Conference League"};
 
+
+const HISTORICAL_ASSOCIATION_COEFFICIENTS: [string, number, number[]][] = [["ENG",1,[24.357,21,23,17.375,29.464,28.68]],["ITA",2,[16.285,15.714,22.357,21,21.875,19]],["ESP",3,[19.5,18.428,16.571,16.062,23.892,22.093]],["GER",4,[15.214,16.214,17.125,19.357,18.421,21.785]],["FRA",5,[7.916,18.416,12.583,16.25,17.928,18.321]],["NED",6,[9.2,19.2,13.5,10,15.25,9.979]],["POR",7,[9.6,12.916,12.5,11,16.25,20.5]],["BEL",8,[6,6.6,14.2,14.4,15.65,11.4]],["CZE",9,[6.6,6.7,6.75,13.5,10.55,11.025]],["TUR",10,[3.1,6.7,11.8,12,10.3,11.075]],["NOR",11,[6.5,7.625,5.75,8,11.812,8.05]],["GRE",12,[5.1,8,2.125,11.4,12.687,14.2]],["AUT",13,[6.7,10.4,4.9,4.8,9.65,4.1]],["SCO",14,[8.5,7.9,3.5,6.4,9.25,5]],["POL",15,[4,4.625,7.75,6.875,11.75,15.75]],["DEN",16,[4.125,7.8,5.9,8.5,7.656,12.25]],["SUI",17,[5.125,7.75,8.5,5.2,7.05,6.2]],["ISR",18,[7,6.75,6.25,8.75,2.875,2.875]],["CYP",19,[4,4.125,5.1,3.75,10.562,12.156]],["SWE",20,[2.5,5.125,6.25,1.875,11.375,5]],["CRO",21,[5.9,6,3.375,5.875,5.875,7.031]],["SRB",22,[5.5,9.5,5.375,1.4,3.725,5.75]],["UKR",23,[6.8,4.2,5.7,4.1,3.6,8.312]],["HUN",24,[4.25,2.75,5.875,4.5,6.625,7.437]],["ROU",25,[3.75,2.25,6.25,3.25,7.75,5.75]],["SVK",26,[1.5,4.125,6,5,4.625,2.625]],["SVN",27,[2.25,3,2.125,3.875,9.093,6.375]],["BUL",28,[4,3.375,4.5,4.375,3.625,5.187]],["AZE",29,[2.5,4.375,4,5.875,2.875,5.812]],["RUS",30,[4.333,5.3,4.333,4.333,0,4.333]],["IRL",31,[1.875,2.875,3.375,1.5,5.343,4.25]],["MDA",32,[1.375,5.25,3.75,2,2.125,1.5]],["ISL",33,[0.625,1.5,3,3.833,4.562,3.625]],["BIH",34,[2.625,1.625,2,2.25,4.531,3.312]],["ARM",35,[1.375,1.875,2.375,2.25,4.375,4.187]],["LVA",36,[1.375,2.625,2.75,1.625,3.875,2]],["FIN",38,[1.375,3.75,2.625,1.75,2.25,3.625]],["KAZ",39,[1,2.875,1.125,3.125,3,3.625]],["ALB",46,[2,1.625,0.875,2.125,1.25,2.25]],["AND",53,[0.666,1.5,0.666,1.666,1,2]],["GEO",50,[1.75,1.25,1.125,1.25,1.25,1.125]],["GIB",54,[1.666,1.25,0.875,0.166,1.5,3.333]],["LTU",43,[1.625,1.75,2.375,1.125,1.375,1.125]]];
+const HISTORICAL_SEASONS = ["2020-2021","2021-2022","2022-2023","2023-2024","2024-2025","2025-2026"];
+const HISTORICAL_CLUB_COEFFICIENTS: Record<string,number> = {"real-madrid":131.5,"bayern-munchen":124.25,"inter":121.25,"man-city":117.75,"manchester-city":117.75,"liverpool":115.5,"paris-saint-germain":109.5,"paris":109.5,"borussia-dortmund":98.75,"b-dortmund":98.75,"leverkusen":98.25,"bayer-leverkusen":98.25,"barcelona":96.25,"arsenal":93};
+async function ensureHistoricalCoefficients(sql:Sql){
+ for(const [country,officialRank,values] of HISTORICAL_ASSOCIATION_COEFFICIENTS){
+  for(let i=0;i<HISTORICAL_SEASONS.length;i++){
+   const coefficient=values[i];
+   await sql.query("INSERT INTO uefa_association_season_coefficients(season_id,country_code,points,participating_clubs,coefficient,ranking) VALUES($1,$2,$3,1,$3,$4) ON CONFLICT(season_id,country_code) DO NOTHING",[HISTORICAL_SEASONS[i],country,coefficient,officialRank]);
+  }
+  const total=values.slice(0,5).reduce((a,b)=>a+b,0);
+  await sql.query("INSERT INTO uefa_association_coefficients(country_code,latest_season_id,five_season_total,coefficient,ranking) VALUES($1,'2024-2025',$2,$2,$3) ON CONFLICT(country_code) DO NOTHING",[country,total.toFixed(3),officialRank]);
+ }
+ const clubs=await sql.query("SELECT u.id,u.name,u.country_code,COALESCE(a.five_season_total,0) AS association_total FROM uefa_clubs u LEFT JOIN uefa_association_coefficients a ON a.country_code=u.country_code");
+ const seeded=clubs.map((c:any)=>({id:String(c.id),value:Math.max(HISTORICAL_CLUB_COEFFICIENTS[slug(String(c.name))]||0,Number(c.association_total||0)*.2)})).sort((a:any,b:any)=>b.value-a.value||a.id.localeCompare(b.id));
+ for(let i=0;i<seeded.length;i++){const c=seeded[i];await sql.query("INSERT INTO uefa_club_coefficients(club_id,five_season_total,ten_season_total,coefficient,ranking) VALUES($1,$2,$2,$2,$3) ON CONFLICT(club_id) DO NOTHING",[c.id,c.value.toFixed(3),i+1]);}
+}
+
 async function finishPreviousSeason(sql:Sql,from:string){
  const fixtures=await sql.query("SELECT f.id,f.competition_id,f.home_club_id,f.away_club_id,f.home_goals,f.away_goals,f.status,h.country_code AS hc,a.country_code AS ac FROM uefa_fixtures f JOIN uefa_clubs h ON h.id=f.home_club_id JOIN uefa_clubs a ON a.id=f.away_club_id WHERE f.season_id=$1 AND f.stage='league_phase'",[from]);
  const stats=new Map<string,{played:number;points:number;gf:number;ga:number;wins:number;draws:number;losses:number}>();
@@ -108,20 +126,22 @@ async function finishPreviousSeason(sql:Sql,from:string){
  const countries=await sql.query("SELECT DISTINCT country_code FROM uefa_clubs");
  const allAssoc:any[]=[];
  for(const c of countries){
-  const rows=await sql.query("SELECT coefficient FROM uefa_association_season_coefficients WHERE country_code=$1 AND season_id IN (SELECT id FROM seasons WHERE starts_on <= (SELECT starts_on FROM seasons WHERE id=$2) ORDER BY starts_on DESC LIMIT 5)",[c.country_code,from]);
+  const rows=await sql.query("SELECT coefficient FROM uefa_association_season_coefficients WHERE country_code=$1 AND split_part(season_id,'-',1)::int <= split_part($2,'-',1)::int ORDER BY split_part(season_id,'-',1)::int DESC LIMIT 5",[c.country_code,from]);
   const total=rows.reduce((sum:number,x:any)=>sum+Number(x.coefficient||0),0);
   allAssoc.push({country:String(c.country_code),total,coefficient:total});
  }
- allAssoc.sort((a,b)=>b.total-a.total||a.country.localeCompare(b.country));
+ const recentAssoc=new Map<string,number>();for(const c of countries){const r=await sql.query("SELECT coefficient FROM uefa_association_season_coefficients WHERE country_code=$1 AND split_part(season_id,'-',1)::int <= split_part($2,'-',1)::int ORDER BY split_part(season_id,'-',1)::int DESC LIMIT 1",[c.country_code,from]);recentAssoc.set(String(c.country_code),Number(r[0]?.coefficient||0));}
+ allAssoc.sort((a,b)=>b.total-a.total||(recentAssoc.get(b.country)||0)-(recentAssoc.get(a.country)||0)||a.country.localeCompare(b.country));
  for(let i=0;i<allAssoc.length;i++){
   const c=allAssoc[i];await sql.query("INSERT INTO uefa_association_coefficients(country_code,latest_season_id,five_season_total,coefficient,ranking) VALUES($1,$2,$3,$3,$4) ON CONFLICT(country_code) DO UPDATE SET latest_season_id=EXCLUDED.latest_season_id,five_season_total=EXCLUDED.five_season_total,coefficient=EXCLUDED.coefficient,ranking=EXCLUDED.ranking",[c.country,from,c.total.toFixed(3),i+1]);
  }
- const clubRows=await sql.query("SELECT c.id,COALESCE(SUM(sc.points),0) total FROM uefa_clubs c LEFT JOIN uefa_club_season_coefficients sc ON sc.club_id=c.id AND sc.season_id IN (SELECT id FROM seasons WHERE starts_on <= (SELECT starts_on FROM seasons WHERE id=$1) ORDER BY starts_on DESC LIMIT 5) GROUP BY c.id ORDER BY total DESC,c.id",[from]);
+ const clubRows=await sql.query("SELECT c.id,c.country_code,COALESCE(SUM(sc.points),0) total FROM uefa_clubs c LEFT JOIN uefa_club_season_coefficients sc ON sc.club_id=c.id AND sc.season_id IN (SELECT season_id FROM uefa_club_season_coefficients WHERE club_id=c.id AND split_part(season_id,'-',1)::int <= split_part($1,'-',1)::int GROUP BY season_id ORDER BY split_part(season_id,'-',1)::int DESC LIMIT 5) GROUP BY c.id,c.country_code ORDER BY total DESC,c.id",[from]);
  for(let i=0;i<clubRows.length;i++){
-  const x=clubRows[i];const ten=await sql.query("SELECT COALESCE(SUM(points),0) total FROM uefa_club_season_coefficients WHERE club_id=$1 AND season_id IN (SELECT id FROM seasons WHERE starts_on <= (SELECT starts_on FROM seasons WHERE id=$2) ORDER BY starts_on DESC LIMIT 10)",[x.id,from]);
-  const association=countryById.get(String(x.id))||"UNK";const assocCoeff=allAssoc.find(a=>a.country===association)?.total||0;
+  const x=clubRows[i];const ten=await sql.query("SELECT COALESCE(SUM(points),0) total FROM uefa_club_season_coefficients WHERE club_id=$1 AND season_id IN (SELECT season_id FROM uefa_club_season_coefficients WHERE club_id=$1 AND split_part(season_id,'-',1)::int <= split_part($2,'-',1)::int GROUP BY season_id ORDER BY split_part(season_id,'-',1)::int DESC LIMIT 10)",[x.id,from]);
+  const association=String(x.country_code||"UNK");const assocCoeff=allAssoc.find(a=>a.country===association)?.total||0;
+  const assocTen=await sql.query("SELECT COALESCE(SUM(coefficient),0) AS total FROM (SELECT coefficient FROM uefa_association_season_coefficients WHERE country_code=$1 AND split_part(season_id,'-',1)::int <= split_part($2,'-',1)::int ORDER BY split_part(season_id,'-',1)::int DESC LIMIT 10) h",[association,from]);
   const fiveTotal=Math.max(Number(x.total||0),assocCoeff*.2);
-  const tenTotal=Math.max(Number(ten[0]?.total||0),assocCoeff*.2);
+  const tenTotal=Math.max(Number(ten[0]?.total||0),Number(assocTen[0]?.total||0)*.2);
   await sql.query("INSERT INTO uefa_club_coefficients(club_id,five_season_total,ten_season_total,coefficient,ranking) VALUES($1,$2,$3,$2,$4) ON CONFLICT(club_id) DO UPDATE SET five_season_total=EXCLUDED.five_season_total,ten_season_total=EXCLUDED.ten_season_total,coefficient=EXCLUDED.coefficient,ranking=EXCLUDED.ranking",[x.id,fiveTotal.toFixed(3),tenTotal.toFixed(3),i+1]);
  }
 }
@@ -246,6 +266,7 @@ export async function advanceUefaDay(sql:Sql,day:string){
 }
 
 export async function buildUefaSeason(sql:Sql,from:string,season:string){
+ await ensureHistoricalCoefficients(sql);
  await finishPreviousSeason(sql,from);
  await ensureDomesticUefaClubs(sql,season);
  const domestic=await sql.query("SELECT h.team_id,h.final_position,h.points,h.division_id,d.country_code,d.tier,t.name,t.reputation,t.team_strength FROM team_season_history h JOIN divisions d ON d.id=h.division_id JOIN teams t ON t.id=h.team_id WHERE h.season_id=$1 AND d.tier=1 ORDER BY d.country_code,h.final_position,h.points DESC,t.id",[from]);
