@@ -288,3 +288,41 @@ tbody tr:hover{background:rgba(131,201,244,.045)}
 
 /* Keep commentary visually attached to the relevant side of the match */
 .commentary{display:flex;flex-direction:column;gap:7px}.commentary .event{width:min(82%,680px)}.commentary .home-event{align-self:flex-start;margin-right:auto;text-align:left}.commentary .away-event{align-self:flex-end;margin-left:auto;text-align:right}.commentary .neutral-event{align-self:center;margin-left:auto;margin-right:auto;text-align:center}
+
+
+/* Light-mode form controls: keep native dropdown menus readable on every screen. */
+.app-shell.theme-light select,
+.app-shell.theme-light input,
+.app-shell.theme-light textarea,
+.app-shell.theme-light option,
+.app-shell.theme-light optgroup,
+.app-shell.theme-light .pitch-heading select,
+.app-shell.theme-light .tactic-setting select,
+.app-shell.theme-light .new-career-card select,
+.app-shell.theme-light .transfer-filters select,
+.app-shell.theme-light .transfer-offer-grid select,
+.app-shell.theme-light .tactics-controls select,
+.app-shell.theme-light .pitch-panel select,
+.app-shell.theme-light .side-section select,
+.app-shell.theme-light .speed-label select {
+  color: #172632;
+  background-color: #ffffff;
+  border-color: #c6d0d6;
+  color-scheme: light;
+}
+.app-shell.theme-light select {
+  appearance: auto;
+}
+.app-shell.theme-light option,
+.app-shell.theme-light optgroup {
+  color: #172632;
+  background-color: #ffffff;
+}
+.app-shell.theme-light select:disabled,
+.app-shell.theme-light input:disabled,
+.app-shell.theme-light textarea:disabled {
+  color: #667782;
+  background-color: #edf1f3;
+  border-color: #d4dde2;
+  opacity: 1;
+}
