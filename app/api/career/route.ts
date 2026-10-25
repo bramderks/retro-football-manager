@@ -24,6 +24,11 @@ async function ensurePlayerAttributes(sql:any){
   await sql.query("UPDATE career_player_states cps SET attributes=p.attributes FROM players p WHERE p.id=cps.player_id AND cps.attributes IS NULL AND p.attributes IS NOT NULL");
  }
 }
+async function getMatchdayFixtures(sql:any,saveId:string,clubId:string,divisionId:string,day:string){
+ const domestic=await sql.query("SELECT cfs.fixture_id AS id,cfs.matchday,cfs.kickoff_date,d.name AS competition,h.name AS home_team,a.name AS away_team,h.name AS home_name,a.name AS away_name,cr.home_goals,cr.away_goals,COALESCE(cr.status,'scheduled') AS status,(cfs.home_team_id=$2 OR cfs.away_team_id=$2) AS user_match,'domestic' AS source,cfs.home_team_id,cfs.away_team_id FROM career_fixture_schedule cfs JOIN fixtures f ON f.id=cfs.fixture_id JOIN divisions d ON d.id=f.division_id JOIN teams h ON h.id=cfs.home_team_id JOIN teams a ON a.id=cfs.away_team_id LEFT JOIN career_fixture_results cr ON cr.fixture_id=cfs.fixture_id AND cr.save_id=cfs.save_id WHERE cfs.save_id=$3 AND f.division_id=$4 AND cfs.kickoff_date=$1 ORDER BY h.name,a.name",[day,clubId,saveId,divisionId]);
+ const european=await sql.query("SELECT f.id,f.kickoff_date,c.name AS competition,h.name AS home_team,a.name AS away_team,h.name AS home_name,a.name AS away_name,f.home_goals,f.away_goals,f.status,(h.domestic_team_id=$2 OR a.domestic_team_id=$2) AS user_match,f.home_club_id AS home_team_id,f.away_club_id AS away_team_id,'european' AS source FROM uefa_fixtures f JOIN uefa_competitions c ON c.id=f.competition_id JOIN uefa_clubs h ON h.id=f.home_club_id JOIN uefa_clubs a ON a.id=f.away_club_id WHERE f.kickoff_date=$1 ORDER BY c.name,h.name",[day,clubId]);
+ return [...domestic,...european].sort((x:any,y:any)=>String(x.competition||"").localeCompare(String(y.competition||""))||String(x.home_team||"").localeCompare(String(y.home_team||"")));
+}
 async function ensureSaveSchedule(sql:any,saveId:string,divisionId:string,seasonId:string){
  const count=await sql.query("SELECT COUNT(*)::int AS n FROM career_fixture_schedule WHERE save_id=$1",[saveId]);
  const fixtureCount=await sql.query("SELECT COUNT(*)::int AS n FROM fixtures WHERE division_id=$1 AND season_id=$2",[divisionId,seasonId]);
@@ -393,13 +398,18 @@ export async function POST(request: Request) {
    await sql.query("INSERT INTO career_news(save_id,news_date,category,headline,body) VALUES($1,$2,'match',$3,$4)",[b.saveId,day,title,s.club_name+" "+gf+"-"+ga+" "+opponent]);
    const conf=Math.max(0,Math.min(100,Number(s.board_confidence)+(gf>ga?2:gf<ga?-3:0))),morale=Math.max(0,Math.min(100,Number(s.club_morale)+(gf>ga?3:gf<ga?-4:0)));
    await sql.query("UPDATE career_saves SET game_date=$1,board_confidence=$2,club_morale=$3,updated_at=NOW() WHERE id=$4",[day,conf,morale,b.saveId]);
-   const matchdayResults=await sql.query("SELECT cfs.fixture_id AS id,cfs.matchday,cfs.kickoff_date,h.name AS home_team,a.name AS away_team,cr.home_goals,cr.away_goals,COALESCE(cr.status,'scheduled') AS status,(cfs.home_team_id=$2 OR cfs.away_team_id=$2) AS user_match FROM career_fixture_schedule cfs JOIN fixtures f ON f.id=cfs.fixture_id JOIN teams h ON h.id=cfs.home_team_id JOIN teams a ON a.id=cfs.away_team_id LEFT JOIN career_fixture_results cr ON cr.fixture_id=cfs.fixture_id AND cr.save_id=cfs.save_id WHERE cfs.save_id=$3 AND f.division_id=$4 AND cfs.kickoff_date=$1 ORDER BY h.name,a.name",[day,s.club_id,b.saveId,s.division_id]);
+   const matchdayResults=await getMatchdayFixtures(sql,b.saveId,s.club_id,s.division_id,day);
    return NextResponse.json({ok:true,gameDate:day,fixtureId,homeGoals,awayGoals,matchdayResults});
   }
   if(b.action==="advance_day"){
    const dayDate=new Date(dateOnly(s.game_date)+"T12:00:00Z");dayDate.setUTCDate(dayDate.getUTCDate()+1);const day=dateOnly(dayDate);
    const seasonStartYear=Number(String(s.season_id||SEASON).slice(0,4));
-   if(day===String(seasonStartYear+1)+"-07-01"){
+   if(String(b.confirmedDate||"").slice(0,10)!==day){
+      const previewFixtures=await getMatchdayFixtures(sql,b.saveId,s.club_id,s.division_id,day);
+      const unplayed=previewFixtures.filter((f:any)=>!["played","finished"].includes(String(f.status||"scheduled").toLowerCase()));
+      if(unplayed.length){const fixture=unplayed.find((f:any)=>f.source==="domestic"&&f.user_match)||null;return NextResponse.json({ok:true,matchdayPreview:true,needsMatch:Boolean(fixture),fixture,matchdayFixtures:previewFixtures,gameDate:day});}
+    }
+    if(day===String(seasonStartYear+1)+"-07-01"){
      const nextSeason=String(seasonStartYear+1)+"-"+String(seasonStartYear+2);
      const rolloverResponse=await generateWorldSeason(new Request("https://internal/api/world",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({fromSeason:s.season_id||SEASON,season:nextSeason,saveId:b.saveId})}));
      const rolloverData=await rolloverResponse.json();
@@ -433,7 +443,7 @@ export async function POST(request: Request) {
     }
    }
    const pendingFixture=await sql.query("SELECT cfs.fixture_id AS id,cfs.home_team_id,cfs.away_team_id,cfs.kickoff_date,h.name AS home_name,a.name AS away_name FROM career_fixture_schedule cfs JOIN fixtures f ON f.id=cfs.fixture_id JOIN teams h ON h.id=cfs.home_team_id JOIN teams a ON a.id=cfs.away_team_id WHERE cfs.save_id=$4 AND cfs.kickoff_date=$1 AND f.status='scheduled' AND f.division_id=$2 AND (cfs.home_team_id=$3 OR cfs.away_team_id=$3) AND NOT EXISTS (SELECT 1 FROM career_fixture_results cr WHERE cr.fixture_id=cfs.fixture_id AND cr.save_id=$4) LIMIT 1",[day,s.division_id,s.club_id,b.saveId]);
-   if(pendingFixture.length){const dayFixtures=await sql.query("SELECT cfs.fixture_id AS id,cfs.matchday,cfs.kickoff_date,h.name AS home_team,a.name AS away_team,cr.home_goals,cr.away_goals,COALESCE(cr.status,'scheduled') AS status,(cfs.home_team_id=$2 OR cfs.away_team_id=$2) AS user_match FROM career_fixture_schedule cfs JOIN fixtures f ON f.id=cfs.fixture_id JOIN teams h ON h.id=cfs.home_team_id JOIN teams a ON a.id=cfs.away_team_id LEFT JOIN career_fixture_results cr ON cr.fixture_id=cfs.fixture_id AND cr.save_id=cfs.save_id WHERE cfs.save_id=$3 AND f.division_id=$4 AND cfs.kickoff_date=$1 ORDER BY h.name,a.name",[day,s.club_id,b.saveId,s.division_id]);return NextResponse.json({ok:true,needsMatch:true,fixture:pendingFixture[0],matchdayFixtures:dayFixtures,gameDate:day});}
+   if(pendingFixture.length){const dayFixtures=await getMatchdayFixtures(sql,b.saveId,s.club_id,s.division_id,day);return NextResponse.json({ok:true,needsMatch:true,fixture:pendingFixture[0],matchdayFixtures:dayFixtures,gameDate:day});}
    await sql.query("UPDATE career_saves SET game_date=$1,updated_at=NOW() WHERE id=$2",[day,b.saveId]);
    await advanceUefaDay(sql,day);
     const scheduled=await sql.query("SELECT f.id,cfs.home_team_id,cfs.away_team_id,cfs.kickoff_date,h.team_strength AS hs,h.reputation AS hr,a.team_strength AS aws,a.reputation AS ar FROM career_fixture_schedule cfs JOIN fixtures f ON f.id=cfs.fixture_id JOIN teams h ON h.id=cfs.home_team_id JOIN teams a ON a.id=cfs.away_team_id WHERE cfs.save_id=$3 AND cfs.kickoff_date=$1 AND f.status='scheduled' AND f.division_id=$2 AND NOT EXISTS (SELECT 1 FROM career_fixture_results cr WHERE cr.fixture_id=cfs.fixture_id AND cr.save_id=$3)",[day,s.division_id,b.saveId]);
@@ -523,7 +533,8 @@ const applications=await sql.query("SELECT a.*,t.name AS target_club FROM career
      const champion=await sql.query("SELECT t.name,COALESCE(SUM(CASE WHEN f.matchday>0 AND cr.status='played' AND ((cfs.home_team_id=t.id AND cr.home_goals>cr.away_goals) OR (cfs.away_team_id=t.id AND cr.away_goals>cr.home_goals)) THEN 3 WHEN cr.status='played' AND cr.home_goals=cr.away_goals THEN 1 ELSE 0 END),0)::int AS points FROM teams t LEFT JOIN career_fixture_schedule cfs ON (cfs.home_team_id=t.id OR cfs.away_team_id=t.id) AND cfs.save_id=$3 LEFT JOIN fixtures f ON f.id=cfs.fixture_id AND f.season_id=$1 LEFT JOIN career_fixture_results cr ON cr.fixture_id=f.id AND cr.save_id=$3 WHERE t.division_id=$2 GROUP BY t.id,t.name ORDER BY points DESC,t.name LIMIT 1",[s.season_id||SEASON,s.division_id,b.saveId]);
     if(champion.length)await sql.query("INSERT INTO career_news(save_id,news_date,category,headline,body) SELECT $1,$2,'league','Seizoensslot: kampioen bekend',$3 WHERE NOT EXISTS (SELECT 1 FROM career_news WHERE save_id=$1 AND category='league' AND headline='Seizoensslot: kampioen bekend')",[b.saveId,day,champion[0].name+" is kampioen van "+s.club_name+"’s divisie met "+champion[0].points+" punten. Het seizoen is volledig uitgespeeld."]); 
    }
-   return NextResponse.json({ok:true,gameDate:day,matchesPlayed:results.length,results,cashBalance:balance,leaguePosition:currentRank.length?Number(currentRank[0].rank):null,seasonComplete:Boolean(seasonEnd[0]?.last_match && day>=dateOnly(seasonEnd[0].last_match) && Number(seasonEnd[0].unplayed)===0)});
+   const matchdayResults=await getMatchdayFixtures(sql,b.saveId,s.club_id,s.division_id,day);
+    return NextResponse.json({ok:true,gameDate:day,matchesPlayed:results.length,results,matchdayResults,cashBalance:balance,leaguePosition:currentRank.length?Number(currentRank[0].rank):null,seasonComplete:Boolean(seasonEnd[0]?.last_match && day>=dateOnly(seasonEnd[0].last_match) && Number(seasonEnd[0].unplayed)===0)});
   }
   return fail("Onbekende actie.");
  }catch(e){console.error("career POST",e);return fail("Carrièreactie kon niet worden opgeslagen.",500);}
